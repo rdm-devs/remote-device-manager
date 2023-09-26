@@ -9,3 +9,5 @@
 3. Accedemos a la documentación de la API para empezar a probar los endpoints disponibles: `http://127.0.0.1:8000/docs`.
 
 Una base de datos de prueba (`fastapi-sia.db`) se creará automáticamente en el directorio raíz. Para ver su contenido, se puede utilizar el programa [DB Browser for SQLite](https://sqlitebrowser.org/dl/), disponible para Windows, Mac y Linux.
+
+La estructura del proyecto está basada en estas recomendaciones: [fastapi-best-practices](https://github.com/zhanymkanov/fastapi-best-practices).
