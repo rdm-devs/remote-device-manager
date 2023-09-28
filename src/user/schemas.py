@@ -1,9 +1,9 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class UserBase(BaseModel): # used as common fields
-    email: str
+    email: EmailStr
     group_id: int
     last_login: datetime
 
