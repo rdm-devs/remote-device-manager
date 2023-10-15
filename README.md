@@ -6,7 +6,7 @@
 
 1. Habiendo creado un entorno virtual, procedemos con la instalación de las dependencias: `pip install -r requirements.txt`.
 2. Creamos un archivo llamado `.env`, modificando los valores indicados en el archivo plantilla `.env.template` según corresponda. 
-   En entornos de desarrollo `ROOT_PATH_DEV` debe ser `""` mientras que en producción el valor de `ROOT_PATH_PROD` dependerá de como haya sido configurado el proxy ya que la ruta principal de la api puede no estar en `https://<my_domain>/` sino bajo otra ruta, por ejemplo: `https://<my_domain>/api/`. configuramos el valor de la cadena de conexión a la base de datos  de desarrollo `DB_CONNECTION_DEV` con el valor correpondiente según el motor de base de datos utilizado. Ver **observaciones** más abajo.
+   En entornos de desarrollo `ROOT_PATH_DEV` debe ser `""` mientras que en producción el valor de `ROOT_PATH_PROD` dependerá de como haya sido configurado el proxy ya que la ruta principal de la api puede no estar en `https://<my_domain>/` sino bajo otra ruta, por ejemplo: `https://<my_domain>/api/`. Adicionalmente, configuramos el valor de la cadena de conexión a la base de datos  de desarrollo `DB_CONNECTION_DEV` con el valor correpondiente según el motor de base de datos utilizado. Ver **observaciones** más abajo.
 3. Ejecutamos `export ENV=DEV` y lanzamos la aplicación FastAPI desde el directorio raíz: `uvicorn src.main:app --reload`. 
    Es importante el primer comando ya que la aplicación cargará diferentes valores dependiendo del tipo de entorno de trabajo, `ENV=DEV` para desarrollo y `ENV=PROD` para producción.
 4. Accedemos a la documentación de la API para empezar a probar los endpoints disponibles: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
@@ -23,7 +23,7 @@ La estructura del proyecto está basada en estas recomendaciones: [fastapi-best-
 
 ### Manualmente
 
-Ubicados en la carpeta raíz del proyecto `fastapi-sia-test`, ejecutamos `export ENV="PROD"` y luego procedemos con alguna de las siguientes alternativas:
+Ubicados en la carpeta raíz del proyecto `fastapi-sia-test`, ejecutamos `export ENV=PROD` y luego procedemos con alguna de las siguientes alternativas:
  
 1. Con `uvicorn`: `uvicorn src.main:app --host 0.0.0.0 --port 5000`
 2. Con `gunicorn`: `gunicorn --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:5000 src.main:app`
