@@ -4,7 +4,8 @@
 
 ## ¿Cómo ejecutar el proyecto?
 
-1. Habiendo creado un entorno virtual, procedemos con la instalación de las dependencias: `pip install -r requirements.txt`.
+1. Habiendo creado un entorno virtual mediante `pip` o `conda`, procedemos con la instalación de las dependencias: `pip install -r requirements.txt`. 
+   **Nota** Se asume que `pip` fue instalado en el entorno `conda` previo a la ejecución de `pip install ...`.
 2. Creamos un archivo llamado `.env`, modificando los valores indicados en el archivo plantilla `.env.template` según corresponda. 
    En entornos de desarrollo `ROOT_PATH_DEV` debe ser `""` mientras que en producción el valor de `ROOT_PATH_PROD` dependerá de como haya sido configurado el proxy ya que la ruta principal de la api puede no estar en `https://<my_domain>/` sino bajo otra ruta, por ejemplo: `https://<my_domain>/api/`. Adicionalmente, configuramos el valor de la cadena de conexión a la base de datos  de desarrollo `DB_CONNECTION_DEV` con el valor correpondiente según el motor de base de datos utilizado. Ver **observaciones** más abajo.
 3. Ejecutamos `export ENV=DEV` y lanzamos la aplicación FastAPI desde el directorio raíz: `uvicorn src.main:app --reload`. 
@@ -17,7 +18,7 @@ Una base de datos se creará automáticamente en el directorio indicado en el ar
 
 La estructura del proyecto está basada en estas recomendaciones: [fastapi-best-practices](https://github.com/zhanymkanov/fastapi-best-practices).
 
-## Cómo ejecutar en producción
+## ¿Cómo ejecutar el proyecto en producción?
 
 **Importante:** Configurar debidamente los valores del archivo `.env`. 
 
@@ -52,3 +53,5 @@ WantedBy=multi-user.target
 Una vez creado, lo iniciamos: `sudo systemctl start fastapi-sia-test`. Para habilitar la posibilidad de que se inicie automáticamente junto con el sistema: `sudo systemctl enable fastapi-sia-test`. 
 
 En este caso se asume que el archivo `.env` existe y tiene todos los valores necesarios para correr en producción y setea automáticamente la variable de entorno `ENV` como `ENV=PROD`.
+
+Habiendo puesto en marcha la aplicación, tanto API como su documentación estarán disponible bajo el endpoint configurado en el proxy.

@@ -164,3 +164,6 @@ data.json
 
 # test-db
 fastapi-sia.db
+
+# nginx config file
+panto-nginx.conf
