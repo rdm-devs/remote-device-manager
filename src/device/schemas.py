@@ -11,7 +11,7 @@ class DeviceBase(BaseModel):
 
 
 class DeviceCreate(DeviceBase):
-    device_group_id: int | None
+    device_group_id: int
 
 
 class Device(DeviceCreate):
