@@ -10,8 +10,13 @@ class DeviceGroupCreate(DeviceGroupBase):
 
 class DeviceGroup(DeviceGroupBase):
     id: int
-    tenant_id: int | None
-    tenant: Tenant | None
+    tenant_id: int
 
     class Config:
         orm_mode = True
+
+class DeviceGroupUpdate(DeviceGroupBase):
+    pass
+
+class DeviceGroupDelete(BaseModel):
+    id: int

@@ -12,5 +12,5 @@ class DeviceGroup(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
-    tenant_id: Mapped[Optional[int] | None] = mapped_column(ForeignKey(Tenant.id))
+    tenant_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Tenant.id))
     tenant: Mapped[Optional["Tenant"]] = relationship("Tenant", back_populates="device_groups")
