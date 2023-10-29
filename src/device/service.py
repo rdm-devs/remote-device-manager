@@ -15,11 +15,12 @@ def get_device_by_name(db: Session, device_name: str):
 
 
 def create_device(db: Session, device: schemas.DeviceCreate):
-    db_device_group = (
+    db_device_group = (  # checking if the device values have a valid device_group_id
         db.query(models.DeviceGroup)
         .filter(models.DeviceGroup.id == device.device_group_id)
         .first()
     )
+
     if db_device_group:
         db_device = models.Device(**device)
         db.add(db_device)
@@ -32,15 +33,20 @@ def create_device(db: Session, device: schemas.DeviceCreate):
 def update_device(
     db: Session, db_device: schemas.Device, updated_device: schemas.DeviceUpdate
 ):
-    updated_db_device = (
-        db.query(models.Device)
-        .filter(models.Device.id == db_device.id)
-        .update(values=updated_device.model_dump())
+    db_device_group = (  # checking if the updated device values have a valid device_group_id
+        db.query(models.DeviceGroup)
+        .filter(models.DeviceGroup.id == update_device.device_group_id)
+        .first()
     )
 
-    db.commit()
-    db.refresh(db_device)
-    return db_device
+    if db_device_group:
+        db.query(models.Device).filter(models.Device.id == db_device.id).update(
+            values=updated_device.model_dump()
+        )
+        db.commit()
+        db.refresh(db_device)
+        return db_device
+    return None
 
 
 def delete_device(db: Session, db_device: schemas.Device):
