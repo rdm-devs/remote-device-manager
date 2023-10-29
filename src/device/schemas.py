@@ -1,20 +1,30 @@
 from datetime import datetime
 from pydantic import BaseModel
-from ..device_group.schemas import DeviceGroup
 
 class DeviceBase(BaseModel):
     name: str
-    id_rust: str
-    pass_rust: str
-    last_screenshot_path: str
-    is_online: bool
-    heartbeat_timestamp: datetime
+    is_online: bool = True
+    heartbeat_timestamp: datetime = datetime.now()
+    id_rust: str | None = None
+    pass_rust: str | None = None
+    last_screenshot_path: str | None = None
+
 
 class DeviceCreate(DeviceBase):
-    device_group: DeviceGroup | None
+    device_group_id: int | None
 
-class Device(DeviceBase):
+
+class Device(DeviceCreate):
     id: int
 
     class Config:
         orm_mode = True
+
+
+class DeviceUpdate(DeviceCreate):
+    pass
+
+
+class DeviceDelete(BaseModel):
+    id: int
+    msg: str
