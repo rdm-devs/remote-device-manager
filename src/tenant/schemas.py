@@ -5,11 +5,18 @@ class TenantBase(BaseModel):
     name: str
 
 class TenantCreate(TenantBase):
-    pass
+    groups: list[DeviceGroup] | list = []
 
 class Tenant(TenantBase):
     id: int
-    groups: list[DeviceGroup] | list = []
+    groups: list[DeviceGroup] | list
 
     class Config:
         orm_mode = True
+
+class TenantUpdate(TenantCreate):
+    pass
+
+class TenantDelete(BaseModel):
+    id: int
+    msg: str
