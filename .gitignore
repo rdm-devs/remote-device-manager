@@ -167,3 +167,6 @@ fastapi-sia.db
 
 # nginx config file
 panto-nginx.conf
+
+# vscode's python debug config
+.vscode
