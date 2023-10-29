@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import Optional
 from ..database import Base
+from ..user_group.models import UserGroup
 
 class User(Base):
     __tablename__ = "user"
