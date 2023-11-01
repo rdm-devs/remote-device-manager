@@ -16,8 +16,7 @@ class UserCreate(UserBase):  # used when creating user
 class User(UserBase):  # used when reading user info
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class UserUpdate(UserCreate):

@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class DeviceBase(BaseModel):
     name: str
     is_online: bool = True
@@ -17,8 +18,7 @@ class DeviceCreate(DeviceBase):
 class Device(DeviceCreate):
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class DeviceUpdate(DeviceCreate):

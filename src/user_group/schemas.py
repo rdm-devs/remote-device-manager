@@ -17,8 +17,7 @@ class UserGroup(UserGroupBase):
     device_group_id: Optional[int] | None
     users: list[User] | list = []
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class UserGroupUpdate(UserGroupBase):
