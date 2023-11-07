@@ -22,7 +22,7 @@ def create_device(db: Session, device: schemas.DeviceCreate):
     )
 
     if db_device_group:
-        db_device = models.Device(**device)
+        db_device = models.Device(**device.model_dump())
         db.add(db_device)
         db.commit()
         db.refresh(db_device)
@@ -35,7 +35,7 @@ def update_device(
 ):
     db_device_group = (  # checking if the updated device values have a valid device_group_id
         db.query(models.DeviceGroup)
-        .filter(models.DeviceGroup.id == update_device.device_group_id)
+        .filter(models.DeviceGroup.id == updated_device.device_group_id)
         .first()
     )
 

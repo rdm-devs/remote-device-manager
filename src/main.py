@@ -13,9 +13,12 @@ load_dotenv()
 ENV = os.getenv("ENV")
 ROOT_PATH=os.getenv(f"ROOT_PATH_{ENV}")
 
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(root_path=ROOT_PATH)
+
+@app.on_event("startup")
+async def startup():
+    Base.metadata.create_all(bind=engine)
 
 app.include_router(user_router)
 app.include_router(user_group_router)
