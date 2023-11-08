@@ -64,6 +64,33 @@ def test_update_device(session: Session):
     assert data["device_group_id"] == 1
 
 
+def test_update_non_existent_device(session: Session):
+    device_id = 5
+
+    response = client.patch(
+        f"/devices/{device_id}", json={"name": "dev2-updated", "device_group_id": 1}
+    )
+    assert response.status_code == 404, response.text
+
+
+def test_update_non_existent_device_attrs(session: Session):
+    device_id = 1
+
+    response = client.patch(
+        f"/devices/{device_id}", json={"tag": "my-cool-device", "device_group_id": 1}
+    )
+    assert response.status_code == 422, response.text
+
+
+def test_update_incomplete_device_attrs(session: Session):
+    device_id = 1
+
+    response = client.patch(
+        f"/devices/{device_id}", json={"name": "dev2-updated"}
+    )
+    assert response.status_code == 422, response.text
+
+
 def test_delete_device(session: Session):
     device_id = 1  # Device with id=1 already exists in the session
 
@@ -72,3 +99,10 @@ def test_delete_device(session: Session):
     data = response.json()
     assert "id" in data
     assert data["id"] == device_id
+
+
+def test_delete_non_existent_device(session: Session):
+    device_id = 5
+
+    response = client.delete(f"/devices/{device_id}")
+    assert response.status_code == 404, response.text
