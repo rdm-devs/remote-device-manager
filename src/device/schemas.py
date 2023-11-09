@@ -24,7 +24,6 @@ class Device(DeviceCreate):
 class DeviceUpdate(DeviceCreate):
     pass
 
-
 class DeviceDelete(BaseModel):
     id: int
     msg: str

@@ -1,9 +1,33 @@
 from sqlalchemy.orm import Session
+
+from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
+from src.device_group.exceptions import DeviceGroupNotFoundError
 from . import schemas, models
 
 
+def check_device_group_exist(db: Session, device_group_id: int):
+    db_device_group = (
+        db.query(models.DeviceGroup)
+        .filter(models.DeviceGroup.id == device_group_id)
+        .first()
+    )
+    if db_device_group is None:
+        raise DeviceGroupNotFoundError()
+
+
+def check_device_name_taken(db: Session, device_name: str):
+    device_name_taken = (
+        db.query(models.Device).filter(models.Device.name == device_name).first()
+    )
+    if device_name_taken is not None:
+        raise DeviceNameTakenError()
+
+
 def get_device(db: Session, device_id: int):
-    return db.query(models.Device).filter(models.Device.id == device_id).first()
+    device = db.query(models.Device).filter(models.Device.id == device_id).first()
+    if not device:
+        raise DeviceNotFoundError()
+    return device
 
 
 def get_devices(db: Session, skip: int = 0, limit: int = 100):
@@ -11,45 +35,44 @@ def get_devices(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_device_by_name(db: Session, device_name: str):
-    return db.query(models.Device).filter(models.Device.name == device_name).first()
+    device = db.query(models.Device).filter(models.Device.name == device_name).first()
+    if not device:
+        raise DeviceNotFoundError()
+    return device
 
 
 def create_device(db: Session, device: schemas.DeviceCreate):
-    db_device_group = (  # checking if the device values have a valid device_group_id
-        db.query(models.DeviceGroup)
-        .filter(models.DeviceGroup.id == device.device_group_id)
-        .first()
-    )
+    # sanity checks
+    check_device_group_exist(db, device.device_group_id)
+    check_device_name_taken(db, device.name)
 
-    if db_device_group:
-        db_device = models.Device(**device.model_dump())
-        db.add(db_device)
-        db.commit()
-        db.refresh(db_device)
-        return db_device
-    return None
+    db_device = models.Device(**device.model_dump())
+    db.add(db_device)
+    db.commit()
+    db.refresh(db_device)
+    return db_device
 
 
 def update_device(
     db: Session, db_device: schemas.Device, updated_device: schemas.DeviceUpdate
 ):
-    db_device_group = (  # checking if the updated device values have a valid device_group_id
-        db.query(models.DeviceGroup)
-        .filter(models.DeviceGroup.id == updated_device.device_group_id)
-        .first()
-    )
+    # sanity checks
+    get_device(db, db_device.id)
+    check_device_group_exist(db, updated_device.device_group_id)
+    check_device_name_taken(db, updated_device.name)
 
-    if db_device_group:
-        db.query(models.Device).filter(models.Device.id == db_device.id).update(
-            values=updated_device.model_dump()
-        )
-        db.commit()
-        db.refresh(db_device)
-        return db_device
-    return None
+    db.query(models.Device).filter(models.Device.id == db_device.id).update(
+        values=updated_device.model_dump()
+    )
+    db.commit()
+    db.refresh(db_device)
+    return db_device
 
 
 def delete_device(db: Session, db_device: schemas.Device):
+    # sanity check
+    get_device(db, db_device.id)
+
     db.delete(db_device)
     db.commit()
     return db_device.id
