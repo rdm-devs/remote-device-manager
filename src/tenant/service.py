@@ -1,5 +1,16 @@
 from sqlalchemy.orm import Session
 from . import schemas, models
+from src.tenant.exceptions import TenantNotFoundError
+
+
+def check_tenant_exists(db: Session, tenant_id: int):
+    tenant = (
+        db.query(models.Tenant)
+        .filter(models.Tenant.id == tenant_id)
+        .first()
+    )
+    if not tenant:
+        raise TenantNotFoundError()
 
 
 def create_tenant(db: Session, tenant: schemas.TenantCreate):
@@ -11,11 +22,7 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
 
 
 def get_tenant(db: Session, tenant_id: int):
-    return (
-        db.query(models.Tenant)
-        .filter(models.Tenant.id == tenant_id)
-        .first()
-    )
+    return db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
 
 
 def get_tenants(db: Session, skip: int = 0, limit: int = 100):
@@ -23,11 +30,7 @@ def get_tenants(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_tenant_by_name(db: Session, tenant_name: str):
-    return (
-        db.query(models.Tenant)
-        .filter(models.Tenant.name == tenant_name)
-        .first()
-    )
+    return db.query(models.Tenant).filter(models.Tenant.name == tenant_name).first()
 
 
 def update_tenant(
