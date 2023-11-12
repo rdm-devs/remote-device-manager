@@ -44,15 +44,27 @@ def session() -> Generator[Session, None, None]:
     db_session = TestingSessionLocal()
 
     # create test objects (Device, DeviceGroup, User, UserGroup, Tenant)
-    db_device_group = DeviceGroup(id=1, name="dev-group1")
+    db_tenant = Tenant(id=1, name="tenant1")
+    db_device_group = DeviceGroup(id=1, name="dev-group1", tenant_id=1)
+    db_device_group_2 = DeviceGroup(id=2, name="dev-group2")
     db_device = Device(id=1, name="dev1", device_group_id=1)
+    db_device_2 = Device(id=2, name="dev2", device_group_id=1)
     db_user_group = UserGroup(id=1, name="user-group1", device_group_id=1)
     db_user = User(
         id=1, hashed_password="_s3cr3tp@5sw0rd_", email="test-user@sia.com", group_id=1
     )
-    db_tenant = Tenant(id=1, name="tenant1")
 
-    db_session.add_all([db_device_group, db_device, db_user, db_user_group, db_tenant])
+    db_session.add_all(
+        [
+            db_tenant,
+            db_device_group,
+            db_device_group_2,
+            db_device,
+            db_device_2,
+            db_user,
+            db_user_group,
+        ]
+    )
     db_session.commit()
 
     yield db_session
