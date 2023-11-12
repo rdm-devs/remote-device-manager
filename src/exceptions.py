@@ -25,6 +25,11 @@ class BadRequest(DetailedHTTPException):
     DETAIL = "Bad Request"
 
 
+class UnprocessableEntity(DetailedHTTPException):
+    STATUS_CODE = status.HTTP_422_UNPROCESSABLE_ENTITY
+    DETAIL = "Unprocessable entity"
+
+
 class NotAuthenticated(DetailedHTTPException):
     STATUS_CODE = status.HTTP_401_UNAUTHORIZED
     DETAIL = "User not authenticated"
