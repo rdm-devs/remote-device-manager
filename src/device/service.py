@@ -2,17 +2,8 @@ from sqlalchemy.orm import Session
 
 from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
 from src.device_group.exceptions import DeviceGroupNotFoundError
+from src.device_group.service import check_device_group_exist
 from . import schemas, models
-
-
-def check_device_group_exist(db: Session, device_group_id: int):
-    db_device_group = (
-        db.query(models.DeviceGroup)
-        .filter(models.DeviceGroup.id == device_group_id)
-        .first()
-    )
-    if db_device_group is None:
-        raise DeviceGroupNotFoundError()
 
 
 def check_device_name_taken(db: Session, device_name: str):
