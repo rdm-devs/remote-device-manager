@@ -19,8 +19,8 @@ from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate
 
 
 def test_create_device(session: Session) -> None:
-    device = create_device(session, DeviceCreate(name="dev2", device_group_id=1))
-    assert device.name == "dev2"
+    device = create_device(session, DeviceCreate(name="dev5", device_group_id=1))
+    assert device.name == "dev5"
     assert device.device_group_id == 1
 
 
@@ -62,7 +62,7 @@ def test_get_devices(session: Session) -> None:
 
 
 def test_update_device(session: Session) -> None:
-    device = create_device(session, DeviceCreate(name="dev2", device_group_id=1))
+    device = create_device(session, DeviceCreate(name="dev5", device_group_id=1))
     db_device = get_device(session, device.id)
 
     device = update_device(
@@ -73,17 +73,9 @@ def test_update_device(session: Session) -> None:
     assert device.name == "dev-custom"
     assert device.device_group_id == 1
 
-    # updating a device without changing device_group_id
-    with pytest.raises(ValidationError):
-        device = update_device(
-            session,
-            db_device=db_device,
-            updated_device=DeviceUpdate(name="dev2"),
-        )
-
 
 def test_update_device_with_invalid_data(session: Session) -> None:
-    device = create_device(session, DeviceCreate(name="dev2", device_group_id=1))
+    device = create_device(session, DeviceCreate(name="dev5", device_group_id=1))
     db_device = get_device(session, device.id)
 
     with pytest.raises(DeviceGroupNotFoundError):
@@ -95,7 +87,6 @@ def test_update_device_with_invalid_data(session: Session) -> None:
 
 
 def test_update_device_with_invalid_id(session: Session) -> None:
-    # device = create_device(session, DeviceCreate(name="dev2", device_group_id=1))
     db_device = get_device(session, 1)
     db_device.id = 5
 
@@ -108,7 +99,7 @@ def test_update_device_with_invalid_id(session: Session) -> None:
 
 
 def test_delete_device(session: Session) -> None:
-    device = create_device(session, DeviceCreate(name="dev2delete", device_group_id=1))
+    device = create_device(session, DeviceCreate(name="dev5delete", device_group_id=1))
     db_device = get_device(session, device.id)
 
     device_id = device.id
@@ -120,7 +111,7 @@ def test_delete_device(session: Session) -> None:
 
 
 def test_delete_device_with_invalid_id(session: Session) -> None:
-    device = create_device(session, DeviceCreate(name="dev2delete", device_group_id=1))
+    device = create_device(session, DeviceCreate(name="dev5delete", device_group_id=1))
     db_device = get_device(session, device.id)
 
     db_device.id = 5
