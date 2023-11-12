@@ -4,7 +4,7 @@ from ..device.schemas import Device
 
 class DeviceGroupBase(BaseModel):
     name: str
-    devices: list[Device] | list = []
+    tenant_id: int | None = None
 
 
 class DeviceGroupCreate(DeviceGroupBase):
@@ -13,14 +13,13 @@ class DeviceGroupCreate(DeviceGroupBase):
 
 class DeviceGroup(DeviceGroupBase):
     id: int
-    tenant_id: int
-
     model_config = {"from_attributes": True}
 
 
-class DeviceGroupUpdate(DeviceGroupBase):
+class DeviceGroupUpdate(DeviceGroupCreate):
     pass
 
 
 class DeviceGroupDelete(BaseModel):
     id: int
+    msg: str
