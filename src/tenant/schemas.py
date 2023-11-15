@@ -7,18 +7,18 @@ class TenantBase(BaseModel):
 
 
 class TenantCreate(TenantBase):
-    groups: list[DeviceGroup] | list = []
+    model_config = {"extra": "forbid"}
 
 
 class Tenant(TenantBase):
     id: int
-    groups: list[DeviceGroup] | list
+    device_groups: list[DeviceGroup] = []
 
     model_config = {"from_attributes": True}
 
 
 class TenantUpdate(TenantCreate):
-    pass
+    model_config = {"extra": "forbid"}
 
 
 class TenantDelete(BaseModel):
