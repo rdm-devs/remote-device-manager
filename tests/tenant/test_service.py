@@ -39,7 +39,7 @@ def test_create_incomplete_tenant(session: Session) -> None:
         create_tenant(session, TenantCreate())
 
 
-def test_create_tenant_with_invalid_attrs(session: Session) -> None:
+def test_create_tenant_with_device_group(session: Session) -> None:
     with pytest.raises(ValidationError):
         create_tenant(session, TenantCreate(name="tenant5", device_groups=[]))
 
@@ -60,7 +60,7 @@ def test_get_tenant_by_name(session: Session) -> None:
     tenant = get_tenant_by_name(session, tenant_name="tenant1")
     assert tenant.name == "tenant1"
     assert tenant.id == 1
-    assert len(tenant.device_groups) == 1 # see tests/database.py
+    assert len(tenant.device_groups) == 1  # see tests/database.py
 
 
 def test_get_tenant_with_invalid_name(session: Session) -> None:
