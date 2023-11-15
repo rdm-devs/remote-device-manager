@@ -8,4 +8,6 @@ class Tenant(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
-    device_groups: Mapped[list["DeviceGroup"] | list] = relationship("DeviceGroup", back_populates="tenant")
+    device_groups: Mapped[list["src.device_groups.models.DeviceGroup"]] = relationship(
+        "DeviceGroup", back_populates="tenant"
+    )
