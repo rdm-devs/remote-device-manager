@@ -1,14 +1,12 @@
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
-from src import device_group
 from src.tenant.exceptions import TenantNotFoundError
 from tests.database import session
 
 from src.device_group.exceptions import (
     DeviceGroupNameTakenError,
     DeviceGroupNotFoundError,
-    InvalidDeviceGroupAttrsError,
 )
 from src.device_group.service import (
     create_device_group,
@@ -20,7 +18,6 @@ from src.device_group.service import (
 )
 from src.device_group.schemas import (
     DeviceGroupCreate,
-    DeviceGroupDelete,
     DeviceGroupUpdate,
 )
 
@@ -33,21 +30,17 @@ def test_create_device_group(session: Session) -> None:
 
 def test_create_duplicated_device(session: Session) -> None:
     with pytest.raises(DeviceGroupNameTakenError):
-        device_group = create_device_group(
-            session, DeviceGroupCreate(name="dev-group1")
-        )
+        create_device_group(session, DeviceGroupCreate(name="dev-group1"))
 
 
 def test_create_incomplete_device(session: Session) -> None:
     with pytest.raises(ValidationError):
-        device_group = create_device_group(session, DeviceGroupCreate())
+        create_device_group(session, DeviceGroupCreate())
 
 
 def test_create_device_group_with_invalid_tenant(session: Session) -> None:
     with pytest.raises(TenantNotFoundError):
-        device_group = create_device_group(
-            session, DeviceGroupCreate(name="dev-group5", tenant_id=5)
-        )
+        create_device_group(session, DeviceGroupCreate(name="dev-group5", tenant_id=5))
 
 
 def test_get_device_group(session: Session) -> None:
@@ -58,7 +51,7 @@ def test_get_device_group(session: Session) -> None:
 
 def test_get_device_group_with_invalid_id(session: Session) -> None:
     with pytest.raises(DeviceGroupNotFoundError):
-        device_group = get_device_group(session, device_group_id=5)
+        get_device_group(session, device_group_id=5)
 
 
 def test_get_device_group_by_name(session: Session) -> None:
@@ -69,7 +62,7 @@ def test_get_device_group_by_name(session: Session) -> None:
 
 def test_get_device_group_with_invalid_name(session: Session) -> None:
     with pytest.raises(DeviceGroupNotFoundError):
-        device_group = get_device_group_by_name(session, device_group_name="dev-group5")
+        get_device_group_by_name(session, device_group_name="dev-group5")
 
 
 def test_get_device_groups(session: Session) -> None:
@@ -124,12 +117,11 @@ def test_update_device_group_with_incomplete_data(session: Session) -> None:
 
 
 def test_update_device_group_with_invalid_id(session: Session) -> None:
-    # device = create_device(session, DeviceCreate(name="dev5", device_group_id=1))
     db_device_group = get_device_group(session, 1)
     db_device_group.id = 5
 
     with pytest.raises(DeviceGroupNotFoundError):
-        device_group = update_device_group(
+        update_device_group(
             session,
             db_device_group=db_device_group,
             updated_device_group=DeviceGroupUpdate(
@@ -162,6 +154,4 @@ def test_delete_device_group_with_invalid_id(session: Session) -> None:
 
     db_device_group.id = 5
     with pytest.raises(DeviceGroupNotFoundError):
-        deleted_device_group_id = delete_device_group(
-            session, db_device_group=db_device_group
-        )
+        delete_device_group(session, db_device_group=db_device_group)

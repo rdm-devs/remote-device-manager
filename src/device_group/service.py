@@ -25,7 +25,7 @@ def check_device_group_name_taken(db: Session, device_group_name: str):
         .filter(models.DeviceGroup.name == device_group_name)
         .first()
     )
-    if device_name_taken is not None:
+    if device_name_taken:
         raise DeviceGroupNameTakenError()
 
 
