@@ -7,10 +7,16 @@ from ..database import Base
 from ..audit_mixin import AuditMixin
 from ..tenant.models import Tenant
 
+
 class DeviceGroup(Base, AuditMixin):
     __tablename__ = "device_group"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
     tenant_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Tenant.id))
-    tenant: Mapped[Optional["Tenant"]] = relationship("Tenant", back_populates="device_groups")
+    tenant: Mapped[Optional["Tenant"]] = relationship(
+        "Tenant", back_populates="device_groups"
+    )
+    devices: Mapped[list["src.device.models.Device"]] = relationship(
+        "src.device.models.Device", back_populates="device_group"
+    )

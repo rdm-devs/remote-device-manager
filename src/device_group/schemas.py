@@ -13,6 +13,7 @@ class DeviceGroupCreate(DeviceGroupBase):
 
 class DeviceGroup(DeviceGroupBase):
     id: int
+    devices: list[Device]
     model_config = {"from_attributes": True}
 
 

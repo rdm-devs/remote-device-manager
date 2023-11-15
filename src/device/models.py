@@ -17,8 +17,11 @@ class Device(Base, AuditMixin):
     heartbeat_timestamp: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()
     )
-    device_group_id: Mapped["DeviceGroup"] = mapped_column(
+    device_group_id: Mapped[DeviceGroup] = mapped_column(
         ForeignKey("device_group.id")
+    )
+    device_group: Mapped[DeviceGroup] = relationship(
+        DeviceGroup, back_populates="devices"
     )
     id_rust: Mapped[Optional[str]]
     pass_rust: Mapped[Optional[str]]
