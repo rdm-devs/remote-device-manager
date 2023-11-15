@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
-from src import device
+from src import device, device_group
 from src.device_group.constants import ErrorCode
 from tests.database import app, session
 
@@ -76,6 +76,33 @@ def test_update_device_group(session: Session):
     data = response.json()
     assert data["name"] == "dev-group5-updated"
     assert data["tenant_id"] == None
+
+
+def test_update_device_group_to_add_a_tenant(session: Session):
+    # first we create a tenant
+    response = client.post("/tenants/", json={"name": "tenant2"})
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert "id" in data
+    tenant_id = data["id"]
+
+    device_group_id = 2
+
+    # then we update an existing device group and associate it with our tenant_id
+    tenant_id = data["id"]
+    response = client.patch(
+        f"/device_groups/{device_group_id}",
+        json={"name": "dev-group2-updated", "tenant_id": tenant_id},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    device_group_data = response.json()
+    assert device_group_data["name"] == "dev-group2-updated"
+    assert device_group_data["tenant_id"] == tenant_id
+
+    # lastly, we confirm a new device group has been added to our tenant's info.
+    response = client.get(f"/tenants/{tenant_id}")
+    data = response.json()
+    assert device_group_data in data["device_groups"]
 
 
 def test_update_non_existent_device_group(session: Session):
