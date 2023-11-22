@@ -1,10 +1,7 @@
-from os import error
 from pydantic import ValidationError
 import pytest
 from sqlalchemy.orm import Session
 from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
-
-# from src.device.router import read_device
 from src.device_group.exceptions import DeviceGroupNotFoundError
 from tests.database import session
 from src.device.service import (

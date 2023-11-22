@@ -2,7 +2,6 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from src.tenant.exceptions import TenantNotFoundError
 from tests.database import session
 
 from src.tenant.exceptions import (
