@@ -10,7 +10,7 @@ from src.database import get_db, Base
 from src.device.models import Device
 from src.device_group.models import DeviceGroup
 from src.user.models import User
-from src.user_group.models import UserGroup
+from src.user_group.models import UserGroup, user_and_groups_table
 from src.tenant.models import Tenant
 
 load_dotenv()
@@ -50,9 +50,12 @@ def session() -> Generator[Session, None, None]:
     db_device = Device(id=1, name="dev1", device_group_id=1)
     db_device_2 = Device(id=2, name="dev2", device_group_id=1)
     db_user_group = UserGroup(id=1, name="user-group1", device_group_id=1)
-    db_user = User(
-        id=1, hashed_password="_s3cr3tp@5sw0rd_", email="test-user@sia.com", group_id=1
+    db_user = User(id=1, hashed_password="_s3cr3tp@5sw0rd_", email="test-user@sia.com")
+    db_user.user_groups.append(db_user_group)
+    db_user_2 = User(
+        id=2, hashed_password="_s3cr3tp@5sw0rd_", email="test-user-2@sia.com"
     )
+    db_user_2.user_groups.append(db_user_group)
 
     db_session.add_all(
         [
@@ -62,6 +65,7 @@ def session() -> Generator[Session, None, None]:
             db_device,
             db_device_2,
             db_user,
+            db_user_2,
             db_user_group,
         ]
     )
