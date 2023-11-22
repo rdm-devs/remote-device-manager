@@ -1,3 +1,4 @@
+from src.schemas import UserGroupWithUsers
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -6,7 +7,7 @@ from . import service, schemas
 router = APIRouter()
 
 
-@router.post("/user_groups/", response_model=schemas.UserGroup)
+@router.post("/user_groups/", response_model=UserGroupWithUsers)
 def create_user_group(
     user_group: schemas.UserGroupCreate, db: Session = Depends(get_db)
 ):
@@ -16,7 +17,7 @@ def create_user_group(
     return service.create_user_group(db=db, user_group=user_group)
 
 
-@router.get("/user_groups/{group_id}", response_model=schemas.UserGroup)
+@router.get("/user_groups/{group_id}", response_model=UserGroupWithUsers)
 def read_user_group(group_id: int, db: Session = Depends(get_db)):
     db_user_group = service.get_user_group(db, group_id=group_id)
     if db_user_group is None:
@@ -24,12 +25,12 @@ def read_user_group(group_id: int, db: Session = Depends(get_db)):
     return db_user_group
 
 
-@router.get("/user_groups/", response_model=list[schemas.UserGroup])
+@router.get("/user_groups/", response_model=list[UserGroupWithUsers])
 def read_user_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return service.get_user_groups(db, skip=skip, limit=limit)
 
 
-@router.patch("/user_groups/{group_id}", response_model=schemas.UserGroup)
+@router.patch("/user_groups/{group_id}", response_model=UserGroupWithUsers)
 def update_user_group(
     group_id: int, user_group: schemas.UserGroupUpdate, db: Session = Depends(get_db)
 ):
