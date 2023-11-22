@@ -75,7 +75,7 @@ def test_get_user_by_email(session: Session) -> None:
     assert len(user.user_groups) == 1
 
 
-def test_get_user_with_invalid_name(session: Session) -> None:
+def test_get_user_with_invalid_email(session: Session) -> None:
     with pytest.raises(UserNotFoundError):
         get_user_by_email(session, email="test-user-5@sia.com")
 
