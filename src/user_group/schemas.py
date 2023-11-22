@@ -1,8 +1,5 @@
-from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
-from ..user.schemas import User
-
 
 class UserGroupBase(BaseModel):
     name: str
@@ -14,9 +11,7 @@ class UserGroupCreate(UserGroupBase):
 
 class UserGroup(UserGroupBase):
     id: int
-    device_group_id: Optional[int] | None
-    users: list[User] | list = []
-
+    device_group_id: Optional[int] = None
     model_config = {"from_attributes": True}
 
 
