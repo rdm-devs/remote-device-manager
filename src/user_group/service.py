@@ -1,3 +1,4 @@
+from src.schemas import UserGroupWithUsers
 from sqlalchemy.orm import Session
 from . import schemas, models
 
@@ -24,7 +25,7 @@ def create_user_group(db: Session, user_group: schemas.UserGroupCreate):
 
 def update_user_group(
     db: Session,
-    db_user_group: schemas.UserGroup,
+    db_user_group: UserGroupWithUsers,
     updated_user_group: schemas.UserGroupUpdate,
 ):
     updated_db_user_group = (
@@ -38,7 +39,7 @@ def update_user_group(
     return db_user_group
 
 
-def delete_user_group(db: Session, db_user_group: schemas.UserGroup):
+def delete_user_group(db: Session, db_user_group: UserGroupWithUsers):
     db.delete(db_user_group)
     db.commit()
     return db_user_group.id
