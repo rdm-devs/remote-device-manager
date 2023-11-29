@@ -9,9 +9,6 @@ router = APIRouter()
 
 @router.post("/users/", response_model=UserWithUserGroups)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # sanity check:
-    service.check_email_exists(db, email=user.email)
-
     db_user = service.create_user(db=db, user=user)
     return db_user
 
