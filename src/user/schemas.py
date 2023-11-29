@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
@@ -19,7 +20,7 @@ class User(UserBase):  # used when reading user info
 
 
 class UserUpdate(UserBase):
-    password: str | None = None
+    password: Optional[str] = None
 
     model_config = {"extra": "forbid"}
 
