@@ -1,14 +1,15 @@
+from typing import Optional
 from pydantic import BaseModel
 from ..device.schemas import Device
 
 
 class DeviceGroupBase(BaseModel):
     name: str
-    tenant_id: int | None = None
+    tenant_id: Optional[int] = None
 
 
 class DeviceGroupCreate(DeviceGroupBase):
-    pass
+    devices: Optional[list[Device]] = []
 
 
 class DeviceGroup(DeviceGroupBase):
