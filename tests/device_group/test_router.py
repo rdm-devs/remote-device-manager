@@ -159,3 +159,17 @@ def test_delete_non_existent_device(session: Session):
     device_group_id = 5
     response = client.delete(f"/device_groups/{device_group_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_read_devices_from_device_group(session: Session):
+    # two devices were assigned to device_group_1. See: tests/database.py
+    device_group_id = 1
+    response = client.get(f"/device_groups/{device_group_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 2
+
+    # no devices were assigned to device_group_2. See: tests/database.py
+    device_group_id = 2
+    response = client.get(f"/device_groups/{device_group_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()) == 0
