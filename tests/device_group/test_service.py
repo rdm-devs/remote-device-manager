@@ -165,3 +165,9 @@ def test_get_devices_from_device_group(session: Session) -> None:
     device_group_id = 2
     db_device_group = get_device_group(session, device_group_id)
     assert len(db_device_group.devices) == 0
+
+
+def test_get_devices_from_a_non_existent_device_group(session: Session) -> None:
+    device_group_id = 5
+    with pytest.raises(DeviceGroupNotFoundError):
+        get_device_group(session, device_group_id)

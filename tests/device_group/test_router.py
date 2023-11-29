@@ -173,3 +173,9 @@ def test_read_devices_from_device_group(session: Session):
     response = client.get(f"/device_groups/{device_group_id}/devices")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) == 0
+
+
+def test_read_devices_from_a_non_existent_device_group(session: Session):
+    device_group_id = 5
+    response = client.get(f"/device_groups/{device_group_id}/devices")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
