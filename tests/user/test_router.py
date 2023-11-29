@@ -9,9 +9,10 @@ client = TestClient(app)
 
 
 def test_read_users(session: Session):
+    # Three users were created in session. See tests/database.py
     response = client.get("/users/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 2
+    assert len(response.json()) == 3
 
 
 def test_read_user(session: Session):

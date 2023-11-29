@@ -1,6 +1,8 @@
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from src.user_group.models import UserGroup
+from src.user_group.service import get_user_groups
 from tests.database import session
 from src.user.exceptions import (
     UserEmailTakenError,
@@ -13,7 +15,7 @@ from src.user.service import (
     get_user_by_email,
     get_users,
     delete_user,
-    update_user,
+    update_user
 )
 from src.user.schemas import (
     UserCreate,
@@ -81,9 +83,9 @@ def test_get_user_with_invalid_email(session: Session) -> None:
 
 
 def test_get_users(session: Session) -> None:
-    # Two users were created in tests/database.py
+    # Three users were created in tests/database.py
     users = get_users(session)
-    assert len(users) == 2
+    assert len(users) == 3
 
 
 def test_update_user(session: Session) -> None:
