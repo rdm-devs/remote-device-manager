@@ -35,11 +35,22 @@ def create_device_group(db: Session, device_group: schemas.DeviceGroupCreate):
     if device_group.tenant_id:
         check_tenant_exists(db, device_group.tenant_id)
 
-    db_device = models.DeviceGroup(**device_group.model_dump())
-    db.add(db_device)
+    create_values = device_group.model_dump()
+
+    devices_to_add = []
+    if "devices" in create_values:
+        devices_to_add = create_values.pop("devices")
+
+    db_device_group = models.DeviceGroup(**create_values)
+    db.add(db_device_group)
     db.commit()
-    db.refresh(db_device)
-    return db_device
+    db.refresh(db_device_group)
+
+    if devices_to_add:
+        db_device_group = add_devices_to_device_group(
+            db, db_device_group.id, devices_to_add
+        )
+    return db_device_group
 
 
 def get_device_group(db: Session, device_group_id: int):
@@ -70,22 +81,32 @@ def get_device_group_by_name(db: Session, device_group_name: str):
 
 def update_device_group(
     db: Session,
-    db_device_group: schemas.DeviceGroup,
+    device_group_id: int,
     updated_device_group: schemas.DeviceGroupUpdate,
 ):
     # sanity checks
-    get_device_group(db, db_device_group.id)
+    db_device_group = get_device_group(db, device_group_id)
     check_device_group_name_taken(db, updated_device_group.name)
-    if updated_device_group.tenant_id: 
+    if updated_device_group.tenant_id:
         check_tenant_exists(db, updated_device_group.tenant_id)
 
-    db.query(models.DeviceGroup).filter(
-        models.DeviceGroup.id == db_device_group.id
-    ).update(values=updated_device_group.model_dump())
+    update_values = updated_device_group.model_dump()
+    devices_to_add = []
+    if "devices" in update_values:
+        devices_to_add = update_values.pop("devices")
 
+    db.query(models.DeviceGroup).filter(
+        models.DeviceGroup.id == device_group_id
+    ).update(values=update_values)
     db.commit()
     db.refresh(db_device_group)
+
+    if devices_to_add:
+        db_device_group = add_devices_to_device_group(
+            db, device_group_id, devices_to_add
+        )
     return db_device_group
+
 
 def delete_device_group(db: Session, db_device_group: schemas.DeviceGroup):
     # sanity check
@@ -94,3 +115,9 @@ def delete_device_group(db: Session, db_device_group: schemas.DeviceGroup):
     db.delete(db_device_group)
     db.commit()
     return db_device_group.id
+
+
+def get_devices_from_device_group(db: Session, device_group_id: int):
+    check_device_group_exists(db, device_group_id)
+    db_device_group = get_device_group(db, device_group_id)
+    return db_device_group.devices
