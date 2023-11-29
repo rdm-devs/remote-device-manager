@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class UserGroupBase(BaseModel):
     name: str
 
 
 class UserGroupCreate(UserGroupBase):
-    pass
+    device_group_id: Optional[int] = None
+    model_config = {"extra": "forbid"}
 
 
 class UserGroup(UserGroupBase):
@@ -15,8 +17,9 @@ class UserGroup(UserGroupBase):
     model_config = {"from_attributes": True}
 
 
-class UserGroupUpdate(UserGroupBase):
-    pass
+class UserGroupUpdate(UserGroupCreate):
+    name: Optional[str]
+    model_config = {"extra": "forbid"}
 
 
 class UserGroupDelete(BaseModel):
