@@ -1,4 +1,4 @@
-from src.schemas import UserGroupWithUsers
+from src.schemas import UserGroupWithUsers, UserWithUserGroups
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -11,15 +11,13 @@ router = APIRouter()
 def create_user_group(
     user_group: schemas.UserGroupCreate, db: Session = Depends(get_db)
 ):
-    db_user_group = service.get_user_group_by_name(db, name=user_group.name)
-    if db_user_group:
-        raise HTTPException(status_code=400, detail="UserGroup name already registered")
-    return service.create_user_group(db=db, user_group=user_group)
+    db_user_group = service.create_user_group(db=db, user_group=user_group)
+    return db_user_group
 
 
-@router.get("/user_groups/{group_id}", response_model=UserGroupWithUsers)
-def read_user_group(group_id: int, db: Session = Depends(get_db)):
-    db_user_group = service.get_user_group(db, group_id=group_id)
+@router.get("/user_groups/{user_group_id}", response_model=UserGroupWithUsers)
+def read_user_group(user_group_id: int, db: Session = Depends(get_db)):
+    db_user_group = service.get_user_group(db, user_group_id=user_group_id)
     if db_user_group is None:
         raise HTTPException(status_code=404, detail="UserGroup not found")
     return db_user_group
@@ -38,8 +36,6 @@ def update_user_group(
     updated_user_group = service.update_user_group(
         db, db_user_group, updated_user_group=user_group
     )
-    if not updated_user_group:
-        raise HTTPException(status_code=400, detail="UserGroup could not be updated")
     return updated_user_group
 
 
@@ -53,3 +49,37 @@ def delete_user_group(group_id: int, db: Session = Depends(get_db)):
         "id": deleted_user_group_id,
         "msg": f"UserGroup {deleted_user_group_id} removed succesfully!",
     }
+
+
+@router.patch("/user_groups/{user_group_id}/users", response_model=UserGroupWithUsers)
+def add_users(
+    user_group_id: int,
+    users: list[UserWithUserGroups],
+    db: Session = Depends(get_db),
+):
+    db_user_group = read_user_group(user_group_id, db)
+    updated_db_user_group = service.add_users(
+        db=db, db_user_group=db_user_group, users=users
+    )
+    return updated_db_user_group
+
+
+@router.patch("/user_groups/{user_group_id}/users/delete", response_model=UserGroupWithUsers)
+def delete_users(
+    user_group_id: int,
+    users_to_delete: list[UserWithUserGroups],
+    db: Session = Depends(get_db),
+):
+    db_user_group = read_user_group(user_group_id, db)
+    db_user_group = service.delete_users(
+        db=db, db_user_group=db_user_group, users_to_delete=users_to_delete
+    )
+    return db_user_group
+
+
+@router.get(
+    "/user_groups/{user_group_id}/users", response_model=list[UserWithUserGroups]
+)
+def get_users_from_user_group(user_group_id: int, db: Session = Depends(get_db)):
+    db_users_from_group = service.get_users_from_group(db, user_group_id)
+    return db_users_from_group
