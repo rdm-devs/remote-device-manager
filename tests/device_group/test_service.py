@@ -15,6 +15,7 @@ from src.device_group.service import (
     get_device_groups,
     delete_device_group,
     update_device_group,
+    get_devices_from_device_group,
 )
 from src.device_group.schemas import (
     DeviceGroupCreate,
@@ -75,11 +76,10 @@ def test_update_device_group(session: Session) -> None:
     device_group = create_device_group(
         session, DeviceGroupCreate(name="dev-group5", tenant_id=None)
     )
-    db_device_group = get_device_group(session, device_group.id)
 
     device_group = update_device_group(
         session,
-        db_device_group=db_device_group,
+        device_group_id=device_group.id,
         updated_device_group=DeviceGroupUpdate(name="dev-group-custom", tenant_id=1),
     )
     assert device_group.name == "dev-group-custom"
@@ -90,12 +90,11 @@ def test_update_device_group_with_invalid_tenant(session: Session) -> None:
     device_group = create_device_group(
         session, DeviceGroupCreate(name="dev-group5", tenant_id=1)
     )
-    db_device_group = get_device_group(session, device_group.id)
 
     with pytest.raises(TenantNotFoundError):
         device_group = update_device_group(
             session,
-            db_device_group=db_device_group,
+            device_group_id=device_group.id,
             updated_device_group=DeviceGroupUpdate(
                 name="dev-group-custom", tenant_id=5
             ),
@@ -106,12 +105,11 @@ def test_update_device_group_with_incomplete_data(session: Session) -> None:
     device_group = create_device_group(
         session, DeviceGroupCreate(name="dev-group5", tenant_id=1)
     )
-    db_device_group = get_device_group(session, device_group.id)
 
     with pytest.raises(ValidationError):
         device_group = update_device_group(
             session,
-            db_device_group=db_device_group,
+            device_group_id=device_group.id,
             updated_device_group=DeviceGroupUpdate(tenant_id=1, tag="my-custom-tag"),
         )
 
@@ -123,7 +121,7 @@ def test_update_device_group_with_invalid_id(session: Session) -> None:
     with pytest.raises(DeviceGroupNotFoundError):
         update_device_group(
             session,
-            db_device_group=db_device_group,
+            device_group_id=db_device_group.id,
             updated_device_group=DeviceGroupUpdate(
                 name="dev-group-custom", tenant_id=1
             ),
@@ -155,3 +153,15 @@ def test_delete_device_group_with_invalid_id(session: Session) -> None:
     db_device_group.id = 5
     with pytest.raises(DeviceGroupNotFoundError):
         delete_device_group(session, db_device_group=db_device_group)
+
+
+def test_get_devices_from_device_group(session: Session) -> None:
+    # two devices were assigned to device_group_1. See: tests/database.py
+    device_group_id = 1
+    db_device_group = get_device_group(session, device_group_id)
+    assert len(db_device_group.devices) == 2
+
+    # no devices were assigned to device_group_2. See: tests/database.py
+    device_group_id = 2
+    db_device_group = get_device_group(session, device_group_id)
+    assert len(db_device_group.devices) == 0
