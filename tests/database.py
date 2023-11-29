@@ -50,12 +50,17 @@ def session() -> Generator[Session, None, None]:
     db_device = Device(id=1, name="dev1", device_group_id=1)
     db_device_2 = Device(id=2, name="dev2", device_group_id=1)
     db_user_group = UserGroup(id=1, name="user-group1", device_group_id=1)
+    db_user_group_2 = UserGroup(id=2, name="user-group2", device_group_id=1)
     db_user = User(id=1, hashed_password="_s3cr3tp@5sw0rd_", email="test-user@sia.com")
-    db_user.user_groups.append(db_user_group)
+
     db_user_2 = User(
         id=2, hashed_password="_s3cr3tp@5sw0rd_", email="test-user-2@sia.com"
     )
-    db_user_2.user_groups.append(db_user_group)
+    db_user_3 = User(
+        id=3, hashed_password="_s3cr3tp@5sw0rd_", email="test-user-3@sia.com"
+    )
+    db_user_group.users.append(db_user)
+    db_user_group.users.append(db_user_2)
 
     db_session.add_all(
         [
@@ -66,7 +71,9 @@ def session() -> Generator[Session, None, None]:
             db_device_2,
             db_user,
             db_user_2,
+            db_user_3,
             db_user_group,
+            db_user_group_2,
         ]
     )
     db_session.commit()
