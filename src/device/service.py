@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
 from src.device_group.exceptions import DeviceGroupNotFoundError
-from src.device_group.service import check_device_group_exist
+from src.device_group.service import check_device_group_exists
 from . import schemas, models
 
 
@@ -34,7 +34,7 @@ def get_device_by_name(db: Session, device_name: str):
 
 def create_device(db: Session, device: schemas.DeviceCreate):
     # sanity checks
-    check_device_group_exist(db, device.device_group_id)
+    check_device_group_exists(db, device.device_group_id)
     check_device_name_taken(db, device.name)
 
     db_device = models.Device(**device.model_dump())
@@ -49,7 +49,7 @@ def update_device(
 ):
     # sanity checks
     get_device(db, db_device.id)
-    check_device_group_exist(db, updated_device.device_group_id)
+    check_device_group_exists(db, updated_device.device_group_id)
     check_device_name_taken(db, updated_device.name)
 
     db.query(models.Device).filter(models.Device.id == db_device.id).update(
