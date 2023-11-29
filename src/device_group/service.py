@@ -9,7 +9,7 @@ from src.device_group.exceptions import (
 from . import schemas, models
 
 
-def check_device_group_exist(db: Session, device_group_id: int):
+def check_device_group_exists(db: Session, device_group_id: int):
     db_device_group = (
         db.query(models.DeviceGroup)
         .filter(models.DeviceGroup.id == device_group_id)
@@ -89,7 +89,7 @@ def update_device_group(
 
 def delete_device_group(db: Session, db_device_group: schemas.DeviceGroup):
     # sanity check
-    check_device_group_exist(db, db_device_group.id)
+    check_device_group_exists(db, db_device_group.id)
 
     db.delete(db_device_group)
     db.commit()
