@@ -1,8 +1,6 @@
 from src.schemas import UserWithUserGroups
 from sqlalchemy.orm import Session
 from . import schemas, models, exceptions
-from src.user_group.models import UserGroup
-
 
 def check_user_exists(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id).first()
