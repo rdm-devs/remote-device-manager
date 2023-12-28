@@ -11,3 +11,6 @@ class UserGroupNameTakenError(BadRequest):
 
 class UserGroupInvalidNameError(BadRequest):
     DETAIL = ErrorCode.USER_GROUP_INVALID_NAME
+
+class UserGroupHasUsersAttachedError(BadRequest):
+    DETAIL = ErrorCode.USER_GROUP_HAS_USERS_ATTACHED

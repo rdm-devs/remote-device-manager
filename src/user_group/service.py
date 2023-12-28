@@ -35,6 +35,14 @@ def check_user_group_name_taken(db: Session, user_group_id: int, name: str):
         raise exceptions.UserGroupNameTakenError()
 
 
+def check_has_no_users_attached(db: Session, user_group_id: int):
+    db_user_group = (
+        db.query(models.UserGroup).filter(models.UserGroup.id == user_group_id).first()
+    )
+    if db_user_group and len(db_user_group.users) > 0:
+        raise exceptions.UserGroupHasUsersAttachedError()
+
+
 def get_user_group(db: Session, user_group_id: int):
     user_group = (
         db.query(models.UserGroup).filter(models.UserGroup.id == user_group_id).first()
@@ -106,6 +114,7 @@ def update_user_group(
 def delete_user_group(db: Session, db_user_group: UserGroupWithUsers):
     # sanity check
     check_user_group_exists(db, db_user_group.id)
+    # check_has_no_users_attached(db, db_user_group.id) # not needed. users without a user_group can exist
 
     db.delete(db_user_group)
     db.commit()
@@ -115,7 +124,7 @@ def delete_user_group(db: Session, db_user_group: UserGroupWithUsers):
 def add_users(
     db: Session, db_user_group: UserGroupWithUsers, users: list[UserWithUserGroups]
 ):
-    import pdb
+    #import pdb
 
     # pdb.set_trace()
     for user in users:
