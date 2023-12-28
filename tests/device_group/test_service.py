@@ -7,6 +7,7 @@ from tests.database import session
 from src.device_group.exceptions import (
     DeviceGroupNameTakenError,
     DeviceGroupNotFoundError,
+    DeviceGroupHasDevicesAttachedError,
 )
 from src.device_group.service import (
     create_device_group,
@@ -152,6 +153,13 @@ def test_delete_device_group_with_invalid_id(session: Session) -> None:
 
     db_device_group.id = 5
     with pytest.raises(DeviceGroupNotFoundError):
+        delete_device_group(session, db_device_group=db_device_group)
+
+
+def test_delete_device_group_with_devices(session: Session) -> None:
+    # two devices were assigned to device_group_1. See: tests/database.py
+    db_device_group = get_device_group(session, 1)
+    with pytest.raises(DeviceGroupHasDevicesAttachedError):
         delete_device_group(session, db_device_group=db_device_group)
 
 

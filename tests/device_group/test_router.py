@@ -155,7 +155,13 @@ def test_delete_device_group(session: Session):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_non_existent_device(session: Session):
+def test_delete_device_group_with_devices_attached(session: Session):
+    device_group_id = 1
+    response = client.delete(f"/device_groups/{device_group_id}")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_delete_non_existent_device_group(session: Session):
     device_group_id = 5
     response = client.delete(f"/device_groups/{device_group_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
