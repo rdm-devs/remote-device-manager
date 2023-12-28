@@ -12,3 +12,6 @@ class DeviceGroupNameTakenError(BadRequest):
 
 class InvalidDeviceGroupAttrsError(BadRequest):
     DETAIL = ErrorCode.DEVICE_GROUP_INVALID_ATTRS
+
+class DeviceGroupHasDevicesAttachedError(BadRequest):
+    DETAIL = ErrorCode.DEVICE_GROUP_HAS_DEVICES_ATTACHED

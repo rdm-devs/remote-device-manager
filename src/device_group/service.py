@@ -1,12 +1,7 @@
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from src.tenant.service import check_tenant_exists
-from src.device_group.exceptions import (
-    DeviceGroupNameTakenError,
-    DeviceGroupNotFoundError,
-    InvalidDeviceGroupAttrsError,
-)
-from . import schemas, models
+from src.device.models import Device
+from . import schemas, models, exceptions
 
 
 def check_device_group_exists(db: Session, device_group_id: int):
@@ -16,7 +11,7 @@ def check_device_group_exists(db: Session, device_group_id: int):
         .first()
     )
     if not db_device_group:
-        raise DeviceGroupNotFoundError()
+        raise exceptions.DeviceGroupNotFoundError()
 
 
 def check_device_group_name_taken(db: Session, device_group_name: str):
@@ -26,7 +21,17 @@ def check_device_group_name_taken(db: Session, device_group_name: str):
         .first()
     )
     if device_name_taken:
-        raise DeviceGroupNameTakenError()
+        raise exceptions.DeviceGroupNameTakenError()
+
+
+def check_has_no_devices_attached(db: Session, device_group_id: int):
+    db_device_group = (
+        db.query(models.DeviceGroup)
+        .filter(models.DeviceGroup.id == device_group_id)
+        .first()
+    )
+    if db_device_group and len(db_device_group.devices) > 0:
+        raise exceptions.DeviceGroupHasDevicesAttachedError()
 
 
 def create_device_group(db: Session, device_group: schemas.DeviceGroupCreate):
@@ -47,9 +52,7 @@ def create_device_group(db: Session, device_group: schemas.DeviceGroupCreate):
     db.refresh(db_device_group)
 
     if devices_to_add:
-        db_device_group = add_devices_to_device_group(
-            db, db_device_group.id, devices_to_add
-        )
+        db_device_group = add_devices(db, db_device_group, devices_to_add)
     return db_device_group
 
 
@@ -60,7 +63,7 @@ def get_device_group(db: Session, device_group_id: int):
         .first()
     )
     if db_device_group is None:
-        raise DeviceGroupNotFoundError()
+        raise exceptions.DeviceGroupNotFoundError()
     return db_device_group
 
 
@@ -75,7 +78,7 @@ def get_device_group_by_name(db: Session, device_group_name: str):
         .first()
     )
     if not device_group:
-        raise DeviceGroupNotFoundError()
+        raise exceptions.DeviceGroupNotFoundError()
     return device_group
 
 
@@ -102,15 +105,31 @@ def update_device_group(
     db.refresh(db_device_group)
 
     if devices_to_add:
-        db_device_group = add_devices_to_device_group(
-            db, device_group_id, devices_to_add
-        )
+        db_device_group = add_devices(db, db_device_group, devices_to_add)
+    return db_device_group
+
+
+def add_devices(
+    db: Session, db_device_group: models.DeviceGroup, devices: list[Device]
+):
+    device_ids = [device.id for device in db_device_group.devices]
+    for device in devices:
+        device = db.query(Device).filter(Device.id == device.id).first()
+        if device and device.id not in device_ids:
+            db_device = db.query(Device).filter(Device.id == device.id).first()
+            db_device_group.devices.append(db_device)
+
+    db.add(db_device_group)
+    db.commit()
+    db.refresh(db_device_group)
+
     return db_device_group
 
 
 def delete_device_group(db: Session, db_device_group: schemas.DeviceGroup):
     # sanity check
     check_device_group_exists(db, db_device_group.id)
+    check_has_no_devices_attached(db, db_device_group.id)
 
     db.delete(db_device_group)
     db.commit()
