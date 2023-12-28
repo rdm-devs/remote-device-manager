@@ -44,7 +44,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
 
-    fake_hashed_password = user.password + "notreallyhashed"
+    fake_hashed_password = user.password + "notreallyhashed" # TODO: fix this!
     db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
     db.add(db_user)
     db.commit()

@@ -1,9 +1,6 @@
 from sqlalchemy.orm import Session
-
-from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
-from src.device_group.exceptions import DeviceGroupNotFoundError
 from src.device_group.service import check_device_group_exists
-from . import schemas, models
+from . import schemas, models, exceptions
 
 
 def check_device_name_taken(db: Session, device_name: str):
@@ -11,13 +8,13 @@ def check_device_name_taken(db: Session, device_name: str):
         db.query(models.Device).filter(models.Device.name == device_name).first()
     )
     if device_name_taken is not None:
-        raise DeviceNameTakenError()
+        raise exceptions.DeviceNameTakenError()
 
 
 def get_device(db: Session, device_id: int):
     device = db.query(models.Device).filter(models.Device.id == device_id).first()
     if not device:
-        raise DeviceNotFoundError()
+        raise exceptions.DeviceNotFoundError()
     return device
 
 
@@ -28,7 +25,7 @@ def get_devices(db: Session, skip: int = 0, limit: int = 100):
 def get_device_by_name(db: Session, device_name: str):
     device = db.query(models.Device).filter(models.Device.name == device_name).first()
     if not device:
-        raise DeviceNotFoundError()
+        raise exceptions.DeviceNotFoundError()
     return device
 
 
