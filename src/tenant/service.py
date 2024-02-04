@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from . import schemas, models
 from src.tenant.exceptions import TenantNameTakenError, TenantNotFoundError
+from ..entity.service import create_entity_auto
 
 
 def check_tenant_exists(db: Session, tenant_id: int):
@@ -36,7 +37,8 @@ def get_tenant_by_name(db: Session, tenant_name: str):
 def create_tenant(db: Session, tenant: schemas.TenantCreate):
     check_tenant_name_taken(db, tenant.name)
 
-    db_tenant = models.Tenant(**tenant.model_dump())
+    entity = create_entity_auto(db)
+    db_tenant = models.Tenant(**tenant.model_dump(), entity_id=entity.id)
     db.add(db_tenant)
     db.commit()
     db.refresh(db_tenant)
