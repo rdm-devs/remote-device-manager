@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from . import schemas, models, exceptions
+from ..entity.service import create_entity_auto
 
 
 def check_user_exists(db: Session, user_id: int):
@@ -44,8 +45,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
 
+    entity = create_entity_auto(db)
     fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    db_user = models.User(
+        email=user.email, hashed_password=fake_hashed_password, entity_id=entity.id
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
