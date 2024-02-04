@@ -4,8 +4,9 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import Optional
 from ..database import Base
-from ..user_group.models import user_and_groups_table
-
+from ..entity.models import Entity
+from ..role.models import Role
+from ..tenant.models import tenants_and_users_table
 
 class User(Base):
     __tablename__ = "user"
@@ -16,6 +17,8 @@ class User(Base):
     last_login: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()
     )
-    user_groups: Mapped[list["src.user_group.models.UserGroup"]] = relationship(
-        secondary=user_and_groups_table, back_populates="users"
+    entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
+    role_id: Mapped[int] = mapped_column(ForeignKey(Role.id))
+    tenants: Mapped[list["src.tenant.models.Tenant"]] = relationship(
+        secondary=tenants_and_users_table, back_populates="users"
     )

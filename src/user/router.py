@@ -1,13 +1,12 @@
-from src.schemas import UserWithUserGroups
 from . import service, schemas
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/users/", response_model=UserWithUserGroups)
+@router.post("/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # sanity check:
     service.check_email_exists(db, email=user.email)
@@ -16,26 +15,26 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get("/users/", response_model=list[UserWithUserGroups])
+@router.get("/", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = service.get_users(db, skip=skip, limit=limit)
     return users
 
 
-@router.get("/users/{user_id}", response_model=UserWithUserGroups)
+@router.get("/{user_id}", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     db_user = service.get_user(db, user_id=user_id)
     return db_user
 
 
-@router.patch("/users/{user_id}", response_model=UserWithUserGroups)
+@router.patch("/{user_id}", response_model=schemas.User)
 def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
     db_user = read_user(user_id, db)
     updated_user = service.update_user(db, db_user, updated_user=user)
     return updated_user
 
 
-@router.delete("/users/{user_id}", response_model=schemas.UserDelete)
+@router.delete("/{user_id}", response_model=schemas.UserDelete)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)

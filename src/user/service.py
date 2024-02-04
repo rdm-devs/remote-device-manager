@@ -1,7 +1,5 @@
-from src.schemas import UserWithUserGroups
 from sqlalchemy.orm import Session
 from . import schemas, models, exceptions
-from src.user_group.models import UserGroup
 
 
 def check_user_exists(db: Session, user_id: int):
@@ -56,7 +54,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 def update_user(
     db: Session,
-    db_user: UserWithUserGroups,
+    db_user: schemas.User,
     updated_user: schemas.UserUpdate,
 ):
     # sanity checks
@@ -77,7 +75,7 @@ def update_user(
     return db_user
 
 
-def delete_user(db: Session, db_user: UserWithUserGroups):
+def delete_user(db: Session, db_user: schemas.User):
     # sanity check
     check_user_exists(db, user_id=db_user.id)
 
