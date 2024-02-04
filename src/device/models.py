@@ -33,3 +33,5 @@ class Device(Base, AuditMixin):
     )  # optional: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
     os_id: Mapped[int] = mapped_column(ForeignKey(DeviceOS.id))
     vendor_id: Mapped[int] = mapped_column(ForeignKey(DeviceVendor.id))
+    os: Mapped[DeviceOS] = relationship(DeviceOS, back_populates="devices")
+    vendor: Mapped[DeviceVendor] = relationship(DeviceVendor, back_populates="devices")

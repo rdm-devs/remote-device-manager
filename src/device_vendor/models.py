@@ -1,5 +1,5 @@
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
@@ -12,3 +12,4 @@ class DeviceVendor(Base, AuditMixin):
     model: Mapped[str] = mapped_column()
     cores: Mapped[int] = mapped_column()
     ram_gb: Mapped[int] = mapped_column()
+    devices: Mapped["Device"] = relationship("Device", back_populates="vendor")

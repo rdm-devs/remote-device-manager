@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-
 from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
 from src.folder.exceptions import FolderNotFoundError
 from src.folder.service import check_folder_exist
 from . import schemas, models
+from ..entity.service import create_entity_auto
 
 
 def check_device_name_taken(db: Session, device_name: str):
@@ -37,7 +37,8 @@ def create_device(db: Session, device: schemas.DeviceCreate):
     check_folder_exist(db, device.folder_id)
     check_device_name_taken(db, device.name)
 
-    db_device = models.Device(**device.model_dump())
+    entity = create_entity_auto(db)
+    db_device = models.Device(**device.model_dump(), entity_id=entity.id)
     db.add(db_device)
     db.commit()
     db.refresh(db_device)

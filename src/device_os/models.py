@@ -1,5 +1,5 @@
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
@@ -13,3 +13,4 @@ class DeviceOS(Base, AuditMixin):
     kernel_version: Mapped[str] = mapped_column()
 
     __table_args__ = (UniqueConstraint("name", "version", name="_name_version_uc"),)
+    devices: Mapped["Device"] = relationship("Device", back_populates="os")
