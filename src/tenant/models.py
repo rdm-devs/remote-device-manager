@@ -1,6 +1,19 @@
+from sqlalchemy import ForeignKey, Table, Column, DateTime
 from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy.sql import func
 from ..database import Base
 from ..audit_mixin import AuditMixin
+from ..entity.models import Entity
+
+
+tenants_and_users_table = Table(
+    "tenants_and_users",
+    Base.metadata,
+    Column("tenant_id", ForeignKey("tenant.id"), primary_key=True),
+    Column("user_id", ForeignKey("user.id"), primary_key=True),
+    Column("created_at", DateTime, default=func.now()),
+    Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+)
 
 
 class Tenant(Base, AuditMixin):
@@ -8,6 +21,10 @@ class Tenant(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
-    device_groups: Mapped[list["src.device_groups.models.DeviceGroup"]] = relationship(
-        "DeviceGroup", back_populates="tenant"
+    entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
+    folders: Mapped[list["src.folders.models.Folder"]] = relationship(
+        "Folder", back_populates="tenant"
+    )
+    users: Mapped[list["src.user.models.User"]] = relationship(
+        secondary=tenants_and_users_table, back_populates="tenants"
     )
