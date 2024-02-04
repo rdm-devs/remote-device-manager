@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from ..device_group.schemas import DeviceGroup
+from ..folder.schemas import Folder
 
 
 class TenantBase(BaseModel):
@@ -12,7 +12,7 @@ class TenantCreate(TenantBase):
 
 class Tenant(TenantBase):
     id: int
-    device_groups: list[DeviceGroup] = []
+    folders: list[Folder] = []
 
     model_config = {"from_attributes": True}
 
