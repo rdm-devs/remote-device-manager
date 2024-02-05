@@ -1,9 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):  # used as common fields
     email: EmailStr
+    role_id: int
     last_login: datetime = datetime.now()
 
 
@@ -20,6 +21,8 @@ class User(UserBase):  # used when reading user info
 
 class UserUpdate(UserBase):
     password: str | None = None
+    email: str | None = None
+    role_id: int | None = None
 
     model_config = {"extra": "forbid"}
 

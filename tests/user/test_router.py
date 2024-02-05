@@ -16,7 +16,7 @@ def test_read_users(session: Session):
 
 def test_read_user(session: Session):
     response = client.post(
-        "/users/", json={"email": "test-user@email.com", "password": "_s3cr3tp@5sw0rd_"}
+        "/users/", json={"email": "test-user@email.com", "password": "_s3cr3tp@5sw0rd_", "role_id": 1}
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -27,8 +27,6 @@ def test_read_user(session: Session):
     data = response.json()
     assert data["id"] == user_id
     assert data["email"] == "test-user@email.com"
-    assert len(data["user_groups"]) == 0
-
 
 def test_read_non_existent_user(session: Session):
     user_id = 5
@@ -38,18 +36,22 @@ def test_read_non_existent_user(session: Session):
 
 def test_create_user(session: Session):
     response = client.post(
-        "/users/", json={"email": "test-user@email.com", "password": "_s3cr3tp@5sw0rd_"}
+        "/users/",
+        json={
+            "email": "test-user@email.com",
+            "password": "_s3cr3tp@5sw0rd_",
+            "role_id": 1,
+        },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
     assert data["email"] == "test-user@email.com"
-    assert len(data["user_groups"]) == 0
 
 
 def test_create_duplicated_user(session: Session):
     response = client.post(
-        "/users/", json={"email": "test-user@sia.com", "password": "_s3cr3tp@5sw0rd_"}
+        "/users/", json={"email": "test-user@sia.com", "password": "_s3cr3tp@5sw0rd_", "role_id": 1}
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.USER_EMAIL_TAKEN
@@ -57,13 +59,13 @@ def test_create_duplicated_user(session: Session):
 
 def test_create_user_with_invalid_password(session: Session):
     response = client.post(
-        "/users/", json={"email": "test-user3@sia.com", "password": ""}
+        "/users/", json={"email": "test-user3@sia.com", "password": "", "role_id": 1}
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.USER_INVALID_PASSWORD
 
     response = client.post(
-        "/users/", json={"email": "test-user3@sia.com", "password": "123"}
+        "/users/", json={"email": "test-user3@sia.com", "password": "123", "role_id": 1}
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.USER_INVALID_PASSWORD
@@ -76,7 +78,7 @@ def test_update_user(session: Session):
     # updating user's email
     response = client.patch(
         f"/users/{user_id}",
-        json={"email": "test-user-updated@sia.com", "password": "1234"},
+        json={"email": "test-user-updated@sia.com"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -135,7 +137,8 @@ def test_update_non_existent_user_attrs(session: Session):
 
 def test_delete_user(session: Session):
     response = client.post(
-        "/users/", json={"email": "test-user-delete@sia.com", "password": "1234"}
+        "/users/",
+        json={"email": "test-user-delete@sia.com", "password": "12345678", "role_id": 1},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

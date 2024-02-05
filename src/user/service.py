@@ -19,7 +19,7 @@ def check_email_exists(db: Session, email: str, user_id: int | None = None):
 
 
 def check_invalid_password(db: Session, password: str):
-    valid = len(password.strip()) > 3
+    valid = len(password.strip()) >= 8
     if not valid:
         raise exceptions.UserInvalidPasswordError()
 
@@ -47,8 +47,12 @@ def create_user(db: Session, user: schemas.UserCreate):
 
     entity = create_entity_auto(db)
     fake_hashed_password = user.password + "notreallyhashed"
+
+    #import pdb; pdb.set_trace()
+    values = user.model_dump()
+    values.pop("password")
     db_user = models.User(
-        email=user.email, hashed_password=fake_hashed_password, entity_id=entity.id
+        **values, hashed_password=fake_hashed_password, entity_id=entity.id
     )
     db.add(db_user)
     db.commit()
@@ -62,7 +66,7 @@ def update_user(
     updated_user: schemas.UserUpdate,
 ):
     # sanity checks
-    values = updated_user.model_dump()
+    values = updated_user.model_dump(exclude_unset=True)
     check_user_exists(db, user_id=db_user.id)
     check_email_exists(db, email=updated_user.email, user_id=db_user.id)
     if updated_user.password:
@@ -71,7 +75,7 @@ def update_user(
             values["password"] + "seriouslyitsnotreallyhashed"
         )  # rehash password
 
-    values.pop("password")
+        values.pop("password")
 
     db.query(models.User).filter(models.User.id == db_user.id).update(values=values)
     db.commit()

@@ -23,20 +23,27 @@ from src.user.schemas import (
 
 def test_create_user(session: Session) -> None:
     user = create_user(
-        session, UserCreate(email="test-user-5@sia.com", password="1234")
+        session,
+        UserCreate(email="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1),
     )
     assert user.email == "test-user-5@sia.com"
-    assert len(user.user_groups) == 0
 
 
 def test_create_duplicated_user(session: Session) -> None:
     with pytest.raises(UserEmailTakenError):
-        create_user(session, UserCreate(email="test-user@sia.com", password="1234"))
+        create_user(
+            session,
+            UserCreate(
+                email="test-user@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1
+            ),
+        )
 
 
 def test_create_user_with_invalid_password(session: Session) -> None:
     with pytest.raises(UserInvalidPasswordError):
-        create_user(session, UserCreate(email="test-user-5@sia.com", password="123"))
+        create_user(
+            session, UserCreate(email="test-user-5@sia.com", password="123", role_id=1)
+        )
 
 
 def test_create_invalid_user(session: Session) -> None:
@@ -58,7 +65,6 @@ def test_get_user(session: Session) -> None:
     assert user.email == "test-user@sia.com"
     assert user.hashed_password is not None
     assert user.id == 1
-    assert len(user.user_groups) == 1
 
 
 def test_get_user_with_invalid_id(session: Session) -> None:
@@ -72,7 +78,6 @@ def test_get_user_by_email(session: Session) -> None:
     assert user.email == "test-user@sia.com"
     assert user.hashed_password is not None
     assert user.id == 1
-    assert len(user.user_groups) == 1
 
 
 def test_get_user_with_invalid_email(session: Session) -> None:
@@ -88,7 +93,8 @@ def test_get_users(session: Session) -> None:
 
 def test_update_user(session: Session) -> None:
     user = create_user(
-        session, UserCreate(email="test-user-5@sia.com", password="1234")
+        session,
+        UserCreate(email="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1),
     )
     db_user = get_user(session, user.id)
     prev_hashed_password = db_user.hashed_password
@@ -104,12 +110,12 @@ def test_update_user(session: Session) -> None:
         user.hashed_password == prev_hashed_password
     )  # keeping the original password unchanged
     assert user.id == db_user.id
-    assert len(user.user_groups) == 0
 
 
 def test_update_user_with_invalid_attrs(session: Session) -> None:
     user = create_user(
-        session, UserCreate(email="test-user-5@sia.com", password="1234")
+        session,
+        UserCreate(email="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1),
     )
     db_user = get_user(session, user.id)
 
@@ -123,20 +129,6 @@ def test_update_user_with_invalid_attrs(session: Session) -> None:
         )
 
 
-def test_update_user_with_incomplete_data(session: Session) -> None:
-    user = create_user(
-        session, UserCreate(email="test-user-5@sia.com", password="1234")
-    )
-    db_user = get_user(session, user.id)
-
-    with pytest.raises(ValidationError):
-        user = update_user(
-            session,
-            db_user=db_user,
-            updated_user=UserUpdate(),
-        )
-
-
 def test_update_user_with_invalid_id(session: Session) -> None:
     db_user = get_user(session, 1)
     db_user.id = 5
@@ -145,13 +137,18 @@ def test_update_user_with_invalid_id(session: Session) -> None:
         update_user(
             session,
             db_user=db_user,
-            updated_user=UserUpdate(email="test-user-5@sia.com", password="1234"),
+            updated_user=UserUpdate(
+                email="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_"
+            ),
         )
 
 
 def test_delete_user(session: Session) -> None:
     user = create_user(
-        session, UserCreate(email="test-user-delete@sia.com", password="1234")
+        session,
+        UserCreate(
+            email="test-user-delete@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1
+        ),
     )
     db_user = get_user(session, user.id)
 
@@ -165,7 +162,10 @@ def test_delete_user(session: Session) -> None:
 
 def test_delete_user_with_invalid_id(session: Session) -> None:
     user = create_user(
-        session, UserCreate(email="test-user-delete@sia.com", password="1234")
+        session,
+        UserCreate(
+            email="test-user-delete@sia.com", password="_s3cr3tp@5sw0rd_", role_id=1
+        ),
     )
     db_user = get_user(session, user.id)
 
