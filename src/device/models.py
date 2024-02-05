@@ -27,8 +27,8 @@ class Device(Base, AuditMixin):
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
 
     # device metadata attrs:
-    mac_address: Mapped[str] = mapped_column(String(16)) #12  + 4(dots)
-    ip_address: Mapped[str] = mapped_column(
+    mac_address: Mapped[Optional[str]] = mapped_column(String(17)) #12  + 5(dots)
+    ip_address: Mapped[Optional[str]] = mapped_column(
         String(15)  # 12  + 3(dots)
     )  # optional: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
     os_id: Mapped[int] = mapped_column(ForeignKey(DeviceOS.id))

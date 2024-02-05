@@ -50,11 +50,13 @@ def update_device(
 ):
     # sanity checks
     get_device(db, db_device.id)
-    check_folder_exist(db, updated_device.folder_id)
+    if updated_device.folder_id:
+        check_folder_exist(db, updated_device.folder_id)
     check_device_name_taken(db, updated_device.name)
 
+    dev = db.query(models.Device).filter(models.Device.id == db_device.id).first()
     db.query(models.Device).filter(models.Device.id == db_device.id).update(
-        values=updated_device.model_dump()
+        values=updated_device.model_dump(exclude_unset=True)
     )
     db.commit()
     db.refresh(db_device)
