@@ -68,7 +68,7 @@ def update_folder(
         check_tenant_exists(db, updated_folder.tenant_id)
 
     db.query(models.Folder).filter(models.Folder.id == db_folder.id).update(
-        values=updated_folder.model_dump()
+        values=updated_folder.model_dump(exclude_unset=True)
     )
 
     db.commit()

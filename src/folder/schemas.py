@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from ..device.schemas import Device
-
+from typing import Optional
 
 class FolderBase(BaseModel):
     name: str
@@ -20,7 +20,9 @@ class FolderCreate(FolderBase):
 
 
 class FolderUpdate(FolderCreate):
-    pass
+    name: Optional[str] = None
+    tenant_id: Optional[int] = None
+    parent_id: Optional[int]  = None
 
 
 class FolderDelete(BaseModel):
