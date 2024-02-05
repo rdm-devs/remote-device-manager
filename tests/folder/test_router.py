@@ -15,7 +15,7 @@ def test_read_folders(session: Session):
 
 
 def test_read_folder(session: Session):
-    response = client.post("/folders/", json={"name": "dev-group5"})
+    response = client.post("/folders/", json={"name": "folder5", "tenant_id": 1})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     folder_id = data["id"]
@@ -24,8 +24,8 @@ def test_read_folder(session: Session):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["id"] == folder_id
-    assert data["name"] == "dev-group5"
-    assert data["tenant_id"] == None
+    assert data["name"] == "folder5"
+    assert data["tenant_id"] == 1
 
 
 def test_read_non_existent_folder(session: Session):
@@ -35,25 +35,25 @@ def test_read_non_existent_folder(session: Session):
 
 
 def test_create_folder(session: Session):
-    response = client.post("/folders/", json={"name": "dev-group5"})
+    response = client.post("/folders/", json={"name": "folder5", "tenant_id": 1})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
-    assert data["name"] == "dev-group5"
-    assert data["tenant_id"] == None
+    assert data["name"] == "folder5"
+    assert data["tenant_id"] == 1
 
 
 def test_create_duplicated_folder(session: Session):
     response = client.post(
-        "/folders/", json={"name": "dev-group1"}
-    )  # "dev-group1" was created in session, see: database.py
+        "/folders/", json={"name": "folder1", "tenant_id": 1}
+    )  # "folder1" was created in session, see: database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.FOLDER_NAME_TAKEN
 
 
 def test_create_folder_with_invalid_tenant_id(session: Session):
     response = client.post(
-        "/folders/", json={"name": "dev-group5", "tenant_id": 5}
+        "/folders/", json={"name": "folder5", "tenant_id": 5}
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -70,12 +70,12 @@ def test_update_folder(session: Session):
 
     response = client.patch(
         f"/folders/{folder_id}",
-        json={"name": "dev-group5-updated", "tenant_id": None},
+        json={"name": "folder5-updated"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["name"] == "dev-group5-updated"
-    assert data["tenant_id"] == None
+    assert data["name"] == "folder5-updated"
+    assert data["tenant_id"] == 1
 
 
 def test_update_folder_to_add_a_tenant(session: Session):
@@ -92,11 +92,11 @@ def test_update_folder_to_add_a_tenant(session: Session):
     tenant_id = data["id"]
     response = client.patch(
         f"/folders/{folder_id}",
-        json={"name": "dev-group2-updated", "tenant_id": tenant_id},
+        json={"name": "folder2-updated", "tenant_id": tenant_id},
     )
     assert response.status_code == status.HTTP_200_OK
     folder_data = response.json()
-    assert folder_data["name"] == "dev-group2-updated"
+    assert folder_data["name"] == "folder2-updated"
     assert folder_data["tenant_id"] == tenant_id
 
     # lastly, we confirm a new device group has been added to our tenant's info.
@@ -110,20 +110,9 @@ def test_update_non_existent_folder(session: Session):
 
     response = client.patch(
         f"/folders/{folder_id}",
-        json={"name": "dev-group5-updated", "tenant_id": None},
+        json={"name": "folder5-updated"},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-
-def test_update_incomplete_folder(session: Session):
-    folder_id = 1
-
-    response = client.patch(
-        f"/folders/{folder_id}",
-        json={"tenant_id": 1},
-    )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
 
 def test_update_non_existent_folder_attrs(session: Session):
     folder_id = (
@@ -133,7 +122,7 @@ def test_update_non_existent_folder_attrs(session: Session):
     response = client.patch(
         f"/folders/{folder_id}",
         json={
-            "name": "dev-group1",
+            "name": "folder1",
             "tenant_id": None,
             "devices": [],  # non existing field
             "tag": "my-cool-device-group-tag",  # non existing field
@@ -143,7 +132,7 @@ def test_update_non_existent_folder_attrs(session: Session):
 
 
 def test_delete_folder(session: Session):
-    response = client.post("/folders/", json={"name": "dev-group5"})
+    response = client.post("/folders/", json={"name": "folder5", "tenant_id": 1})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     folder_id = data["id"]

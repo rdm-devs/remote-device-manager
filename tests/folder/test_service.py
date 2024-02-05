@@ -23,14 +23,14 @@ from src.folder.schemas import (
 
 
 def test_create_folder(session: Session) -> None:
-    folder = create_folder(session, FolderCreate(name="dev-group5"))
-    assert folder.name == "dev-group5"
-    assert folder.tenant_id == None
+    folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
+    assert folder.name == "folder5"
+    assert folder.tenant_id == 1
 
 
 def test_create_duplicated_device(session: Session) -> None:
     with pytest.raises(FolderNameTakenError):
-        create_folder(session, FolderCreate(name="dev-group1"))
+        create_folder(session, FolderCreate(name="folder1", tenant_id=1))
 
 
 def test_create_incomplete_device(session: Session) -> None:
@@ -40,12 +40,12 @@ def test_create_incomplete_device(session: Session) -> None:
 
 def test_create_folder_with_invalid_tenant(session: Session) -> None:
     with pytest.raises(TenantNotFoundError):
-        create_folder(session, FolderCreate(name="dev-group5", tenant_id=5))
+        create_folder(session, FolderCreate(name="folder5", tenant_id=5))
 
 
 def test_get_folder(session: Session) -> None:
     folder = get_folder(session, folder_id=1)
-    assert folder.name == "dev-group1"
+    assert folder.name == "folder1"
     assert folder.tenant_id == 1
 
 
@@ -55,14 +55,14 @@ def test_get_folder_with_invalid_id(session: Session) -> None:
 
 
 def test_get_folder_by_name(session: Session) -> None:
-    folder = get_folder_by_name(session, folder_name="dev-group1")
-    assert folder.name == "dev-group1"
+    folder = get_folder_by_name(session, folder_name="folder1")
+    assert folder.name == "folder1"
     assert folder.tenant_id == 1
 
 
 def test_get_folder_with_invalid_name(session: Session) -> None:
     with pytest.raises(FolderNotFoundError):
-        get_folder_by_name(session, folder_name="dev-group5")
+        get_folder_by_name(session, folder_name="folder5")
 
 
 def test_get_folders(session: Session) -> None:
@@ -73,22 +73,22 @@ def test_get_folders(session: Session) -> None:
 
 def test_update_folder(session: Session) -> None:
     folder = create_folder(
-        session, FolderCreate(name="dev-group5", tenant_id=None)
+        session, FolderCreate(name="folder5", tenant_id=1)
     )
     db_folder = get_folder(session, folder.id)
 
     folder = update_folder(
         session,
         db_folder=db_folder,
-        updated_folder=FolderUpdate(name="dev-group-custom", tenant_id=1),
+        updated_folder=FolderUpdate(name="folder-custom"),
     )
-    assert folder.name == "dev-group-custom"
+    assert folder.name == "folder-custom"
     assert folder.tenant_id == 1
 
 
 def test_update_folder_with_invalid_tenant(session: Session) -> None:
     folder = create_folder(
-        session, FolderCreate(name="dev-group5", tenant_id=1)
+        session, FolderCreate(name="folder5", tenant_id=1)
     )
     db_folder = get_folder(session, folder.id)
 
@@ -97,22 +97,8 @@ def test_update_folder_with_invalid_tenant(session: Session) -> None:
             session,
             db_folder=db_folder,
             updated_folder=FolderUpdate(
-                name="dev-group-custom", tenant_id=5
+                name="folder-custom", tenant_id=5
             ),
-        )
-
-
-def test_update_folder_with_incomplete_data(session: Session) -> None:
-    folder = create_folder(
-        session, FolderCreate(name="dev-group5", tenant_id=1)
-    )
-    db_folder = get_folder(session, folder.id)
-
-    with pytest.raises(ValidationError):
-        folder = update_folder(
-            session,
-            db_folder=db_folder,
-            updated_folder=FolderUpdate(tenant_id=1, tag="my-custom-tag"),
         )
 
 
@@ -125,14 +111,14 @@ def test_update_folder_with_invalid_id(session: Session) -> None:
             session,
             db_folder=db_folder,
             updated_folder=FolderUpdate(
-                name="dev-group-custom", tenant_id=1
+                name="folder-custom", tenant_id=1
             ),
         )
 
 
 def test_delete_group_device(session: Session) -> None:
     folder = create_folder(
-        session, FolderCreate(name="dev-group5delete", tenant_id=1)
+        session, FolderCreate(name="folder5delete", tenant_id=1)
     )
     db_folder = get_folder(session, folder.id)
 
@@ -148,7 +134,7 @@ def test_delete_group_device(session: Session) -> None:
 
 def test_delete_folder_with_invalid_id(session: Session) -> None:
     folder = create_folder(
-        session, FolderCreate(name="dev-group5delete", tenant_id=1)
+        session, FolderCreate(name="folder5delete", tenant_id=1)
     )
     db_folder = get_folder(session, folder.id)
 
