@@ -25,7 +25,7 @@ def test_read_tenant(session: Session):
     data = response.json()
     assert data["id"] == tenant_id
     assert data["name"] == "tenant2"
-    assert len(data["device_groups"]) == 0
+    assert len(data["folders"]) == 0
 
 
 def test_read_non_existent_tenant(session: Session):
@@ -40,16 +40,16 @@ def test_create_tenant(session: Session):
     data = response.json()
     assert "id" in data
     assert data["name"] == "tenant2"
-    assert len(data["device_groups"]) == 0
+    assert len(data["folders"]) == 0
 
 
-def test_create_tenant_with_device_group(session: Session):
-    device_group_id = 2
-    response = client.get(f"/device_groups/{device_group_id}")
-    device_group_data = response.json()
+def test_create_tenant_with_folder(session: Session):
+    folder_id = 2
+    response = client.get(f"/folders/{folder_id}")
+    folder_data = response.json()
 
     response = client.post(
-        "/tenants/", json={"name": "tenant2", "device_groups": [device_group_data]}
+        "/tenants/", json={"name": "tenant2", "folders": [folder_data]}
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -80,7 +80,7 @@ def test_update_tenant(session: Session):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "tenant1-updated"
-    assert len(data["device_groups"]) == 1
+    assert len(data["folders"]) == 2
 
 
 def test_update_non_existent_tenant(session: Session):
