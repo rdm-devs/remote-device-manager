@@ -1,8 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
-from ..device_os.schemas import DeviceOS
-from ..device_vendor.schemas import DeviceVendor
 
 
 class DeviceBase(BaseModel):
@@ -16,16 +14,19 @@ class DeviceBase(BaseModel):
 
 class DeviceCreate(DeviceBase):
     folder_id: int
-    os_id: int
-    vendor_id: int
     mac_address: Optional[str] = None
     ip_address: Optional[str] = None
+    os_name: str
+    os_version: str
+    os_kernel_version: str
+    vendor_name: str
+    vendor_model: str
+    vendor_cores: int
+    vendor_ram_gb: int
 
 
 class Device(DeviceCreate):
     id: int
-    os: DeviceOS
-    vendor: DeviceVendor
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()
 
@@ -35,10 +36,15 @@ class Device(DeviceCreate):
 class DeviceUpdate(DeviceCreate):
     name: Optional[str] = None
     folder_id: Optional[int] = None
-    os_id: Optional[int] = None
-    vendor_id: Optional[int] = None
     mac_address: Optional[str] = None
     ip_address: Optional[str] = None
+    os_name: Optional[str] = None
+    os_version: Optional[str] = None
+    os_kernel_version: Optional[str] = None
+    vendor_name: Optional[str] = None
+    vendor_model: Optional[str] = None
+    vendor_cores: Optional[int] = None
+    vendor_ram_gb: Optional[int] = None
 
     model_config = {"extra": "forbid"}
 

@@ -7,8 +7,6 @@ from ..database import Base
 from ..audit_mixin import AuditMixin
 from ..folder.models import Folder
 from ..entity.models import Entity
-from ..device_os.models import DeviceOS
-from ..device_vendor.models import DeviceVendor
 
 class Device(Base, AuditMixin):
     __tablename__ = "device"
@@ -27,11 +25,14 @@ class Device(Base, AuditMixin):
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
 
     # device metadata attrs:
-    mac_address: Mapped[Optional[str]] = mapped_column(String(17)) #12  + 5(dots)
+    mac_address: Mapped[Optional[str]] = mapped_column(String(17))
     ip_address: Mapped[Optional[str]] = mapped_column(
-        String(15)  # 12  + 3(dots)
-    )  # optional: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
-    os_id: Mapped[int] = mapped_column(ForeignKey(DeviceOS.id))
-    vendor_id: Mapped[int] = mapped_column(ForeignKey(DeviceVendor.id))
-    os: Mapped[DeviceOS] = relationship(DeviceOS, back_populates="devices")
-    vendor: Mapped[DeviceVendor] = relationship(DeviceVendor, back_populates="devices")
+        String(15)
+    )  # alternatively: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
+    os_name: Mapped[str] = mapped_column(index=True)
+    os_version: Mapped[str] = mapped_column()
+    os_kernel_version: Mapped[str] = mapped_column()
+    vendor_name: Mapped[str] = mapped_column(index=True)
+    vendor_model: Mapped[str] = mapped_column()
+    vendor_cores: Mapped[int] = mapped_column()
+    vendor_ram_gb: Mapped[int] = mapped_column()
