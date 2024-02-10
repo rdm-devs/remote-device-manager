@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from src.tenant.exceptions import TenantNotFoundError
-from tests.database import session
+from tests.database import session, mock_os_data, mock_vendor_data
 
 from src.folder.exceptions import (
     FolderNameTakenError,

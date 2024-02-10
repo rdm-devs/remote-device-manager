@@ -4,7 +4,7 @@ from fastapi import status
 from src import device
 from src.device.constants import ErrorCode
 from src.folder.constants import ErrorCode as FolderErrorCode
-from tests.database import app, session
+from tests.database import app, session, mock_os_data, mock_vendor_data
 
 client = TestClient(app)
 TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
@@ -17,7 +17,7 @@ def test_read_devices(session: Session):
     assert len(response.json()) >= 1
 
 
-def test_read_device(session: Session):
+def test_read_device(session: Session, mock_os_data: dict, mock_vendor_data: dict):
     response = client.post(
         "/devices/",
         json={
@@ -27,6 +27,8 @@ def test_read_device(session: Session):
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
             "ip_address": TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -47,7 +49,7 @@ def test_read_non_existent_device(session: Session) -> None:
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_create_device(session: Session):
+def test_create_device(session: Session, mock_os_data: dict, mock_vendor_data: dict):
     response = client.post(
         "/devices/",
         json={
@@ -57,6 +59,8 @@ def test_create_device(session: Session):
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
             "ip_address": TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -66,7 +70,9 @@ def test_create_device(session: Session):
     assert data["folder_id"] == 1
 
 
-def test_create_duplicated_device(session: Session):
+def test_create_duplicated_device(
+    session: Session, mock_os_data: dict, mock_vendor_data: dict
+):
     response = client.post(
         "/devices/",
         json={
@@ -76,13 +82,17 @@ def test_create_duplicated_device(session: Session):
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
             "ip_address": TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data,
         },
     )  # "dev1" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.DEVICE_NAME_TAKEN
 
 
-def test_create_incomplete_device(session: Session):
+def test_create_incomplete_device(
+    session: Session, mock_os_data: dict, mock_vendor_data: dict
+):
     response = client.post(
         "/devices/",
         json={
@@ -91,12 +101,16 @@ def test_create_incomplete_device(session: Session):
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
             "ip_address": TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data,
         },
     )
     assert response.status_code == 422, response.text
 
 
-def test_create_device_with_non_existing_folder(session: Session):
+def test_create_device_with_non_existing_folder(
+    session: Session, mock_os_data: dict, mock_vendor_data: dict
+):
     response = client.post(
         "/devices/",
         json={
@@ -106,6 +120,8 @@ def test_create_device_with_non_existing_folder(session: Session):
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
             "ip_address": TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data,
         },
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND

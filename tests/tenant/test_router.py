@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from fastapi import status
 
 from src.tenant.constants import ErrorCode
-from tests.database import app, session
+from tests.database import app, session, mock_os_data, mock_vendor_data
 
 client = TestClient(app)
 

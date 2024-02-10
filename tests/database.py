@@ -13,8 +13,6 @@ from src.user.models import User
 from src.tenant.models import Tenant
 from src.entity.models import Entity
 from src.role.models import Role
-from src.device_os.models import DeviceOS
-from src.device_vendor.models import DeviceVendor
 
 load_dotenv()
 
@@ -38,32 +36,32 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-# @pytest.fixture
-# def create_entity() -> Generator[Entity, None, None]:
-#     Base.metadata.create_all(bind=engine)
-#     db_session = TestingSessionLocal()
-#     entity = Entity()
-#     db_session.add(entity)
-#     db_session.commit()
-#     yield db_session
-#     db_session.close()
-#     Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture
+def mock_os_data() -> Generator[dict, None, None]:
+    return {"os_name": "android", "os_version": "10", "os_kernel_version": "6"}
 
 
 @pytest.fixture
-def session() -> Generator[Session, None, None]:
+def mock_vendor_data() -> Generator[dict, None, None]:
+    return {
+        "vendor_name": "samsung",
+        "vendor_model": "galaxy tab s9",
+        "vendor_cores": 8,
+        "vendor_ram_gb": 4,
+    }
+
+
+@pytest.fixture
+def session(
+    mock_os_data: pytest.fixture, mock_vendor_data: pytest.fixture
+) -> Generator[Session, None, None]:
     # Create the tables in the test database
     Base.metadata.create_all(bind=engine)
 
     db_session = TestingSessionLocal()
 
     # create test objects (Entity, Device, Folder, User, Tenant)
-    db_oss = [DeviceOS(id=1, name="android", version="10", kernel_version="6")]
-
-    db_vendors = [
-        DeviceVendor(id=1, brand="samsung", model="galaxy tab s9", cores=8, ram_gb=4)
-    ]
-
     db_roles = [
         Role(id=1, name="admin"),
     ]
@@ -79,8 +77,8 @@ def session() -> Generator[Session, None, None]:
         entity_id=3,
         mac_address="61:68:0C:1E:93:8F",
         ip_address="96.119.132.44",
-        os_id=1,
-        vendor_id=1,
+        **mock_os_data,
+        **mock_vendor_data
     )
     db_device_2 = Device(
         id=2,
@@ -89,8 +87,8 @@ def session() -> Generator[Session, None, None]:
         entity_id=4,
         mac_address="61:68:0C:1E:93:9F",
         ip_address="96.119.132.45",
-        os_id=1,
-        vendor_id=1,
+        **mock_os_data,
+        **mock_vendor_data
     )
 
     db_user = User(
@@ -109,8 +107,6 @@ def session() -> Generator[Session, None, None]:
         role_id=1,
     )
 
-    db_session.add_all(db_oss)
-    db_session.add_all(db_vendors)
     db_session.add_all(db_roles)
     db_session.add_all(db_entities)
     db_session.add_all(
