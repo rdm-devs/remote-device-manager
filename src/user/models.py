@@ -4,11 +4,13 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import Optional
 from ..database import Base
+from ..audit_mixin import AuditMixin
 from ..entity.models import Entity
 from ..role.models import Role
 from ..tenant.models import tenants_and_users_table
 
-class User(Base):
+
+class User(Base, AuditMixin):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
