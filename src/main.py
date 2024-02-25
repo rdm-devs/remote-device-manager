@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from .database import engine, Base
+from .auth.router import router as auth_router 
 from .device.router import router as device_router
 from .folder.router import router as folder_router
 from .role.router import router as role_router
@@ -24,6 +26,7 @@ async def startup():
     Base.metadata.create_all(bind=engine)
 
 
+app.include_router(auth_router)
 app.include_router(device_router)
 app.include_router(folder_router)
 app.include_router(role_router)
