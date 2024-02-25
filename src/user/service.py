@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from src.auth.utils import get_password_hash
+from src.role.service import check_role_exists
 from . import schemas, models, exceptions
 from ..entity.service import create_entity_auto
 
@@ -7,6 +9,15 @@ def check_user_exists(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise exceptions.UserNotFoundError()
+
+
+def check_username_exists(db: Session, username: str, user_id: int | None = None):
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user_id and user:
+        if user_id != user.id:
+            raise exceptions.UsernameTakenError()
+    if user:
+        raise exceptions.UsernameTakenError()
 
 
 def check_email_exists(db: Session, email: str, user_id: int | None = None):
@@ -42,17 +53,19 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 def create_user(db: Session, user: schemas.UserCreate):
     # sanity checks
+    check_username_exists(db, username=user.username)
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
+    check_role_exists(db, role_id=user.role_id)
 
     entity = create_entity_auto(db)
-    fake_hashed_password = user.password + "notreallyhashed"
+    hashed_password = get_password_hash(user.password)
 
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     values = user.model_dump()
     values.pop("password")
     db_user = models.User(
-        **values, hashed_password=fake_hashed_password, entity_id=entity.id
+        **values, hashed_password=hashed_password, entity_id=entity.id
     )
     db.add(db_user)
     db.commit()
@@ -68,11 +81,12 @@ def update_user(
     # sanity checks
     values = updated_user.model_dump(exclude_unset=True)
     check_user_exists(db, user_id=db_user.id)
+    check_username_exists(db, username=updated_user.username, user_id=db_user.id)
     check_email_exists(db, email=updated_user.email, user_id=db_user.id)
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
         values["hashed_password"] = (
-            values["password"] + "seriouslyitsnotreallyhashed"
+            get_password_hash(values["password"])
         )  # rehash password
 
         values.pop("password")

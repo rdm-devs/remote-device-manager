@@ -4,7 +4,7 @@ from . import schemas, models, exceptions
 
 def check_role_name_taken(db: Session, role_name: str):
     role_name_taken = (
-        db.query(models.Device).filter(models.Device.name == role_name).first()
+        db.query(models.Role).filter(models.Role.name == role_name).first()
     )
     if role_name_taken is not None:
         raise exceptions.RoleNameTakenError()
@@ -32,7 +32,7 @@ def get_roles(db: Session, skip: int = 0, limit: int = 100):
 
 def create_role(db: Session, role: schemas.RoleCreate):
     # sanity checks
-    check_role_name_taken(db, name=role.name)
+    check_role_name_taken(db, role.name)
 
     db_role = models.Role(**role.model_dump())
     db.add(db_role)

@@ -15,6 +15,8 @@ class User(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
+    username: Mapped[str] = mapped_column(unique=True)
+    disabled: Mapped[bool] = mapped_column(default=False)
     hashed_password: Mapped[str] = mapped_column()
     last_login: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()

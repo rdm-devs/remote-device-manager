@@ -6,13 +6,13 @@ from ..database import get_db
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # sanity check:
-    service.check_email_exists(db, email=user.email)
+# @router.post("/", response_model=schemas.User)
+# def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+#     # sanity check:
+#     service.check_email_exists(db, email=user.email)
 
-    db_user = service.create_user(db=db, user=user)
-    return db_user
+#     db_user = service.create_user(db=db, user=user)
+#     return db_user
 
 
 @router.get("/", response_model=list[schemas.User])
