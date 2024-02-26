@@ -1,6 +1,7 @@
 from . import service, schemas
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from src.auth.dependencies import get_current_active_user
 from ..database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -16,26 +17,44 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/", response_model=list[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(get_current_active_user)
+):
     users = service.get_users(db, skip=skip, limit=limit)
     return users
 
 
 @router.get("/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(get_current_active_user)
+):
     db_user = service.get_user(db, user_id=user_id)
     return db_user
 
 
 @router.patch("/{user_id}", response_model=schemas.User)
-def update_user(user_id: int, user: schemas.UserUpdate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    user: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    auth_user: schemas.User = Depends(get_current_active_user)
+):
     db_user = read_user(user_id, db)
     updated_user = service.update_user(db, db_user, updated_user=user)
     return updated_user
 
 
 @router.delete("/{user_id}", response_model=schemas.UserDelete)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(get_current_active_user)
+):
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)
     if not deleted_user_user_id:

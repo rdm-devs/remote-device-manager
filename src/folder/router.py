@@ -1,5 +1,7 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from src.auth.dependencies import get_current_active_user
+from src.user.schemas import User
 from ..database import get_db
 from . import service, schemas
 
@@ -7,25 +9,41 @@ router = APIRouter(prefix="/folders", tags=["folders"])
 
 
 @router.post("/", response_model=schemas.Folder)
-def create_folder(folder: schemas.FolderCreate, db: Session = Depends(get_db)):
+def create_folder(
+    folder: schemas.FolderCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+):
     db_folder = service.create_folder(db, folder)
     return db_folder
 
 
 @router.get("/{folder_id}", response_model=schemas.Folder)
-def read_folder(folder_id: int, db: Session = Depends(get_db)):
+def read_folder(
+    folder_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+):
     db_folder = service.get_folder(db, folder_id)
     return db_folder
 
 
 @router.get("/", response_model=list[schemas.Folder])
-def read_folders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_folders(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+):
     return service.get_folders(db, skip=skip, limit=limit)
 
 
 @router.patch("/{folder_id}", response_model=schemas.Folder)
 def update_folder(
-    folder_id: int, folder: schemas.FolderUpdate, db: Session = Depends(get_db)
+    folder_id: int,
+    folder: schemas.FolderUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
 ):
     db_folder = read_folder(folder_id, db)
     updated_device = service.update_folder(db, db_folder, updated_folder=folder)
@@ -33,7 +51,11 @@ def update_folder(
 
 
 @router.delete("/{folder_id}", response_model=schemas.FolderDelete)
-def delete_folder(folder_id: int, db: Session = Depends(get_db)):
+def delete_folder(
+    folder_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+):
     db_folder = read_folder(folder_id, db)
     deleted_folder_id = service.delete_folder(db, db_folder)
     return {
@@ -44,7 +66,11 @@ def delete_folder(folder_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{folder_id}/subfolders", response_model=list[schemas.Folder])
 def read_subfolders(
-    folder_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    folder_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
 ):
     return service.get_subfolders(
         db, parent_folder_id=folder_id, skip=skip, limit=limit
@@ -56,6 +82,7 @@ def create_subfolder(
     folder_id: int,
     subfolder: schemas.FolderCreate,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
 ):
     db_folder = service.create_subfolder(
         db, parent_folder_id=folder_id, subfolder=subfolder
@@ -69,6 +96,7 @@ def update_subfolder(
     subfolder_id: int,
     subfolder: schemas.FolderUpdate,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
 ):
     db_subfolder = read_folder(subfolder_id, db)
     updated_device = service.update_subfolder(
@@ -80,7 +108,12 @@ def update_subfolder(
 @router.delete(
     "/{folder_id}/subfolders/{subfolder_id}", response_model=schemas.FolderDelete
 )
-def delete_subfolder(folder_id: int, subfolder_id: int, db: Session = Depends(get_db)):
+def delete_subfolder(
+    folder_id: int,
+    subfolder_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+):
     db_subfolder = read_folder(subfolder_id, db)
     deleted_folder_id = service.delete_subfolder(
         db, parent_folder_id=folder_id, subfolder=db_subfolder

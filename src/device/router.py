@@ -9,7 +9,7 @@ router = APIRouter(prefix="/devices", tags=["devices"])
 
 
 @router.post("/", response_model=schemas.Device)
-def create_device(
+def register_device(
     device: schemas.DeviceCreate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
