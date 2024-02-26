@@ -11,4 +11,8 @@ class InactiveUserError(BadRequest):
 
 
 class InvalidCredentialsError(NotAuthenticated):
-    pass
+    DETAIL = ErrorCode.AUTHENTICATION_REQUIRED
+
+
+class RefreshTokenNotValid(NotAuthenticated):
+    DETAIL = ErrorCode.REFRESH_TOKEN_NOT_VALID
