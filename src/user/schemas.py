@@ -14,7 +14,7 @@ class UserCreate(BaseModel):  # used when creating user
     email: EmailStr
     username: str
     password: str
-    role_id: int
+    role_id: int | None = None
 
     model_config = {"extra": "forbid"}
 

@@ -56,7 +56,8 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_username_exists(db, username=user.username)
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
-    check_role_exists(db, role_id=user.role_id)
+    if user.role_id:
+        check_role_exists(db, role_id=user.role_id)
 
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
