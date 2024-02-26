@@ -9,6 +9,7 @@ from src.user.schemas import User, UserCreate
 from src.user.service import check_email_exists, check_username_exists, create_user
 from .exceptions import IncorrectUserOrPasswordError
 from .utils import authenticate_user, create_access_token
+from .dependencies import get_current_active_user
 from .schemas import Token
 
 load_dotenv()
@@ -23,6 +24,17 @@ async def login_for_access_token(
     if not user:
         raise IncorrectUserOrPasswordError()
     access_token_expires = timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")))
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@router.post("/token/refresh", response_model=Token)
+async def refresh_token(user=Depends(get_current_active_user)):
+    access_token_expires = timedelta(
+        minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+    )
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
