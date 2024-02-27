@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from src import folder
 from src.main import app
-from src.auth.dependencies import oauth2_scheme
+from src.auth.dependencies import oauth2_scheme, get_current_active_user
 from src.database import get_db, Base
 from src.device.models import Device
 from src.folder.models import Folder
@@ -144,3 +144,17 @@ def client_fixture(session: Session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_authenticated():
+    """
+    Returns an API client which skips the authentication
+    """
+
+    def skip_auth():
+        pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_active_user] = skip_auth
+    return TestClient(app)
