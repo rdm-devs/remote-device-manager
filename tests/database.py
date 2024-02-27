@@ -1,11 +1,14 @@
 import os
 import pytest
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.testclient import TestClient
 from typing import Generator
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from src import folder
 from src.main import app
+from src.auth.dependencies import oauth2_scheme
 from src.database import get_db, Base
 from src.device.models import Device
 from src.folder.models import Folder
@@ -93,7 +96,8 @@ def session(
 
     db_user = User(
         id=1,
-        hashed_password="_s3cr3tp@5sw0rd_",
+        username="test-user-1",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
         email="test-user@sia.com",
         entity_id=5,
         role_id=1,
@@ -101,7 +105,8 @@ def session(
 
     db_user_2 = User(
         id=2,
-        hashed_password="_s3cr3tp@5sw0rd_",
+        username="test-user-2",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
         email="test-user-2@sia.com",
         entity_id=6,
         role_id=1,
@@ -126,3 +131,16 @@ def session(
 
     db_session.close()
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(name="client")
+def client_fixture(session: Session):
+    def get_db_session_override():
+        return session
+
+    oauth2_scheme_override = OAuth2PasswordBearer(tokenUrl="auth/token")
+    app.dependency_overrides[oauth2_scheme] = oauth2_scheme_override
+    app.dependency_overrides[get_db] = get_db_session_override
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()
