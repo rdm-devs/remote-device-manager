@@ -47,10 +47,9 @@ async def refresh_tokens(
     refresh_token=Depends(valid_refresh_token),
 ):
     new_refresh_token = await service.create_refresh_token(db, refresh_token.user_id)
-    print(f"{new_refresh_token=}")
     response.set_cookie(**get_refresh_token_settings(new_refresh_token))
 
-    worker.add_task(service.expire_refresh_token, refresh_token.id)
+    worker.add_task(service.expire_refresh_token, refresh_token_id=refresh_token.id, db=db)
     return Token(
         access_token=create_access_token(user),
         refresh_token=new_refresh_token,
