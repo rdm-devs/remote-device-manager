@@ -9,5 +9,10 @@ class UserNotFoundError(NotFound):
 class UserEmailTakenError(BadRequest):
     DETAIL = ErrorCode.USER_EMAIL_TAKEN
 
+
+class UsernameTakenError(BadRequest):
+    DETAIL = ErrorCode.USERNAME_TAKEN
+
+
 class UserInvalidPasswordError(BadRequest):
     DETAIL = ErrorCode.USER_INVALID_PASSWORD

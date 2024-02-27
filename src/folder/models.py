@@ -5,18 +5,20 @@ from sqlalchemy.sql import func
 from typing import Optional
 from ..database import Base
 from ..audit_mixin import AuditMixin
-from ..tenant.models import Tenant
 
 
-class DeviceGroup(Base, AuditMixin):
-    __tablename__ = "device_group"
+class Folder(Base, AuditMixin):
+    __tablename__ = "folder"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
-    tenant_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Tenant.id))
-    tenant: Mapped[Optional["Tenant"]] = relationship(
-        "Tenant", back_populates="device_groups"
+    entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id"))
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))
+    tenant: Mapped["Tenant"] = relationship(
+        "Tenant", back_populates="folders"
     )
     devices: Mapped[list["src.device.models.Device"]] = relationship(
-        "src.device.models.Device", back_populates="device_group"
+        "src.device.models.Device", back_populates="folder"
     )
+    parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id"), nullable=True)
+    subfolders = relationship("Folder")

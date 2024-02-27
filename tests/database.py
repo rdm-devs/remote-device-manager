@@ -1,17 +1,21 @@
 import os
 import pytest
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.testclient import TestClient
 from typing import Generator
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
-from src import device_group
+from src import folder
 from src.main import app
+from src.auth.dependencies import oauth2_scheme, get_current_active_user
 from src.database import get_db, Base
 from src.device.models import Device
-from src.device_group.models import DeviceGroup
+from src.folder.models import Folder
 from src.user.models import User
-from src.user_group.models import UserGroup, user_and_groups_table
 from src.tenant.models import Tenant
+from src.entity.models import Entity
+from src.role.models import Role
 
 load_dotenv()
 
@@ -37,36 +41,88 @@ app.dependency_overrides[get_db] = override_get_db
 
 
 @pytest.fixture
-def session() -> Generator[Session, None, None]:
+def mock_os_data() -> Generator[dict, None, None]:
+    return {"os_name": "android", "os_version": "10", "os_kernel_version": "6"}
+
+
+@pytest.fixture
+def mock_vendor_data() -> Generator[dict, None, None]:
+    return {
+        "vendor_name": "samsung",
+        "vendor_model": "galaxy tab s9",
+        "vendor_cores": 8,
+        "vendor_ram_gb": 4,
+    }
+
+
+@pytest.fixture
+def session(
+    mock_os_data: pytest.fixture, mock_vendor_data: pytest.fixture
+) -> Generator[Session, None, None]:
     # Create the tables in the test database
     Base.metadata.create_all(bind=engine)
 
     db_session = TestingSessionLocal()
 
-    # create test objects (Device, DeviceGroup, User, UserGroup, Tenant)
-    db_tenant = Tenant(id=1, name="tenant1")
-    db_device_group = DeviceGroup(id=1, name="dev-group1", tenant_id=1)
-    db_device_group_2 = DeviceGroup(id=2, name="dev-group2")
-    db_device = Device(id=1, name="dev1", device_group_id=1)
-    db_device_2 = Device(id=2, name="dev2", device_group_id=1)
-    db_user_group = UserGroup(id=1, name="user-group1", device_group_id=1)
-    db_user = User(id=1, hashed_password="_s3cr3tp@5sw0rd_", email="test-user@sia.com")
-    db_user.user_groups.append(db_user_group)
-    db_user_2 = User(
-        id=2, hashed_password="_s3cr3tp@5sw0rd_", email="test-user-2@sia.com"
-    )
-    db_user_2.user_groups.append(db_user_group)
+    # create test objects (Entity, Device, Folder, User, Tenant)
+    db_roles = [
+        Role(id=1, name="admin"),
+    ]
+    db_entities = [Entity() for i in range(7)]
 
+    db_tenant = Tenant(id=1, name="tenant1", entity_id=0)
+    db_folder = Folder(id=1, name="folder1", tenant_id=1, entity_id=1)
+    db_folder_2 = Folder(id=2, name="folder2", entity_id=2, tenant_id=1)
+    db_device = Device(
+        id=1,
+        name="dev1",
+        folder_id=1,
+        entity_id=3,
+        mac_address="61:68:0C:1E:93:8F",
+        ip_address="96.119.132.44",
+        **mock_os_data,
+        **mock_vendor_data
+    )
+    db_device_2 = Device(
+        id=2,
+        name="dev2",
+        folder_id=1,
+        entity_id=4,
+        mac_address="61:68:0C:1E:93:9F",
+        ip_address="96.119.132.45",
+        **mock_os_data,
+        **mock_vendor_data
+    )
+
+    db_user = User(
+        id=1,
+        username="test-user-1",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
+        email="test-user@sia.com",
+        entity_id=5,
+        role_id=1,
+    )
+
+    db_user_2 = User(
+        id=2,
+        username="test-user-2",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
+        email="test-user-2@sia.com",
+        entity_id=6,
+        role_id=1,
+    )
+
+    db_session.add_all(db_roles)
+    db_session.add_all(db_entities)
     db_session.add_all(
         [
             db_tenant,
-            db_device_group,
-            db_device_group_2,
+            db_folder,
+            db_folder_2,
             db_device,
             db_device_2,
             db_user,
             db_user_2,
-            db_user_group,
         ]
     )
     db_session.commit()
@@ -75,3 +131,30 @@ def session() -> Generator[Session, None, None]:
 
     db_session.close()
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(name="client")
+def client_fixture(session: Session):
+    def get_db_session_override():
+        return session
+
+    oauth2_scheme_override = OAuth2PasswordBearer(tokenUrl="auth/token")
+    app.dependency_overrides[oauth2_scheme] = oauth2_scheme_override
+    app.dependency_overrides[get_db] = get_db_session_override
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_authenticated():
+    """
+    Returns an API client which skips the authentication
+    """
+
+    def skip_auth():
+        pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_active_user] = skip_auth
+    return TestClient(app)
