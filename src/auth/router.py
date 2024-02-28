@@ -10,7 +10,11 @@ from src.user.service import check_email_exists, check_username_exists, create_u
 from typing import Any
 from .exceptions import IncorrectUserOrPasswordError
 from .utils import authenticate_user, create_access_token, get_refresh_token_settings
-from .dependencies import get_current_active_user, valid_refresh_token, valid_refresh_token_user
+from .dependencies import (
+    get_current_active_user,
+    valid_refresh_token,
+    valid_refresh_token_user,
+)
 from .schemas import Token
 from src.auth import service
 
@@ -33,8 +37,7 @@ async def login(
 
     return Token(
         access_token=create_access_token(user),
-        refresh_token=refresh_token_value,
-        token_type="bearer",
+        refresh_token=refresh_token_value
     )
 
 
@@ -46,14 +49,16 @@ async def refresh_tokens(
     user=Depends(valid_refresh_token_user),
     refresh_token=Depends(valid_refresh_token),
 ):
-    new_refresh_token = await service.create_refresh_token(db, refresh_token.user_id)
+    new_access_token = create_access_token(user)
+    new_refresh_token = await service.create_refresh_token(
+        db, refresh_token.user_id, refresh_token=refresh_token
+    )
     response.set_cookie(**get_refresh_token_settings(new_refresh_token))
 
-    worker.add_task(service.expire_refresh_token, refresh_token_id=refresh_token.id, db=db)
+    # worker.add_task(service.expire_refresh_token, refresh_token_id=refresh_token.id, db=db)
     return Token(
-        access_token=create_access_token(user),
-        refresh_token=new_refresh_token,
-        token_type="bearer"
+        access_token=new_access_token,
+        refresh_token=new_refresh_token
     )
 
 
@@ -69,7 +74,7 @@ async def logout_user(
     db: Session = Depends(get_db),
     refresh_token: dict[str, Any] = Depends(valid_refresh_token),
 ) -> dict:
-    await service.expire_refresh_token(db, refresh_token.id)
+    await service.expire_refresh_token(db, refresh_token.refresh_token)
 
     response.delete_cookie(
         **get_refresh_token_settings(refresh_token.refresh_token, expired=True)
