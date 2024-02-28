@@ -1,3 +1,4 @@
+import time
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -38,9 +39,12 @@ def test_refresh_token(client: TestClient):
     old_access_token = response.json()["access_token"]
     old_refresh_token = response.json()["refresh_token"]
 
+    time.sleep(
+        0.5
+    )  # needed to force the creation of new tokens with different encoded values.
     response = client.put("/auth/token", params={"refresh_token": old_refresh_token})
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["access_token"] == old_access_token
+    assert response.json()["access_token"] != old_access_token
     assert response.json()["refresh_token"] != old_refresh_token
 
 

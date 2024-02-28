@@ -31,9 +31,9 @@ def get_user_by_username(db: Session, username: str):
 def authenticate_user(username: str, password: str, db: Session = Depends(get_db)):
     user = get_user_by_username(db, username)
     if not user:
-        return False
+        return exceptions.UserNotFoundError()
     if not verify_password(password, user.hashed_password):
-        return False
+        return exceptions.IncorrectUserOrPasswordError()
     return user
 
 
@@ -50,10 +50,11 @@ def encode_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def create_access_token(user: schemas.User):
-    access_token_expires = timedelta(
-        minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-    )
+def create_access_token(
+    user: schemas.User,
+    expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
+):
+    access_token_expires = timedelta(minutes=expiration_minutes)
     access_token = encode_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
