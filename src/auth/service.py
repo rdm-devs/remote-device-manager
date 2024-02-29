@@ -43,7 +43,7 @@ async def create_refresh_token(
 async def get_refresh_token(
     db: Session,
     refresh_token: str,
-) -> Dict[str, Any] | None:
+) -> Optional[Dict[str, Any]]:
     db_refresh_token = (
         db.query(models.AuthRefreshToken)
         .filter(models.AuthRefreshToken.refresh_token == refresh_token)
