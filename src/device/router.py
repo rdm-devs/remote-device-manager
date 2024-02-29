@@ -29,7 +29,7 @@ def read_device(
     return db_device
 
 
-@router.get("/", response_model=list[schemas.Device])
+@router.get("/", response_model=List[schemas.Device])
 def read_devices(
     skip: int = 0,
     limit: int = 100,
