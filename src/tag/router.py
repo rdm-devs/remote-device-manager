@@ -1,5 +1,6 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from src.auth.dependencies import get_current_active_user
 from src.user.schemas import User
 from ..database import get_db
@@ -28,7 +29,7 @@ def read_tag(
     return db_tag
 
 
-@router.get("/", response_model=list[schemas.Tag])
+@router.get("/", response_model=List[schemas.Tag])
 def read_tags(
     skip: int = 0,
     limit: int = 100,

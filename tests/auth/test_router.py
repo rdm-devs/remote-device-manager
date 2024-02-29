@@ -40,7 +40,7 @@ def test_refresh_token(client: TestClient):
     old_refresh_token = response.json()["refresh_token"]
 
     time.sleep(
-        0.5
+        1
     )  # needed to force the creation of new tokens with different encoded values.
     response = client.put("/auth/token", params={"refresh_token": old_refresh_token})
     assert response.status_code == status.HTTP_200_OK, response.text

@@ -1,5 +1,6 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from src.auth.dependencies import get_current_active_user
 from src.user.schemas import User
 from ..database import get_db
@@ -28,7 +29,7 @@ def read_folder(
     return db_folder
 
 
-@router.get("/", response_model=list[schemas.Folder])
+@router.get("/", response_model=List[schemas.Folder])
 def read_folders(
     skip: int = 0,
     limit: int = 100,
@@ -64,7 +65,7 @@ def delete_folder(
     }
 
 
-@router.get("/{folder_id}/subfolders", response_model=list[schemas.Folder])
+@router.get("/{folder_id}/subfolders", response_model=List[schemas.Folder])
 def read_subfolders(
     folder_id: int,
     skip: int = 0,

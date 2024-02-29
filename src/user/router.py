@@ -1,7 +1,8 @@
-from . import service, schemas
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from src.auth.dependencies import get_current_active_user
+from . import service, schemas
 from ..database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 #     return db_user
 
 
-@router.get("/", response_model=list[schemas.User])
+@router.get("/", response_model=List[schemas.User])
 def read_users(
     skip: int = 0,
     limit: int = 100,

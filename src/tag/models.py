@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey, Table, Column, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, mapped_column, Mapped
+from typing import List
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
@@ -19,7 +20,7 @@ class Tag(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True, unique=True) #e.g.: os-android-9 | brand-xiaomi
-    entities: Mapped[list["src.entity.models.Entity"]] = relationship(
+    entities: Mapped[List["src.entity.models.Entity"]] = relationship(
         secondary=entities_and_tags_table, back_populates="tags"
     )
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))

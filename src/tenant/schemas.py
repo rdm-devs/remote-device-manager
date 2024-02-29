@@ -1,6 +1,6 @@
 from pydantic import BaseModel
+from typing import List
 from ..folder.schemas import Folder
-
 
 class TenantBase(BaseModel):
     name: str
@@ -12,7 +12,7 @@ class TenantCreate(TenantBase):
 
 class Tenant(TenantBase):
     id: int
-    folders: list[Folder] = []
+    folders: List[Folder] = []
 
     model_config = {"from_attributes": True}
 

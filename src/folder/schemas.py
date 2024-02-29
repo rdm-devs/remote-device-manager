@@ -1,22 +1,22 @@
 from pydantic import BaseModel
 from ..device.schemas import Device
-from typing import Optional
+from typing import Optional, List
 
 class FolderBase(BaseModel):
     name: str
     tenant_id: int
-    subfolders: list["Folder"] = []
+    subfolders: List["Folder"] = []
 
 
 class Folder(FolderBase):
     id: int
-    parent_id: int | None = None
-    devices: list[Device]
+    parent_id: Optional[int] = None
+    devices: List[Device]
     model_config = {"from_attributes": True}
 
 
 class FolderCreate(FolderBase):
-    parent_id: int | None = None
+    parent_id: Optional[int] = None
 
 
 class FolderUpdate(FolderCreate):

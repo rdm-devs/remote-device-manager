@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.user.schemas import User, UserCreate
 from src.user.service import check_email_exists, check_username_exists, create_user
-from typing import Any
+from typing import Any, Dict
 from .exceptions import IncorrectUserOrPasswordError
 from .utils import authenticate_user, create_access_token, get_refresh_token_settings
 from .dependencies import (
@@ -72,7 +72,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 async def logout_user(
     response: Response,
     db: Session = Depends(get_db),
-    refresh_token: dict[str, Any] = Depends(valid_refresh_token),
+    refresh_token: Dict[str, Any] = Depends(valid_refresh_token),
 ) -> dict:
     await service.expire_refresh_token(db, refresh_token.refresh_token)
 

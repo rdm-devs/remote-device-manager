@@ -2,7 +2,7 @@ import os
 import string
 import random
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from src.auth import models, utils
@@ -18,7 +18,7 @@ def generate_random_alphanum(length: int = 20) -> str:
 
 
 async def create_refresh_token(
-    db: Session, user_id: int, refresh_token: models.AuthRefreshToken | None = None
+    db: Session, user_id: int, refresh_token: Optional[models.AuthRefreshToken] = None
 ) -> str:
 
     if refresh_token:
@@ -43,7 +43,7 @@ async def create_refresh_token(
 async def get_refresh_token(
     db: Session,
     refresh_token: str,
-) -> dict[str, Any] | None:
+) -> Dict[str, Any] | None:
     db_refresh_token = (
         db.query(models.AuthRefreshToken)
         .filter(models.AuthRefreshToken.refresh_token == refresh_token)

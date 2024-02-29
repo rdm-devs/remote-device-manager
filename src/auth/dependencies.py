@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from typing import Any
+from typing import Any, Dict
 from src.database import get_db
 from src.user.schemas import User
 from src.user import service as user_service
@@ -47,7 +47,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 async def valid_refresh_token(
     refresh_token: str,
     db: Session = Depends(get_db),
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     db_refresh_token = await service.get_refresh_token(db, refresh_token)
     if not db_refresh_token:
         raise RefreshTokenNotValid()
@@ -59,9 +59,9 @@ async def valid_refresh_token(
 
 
 async def valid_refresh_token_user(
-    refresh_token: dict[str, Any] = Depends(valid_refresh_token),
+    refresh_token: Dict[str, Any] = Depends(valid_refresh_token),
     db: Session = Depends(get_db),
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     user = user_service.get_user(db, refresh_token.user_id)
     if not user:
         raise RefreshTokenNotValid()
@@ -69,5 +69,5 @@ async def valid_refresh_token_user(
     return user
 
 
-def _is_valid_refresh_token(db_refresh_token: dict[str, Any]) -> bool:
+def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
     return datetime.utcnow() <= db_refresh_token.expires_at

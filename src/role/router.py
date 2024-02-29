@@ -1,5 +1,6 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
+from typing import List
 from src.auth.dependencies import get_current_active_user
 from src.user.schemas import User
 from ..database import get_db
@@ -28,7 +29,7 @@ def read_role(
     return db_role
 
 
-@router.get("/", response_model=list[schemas.Role])
+@router.get("/", response_model=List[schemas.Role])
 def read_roles(
     skip: int = 0,
     limit: int = 100,

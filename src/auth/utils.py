@@ -3,7 +3,7 @@ from fastapi import Depends
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Optional, Dict
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from src.database import get_db
@@ -37,7 +37,7 @@ def authenticate_user(username: str, password: str, db: Session = Depends(get_db
     return user
 
 
-def encode_access_token(data: dict, expires_delta: timedelta | None = None):
+def encode_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -64,7 +64,7 @@ def create_access_token(
 def get_refresh_token_settings(
     refresh_token: str,
     expired: bool = False,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     base_cookie = {
         "key": os.getenv("REFRESH_SECRET_KEY"),
         "httponly": True,

@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
 from . import schemas, models, exceptions
@@ -11,7 +12,7 @@ def check_user_exists(db: Session, user_id: int):
         raise exceptions.UserNotFoundError()
 
 
-def check_username_exists(db: Session, username: str, user_id: int | None = None):
+def check_username_exists(db: Session, username: str, user_id: Optional[int] = None):
     user = db.query(models.User).filter(models.User.username == username).first()
     if user_id and user:
         if user_id != user.id:
@@ -20,7 +21,7 @@ def check_username_exists(db: Session, username: str, user_id: int | None = None
         raise exceptions.UsernameTakenError()
 
 
-def check_email_exists(db: Session, email: str, user_id: int | None = None):
+def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user_id and user:
         if user_id != user.id:

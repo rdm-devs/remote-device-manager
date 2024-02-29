@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
-from typing import Optional
+from typing import Optional, List
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
@@ -17,7 +17,7 @@ class Folder(Base, AuditMixin):
     tenant: Mapped["Tenant"] = relationship(
         "Tenant", back_populates="folders"
     )
-    devices: Mapped[list["src.device.models.Device"]] = relationship(
+    devices: Mapped[List["src.device.models.Device"]] = relationship(
         "src.device.models.Device", back_populates="folder"
     )
     parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id"), nullable=True)

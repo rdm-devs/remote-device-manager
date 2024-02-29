@@ -7,9 +7,9 @@ class DeviceBase(BaseModel):
     name: str
     ip_address: str
     mac_address: str
-    id_rust: str | None = None
-    pass_rust: str | None = None
-    last_screenshot_path: str | None = None
+    id_rust: Optional[str] = None
+    pass_rust: Optional[str] = None
+    last_screenshot_path: Optional[str] = None
 
 
 class DeviceCreate(DeviceBase):

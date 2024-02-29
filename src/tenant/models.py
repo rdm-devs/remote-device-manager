@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey, Table, Column, DateTime
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
+from typing import List
 from ..database import Base
 from ..audit_mixin import AuditMixin
 from ..entity.models import Entity
@@ -22,9 +23,9 @@ class Tenant(Base, AuditMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
-    folders: Mapped[list["src.folders.models.Folder"]] = relationship(
+    folders: Mapped[List["src.folders.models.Folder"]] = relationship(
         "Folder", back_populates="tenant"
     )
-    users: Mapped[list["src.user.models.User"]] = relationship(
+    users: Mapped[List["src.user.models.User"]] = relationship(
         secondary=tenants_and_users_table, back_populates="tenants"
     )

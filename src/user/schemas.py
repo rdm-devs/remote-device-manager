@@ -1,20 +1,21 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
 
 class UserBase(BaseModel):  # used as common fields
     email: EmailStr
     username: str
     last_login: datetime = datetime.now()
-    role_id: int | None = None
-    disabled: bool | None = False
+    role_id: Optional[int] = None
+    disabled: Optional[bool] = False
 
 
 class UserCreate(BaseModel):  # used when creating user
     email: EmailStr
     username: str
     password: str
-    role_id: int | None = None
+    role_id: Optional[int] = None
 
     model_config = {"extra": "forbid"}
 
@@ -26,10 +27,10 @@ class User(UserBase):  # used when reading user info
 
 
 class UserUpdate(UserBase):
-    username: str | None = None
-    password: str | None = None
-    email: str | None = None
-    role_id: int | None = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    email: Optional[str] = None
+    role_id: Optional[int] = None
 
     model_config = {"extra": "forbid"}
 
