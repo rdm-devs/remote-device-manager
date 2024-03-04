@@ -1,8 +1,11 @@
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Path
 from sqlalchemy.orm import Session
-from typing import List
-from src.auth.dependencies import get_current_active_user
+from typing import List, Optional
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
+from src.auth.dependencies import get_current_active_user, has_admin_role
 from src.user.schemas import User
+from src.tenant.router import router as tenant_router
 from ..database import get_db
 from . import service, schemas
 
@@ -29,14 +32,21 @@ def read_folder(
     return db_folder
 
 
-@router.get("/", response_model=List[schemas.Folder])
+@router.get("/", response_model=Page[schemas.FolderList])
 def read_folders(
-    skip: int = 0,
-    limit: int = 100,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(has_admin_role),
 ):
-    return service.get_folders(db, skip=skip, limit=limit)
+    return paginate(service.get_folders(db))
+
+
+@tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.FolderList])
+def read_folders(
+    tenant_id: Optional[int] = Path(),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return paginate(service.get_folders_from_tenant(db, tenant_id=tenant_id))
 
 
 @router.patch("/{folder_id}", response_model=schemas.Folder)
@@ -68,8 +78,6 @@ def delete_folder(
 @router.get("/{folder_id}/subfolders", response_model=List[schemas.Folder])
 def read_subfolders(
     folder_id: int,
-    skip: int = 0,
-    limit: int = 100,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user)
 ):

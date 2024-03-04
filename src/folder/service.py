@@ -1,5 +1,7 @@
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from typing import List, Optional
+from src.exceptions import PermissionDenied
 from src.tenant.service import check_tenant_exists
 from src.folder.exceptions import (
     FolderNameTakenError,
@@ -45,9 +47,13 @@ def get_folder(db: Session, folder_id: int):
     return db_folder
 
 
-def get_folders(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Folder).offset(skip).limit(limit).all()
+# def get_folders(db: Session, skip: int = 0, limit: int = 100):
+def get_folders(db: Session) -> List[models.Folder]:
+    return db.query(models.Folder).filter()  # .all()
 
+
+def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:
+    return db.query(models.Folder).filter(models.Folder.tenant_id == tenant_id) #.all()
 
 def get_folder_by_name(db: Session, folder_name: str):
     folder = db.query(models.Folder).filter(models.Folder.name == folder_name).first()
