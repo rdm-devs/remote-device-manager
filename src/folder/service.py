@@ -49,7 +49,7 @@ def get_folder(db: Session, folder_id: int):
 
 # def get_folders(db: Session, skip: int = 0, limit: int = 100):
 def get_folders(db: Session) -> List[models.Folder]:
-    return db.query(models.Folder).filter()  # .all()
+    return db.query(models.Folder)  # .all()
 
 
 def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:
