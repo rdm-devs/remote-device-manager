@@ -1,5 +1,7 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
 from src.auth.dependencies import get_current_active_user, has_admin_role
 from . import service, schemas
@@ -17,22 +19,20 @@ router = APIRouter(prefix="/users", tags=["users"])
 #     return db_user
 
 
-@router.get("/", response_model=List[schemas.User])
-def read_users(
-    skip: int = 0,
-    limit: int = 100,
+@router.get("/", response_model=Page[schemas.User])
+async def read_users(
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user),
+    user: schemas.User = Depends(has_admin_role),
 ):
-    users = service.get_users(db, skip=skip, limit=limit)
-    return users
+    users = service.get_users(db)
+    return paginate(users)
 
 
 @router.get("/{user_id}", response_model=schemas.User)
 def read_user(
     user_id: int,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user),
+    user: schemas.User = Depends(has_admin_role),
 ):
     db_user = service.get_user(db, user_id=user_id)
     return db_user
@@ -43,7 +43,7 @@ def update_user(
     user_id: int,
     user: schemas.UserUpdate,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_active_user),
+    auth_user: schemas.User = Depends(has_admin_role),
 ):
     db_user = read_user(user_id, db)
     updated_user = service.update_user(db, db_user, updated_user=user)
@@ -54,7 +54,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user),
+    user: schemas.User = Depends(has_admin_role),
 ):
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)
@@ -71,7 +71,7 @@ def assign_role(
     user_id: int,
     role_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_role),
+    user: schemas.User = Depends(has_admin_role),
 ):
     service.assign_role(db=db, user_id=user_id, role_id=role_id)
     return schemas.UserRole(id=user_id, role_id=role_id)
