@@ -18,8 +18,12 @@ class FolderList(BaseModel):
     id: int
     name: str
     parent_id: Optional[int] = None
-    devices: List[DeviceList]
-    subfolders: List["Folder"]
+    devices: List[DeviceList] = []
+    subfolders: List["Folder"] = []
+
+class FolderTenantList(BaseModel):
+    id: int
+    name: str
 
 class FolderCreate(FolderBase):
     parent_id: Optional[int] = None
