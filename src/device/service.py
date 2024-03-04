@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
 from src.folder.exceptions import FolderNotFoundError
 from src.folder.service import check_folder_exist
+from src.folder import models as folder_models
 from . import schemas, models
 from ..entity.service import create_entity_auto
 
@@ -21,8 +22,18 @@ def get_device(db: Session, device_id: int):
     return device
 
 
-def get_devices(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Device).offset(skip).limit(limit).all()
+def get_devices_from_tenant(db: Session, tenant_id: int):
+    return (
+        db.query(models.Device)
+        .filter(folder_models.Folder.id == models.Device.folder_id)
+        .filter(folder_models.Folder.tenant_id == tenant_id)
+    )
+
+
+def get_devices(db: Session):
+    return (
+        db.query(models.Device)
+    )
 
 
 def get_device_by_name(db: Session, device_name: str):

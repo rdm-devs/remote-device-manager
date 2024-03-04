@@ -33,6 +33,13 @@ class Device(DeviceCreate):
     model_config = {"from_attributes": True, "extra": "forbid"}
 
 
+class DeviceList(BaseModel):
+    id: int
+    name: str
+    is_online: bool
+    heartbeat_timestamp: datetime = datetime.now()
+
+
 class DeviceUpdate(DeviceCreate):
     name: Optional[str] = None
     folder_id: Optional[int] = None

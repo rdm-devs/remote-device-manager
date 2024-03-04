@@ -1,8 +1,11 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
-from src.auth.dependencies import get_current_active_user
+from src.auth.dependencies import get_current_active_user, has_admin_role
 from src.user.schemas import User
+from src.tenant.router import router as tenant_router
 from ..database import get_db
 from . import service, schemas
 
@@ -29,14 +32,21 @@ def read_device(
     return db_device
 
 
-@router.get("/", response_model=List[schemas.Device])
+@tenant_router.get("/{tenant_id}/devices", response_model=Page[schemas.DeviceList])
 def read_devices(
-    skip: int = 0,
-    limit: int = 100,
+    tenant_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    return service.get_devices(db, skip=skip, limit=limit)
+    return paginate(service.get_devices(db, tenant_id=tenant_id))
+
+
+@router.get("/", response_model=Page[schemas.DeviceList])
+def read_devices(
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_role),
+):
+    return paginate(service.get_devices(db))
 
 
 @router.patch("/{device_id}", response_model=schemas.Device)
