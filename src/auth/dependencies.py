@@ -49,27 +49,41 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 async def has_role(
     role_name: str,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ) -> User:
     role = db.query(role_models.Role).filter(role_models.Role.name == role_name).first()
     if role and user.role_id == role.id:
         return user
-    raise PermissionDenied()
+    return None
 
 
 async def has_admin_role(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
-):
-    return has_role("admin", db, user)
-
+) -> User:
+    user = await has_role("admin", db, user)
+    if user:
+        return user 
+    raise PermissionDenied()
 
 async def has_owner_role(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
-):
-    return has_role("owner", db, user)
+) -> User:
+    user = await has_role("owner", db, user)
+    if user:
+        return user
+    raise PermissionDenied()
 
+
+async def has_admin_or_owner_role(
+    db: Session = Depends(get_db), user: User = Depends(get_current_active_user)
+) -> User:
+    admin_user = await has_role("admin", db, user)
+    owner_user = await has_role("owner", db, user)
+    if admin_user or owner_user:
+        return user
+    raise PermissionDenied()
 
 async def valid_refresh_token(
     refresh_token: str,
