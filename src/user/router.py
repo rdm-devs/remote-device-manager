@@ -1,9 +1,14 @@
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Path
 from sqlalchemy.orm import Session
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
-from src.auth.dependencies import get_current_active_user, has_admin_role
+from src.auth.dependencies import (
+    get_current_active_user,
+    has_admin_role,
+    has_admin_or_owner_role,
+)
+from src.tenant.schemas import TenantList
 from . import service, schemas
 from ..database import get_db
 
@@ -20,12 +25,33 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/", response_model=Page[schemas.User])
-async def read_users(
+def read_users(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_role),
 ):
     users = service.get_users(db)
     return paginate(users)
+
+
+@router.get("/me/tenants", response_model=Page[TenantList])
+async def read_my_tenants(
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_admin_or_owner_role),
+):
+    tenants = service.get_tenants(db, user_id=user.id)
+    return paginate(tenants)
+
+
+@router.get("/{user_id}/tenants", response_model=Page[TenantList])
+async def read_tenants(
+    user_id: str = Path(),
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_admin_role),
+):
+    if user_id == "me":
+        user_id = (await user).id
+    tenants = service.get_tenants(db, user_id=int(user_id))
+    return paginate(tenants)
 
 
 @router.get("/{user_id}", response_model=schemas.User)

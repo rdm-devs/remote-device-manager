@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
+from src.tenant.schemas import TenantList
+from src.tenant.models import Tenant, tenants_and_users_table
 from . import schemas, models, exceptions
 from ..entity.service import create_entity_auto
 
@@ -48,9 +50,16 @@ def get_user_by_email(db: Session, email: str):
     return user
 
 
-# def get_users(db: Session, skip: int = 0, limit: int = 100):
 def get_users(db: Session):
-    return db.query(models.User) #.offset(skip).limit(limit).all()
+    return db.query(models.User)
+
+
+def get_tenants(db: Session, user_id: int) -> List[TenantList]:
+    return (
+        db.query(Tenant)
+        .join(tenants_and_users_table)
+        .filter(tenants_and_users_table.columns.user_id == user_id)
+    )
 
 
 def create_user(db: Session, user: schemas.UserCreate):
