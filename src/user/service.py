@@ -87,8 +87,8 @@ def update_user(
     check_email_exists(db, email=updated_user.email, user_id=db_user.id)
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
-        values["hashed_password"] = (
-            get_password_hash(values["password"])
+        values["hashed_password"] = get_password_hash(
+            values["password"]
         )  # rehash password
 
         values.pop("password")
@@ -106,3 +106,13 @@ def delete_user(db: Session, db_user: schemas.User):
     db.delete(db_user)
     db.commit()
     return db_user.id
+
+
+def assign_role(db: Session, user_id: int, role_id: int):
+    check_user_exists(db, user_id)
+    check_role_exists(db, role_id)
+
+    db.query(models.User).filter(models.User.id == user_id).update(
+        values={"role_id": role_id}
+    )
+    db.commit()

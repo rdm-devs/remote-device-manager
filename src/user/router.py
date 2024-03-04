@@ -22,7 +22,7 @@ def read_users(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user)
+    user: schemas.User = Depends(get_current_active_user),
 ):
     users = service.get_users(db, skip=skip, limit=limit)
     return users
@@ -32,7 +32,7 @@ def read_users(
 def read_user(
     user_id: int,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user)
+    user: schemas.User = Depends(get_current_active_user),
 ):
     db_user = service.get_user(db, user_id=user_id)
     return db_user
@@ -43,7 +43,7 @@ def update_user(
     user_id: int,
     user: schemas.UserUpdate,
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(get_current_active_user)
+    auth_user: schemas.User = Depends(get_current_active_user),
 ):
     db_user = read_user(user_id, db)
     updated_user = service.update_user(db, db_user, updated_user=user)
@@ -54,7 +54,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(get_current_active_user)
+    user: schemas.User = Depends(get_current_active_user),
 ):
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)
@@ -64,3 +64,14 @@ def delete_user(
         "id": deleted_user_user_id,
         "msg": f"User {deleted_user_user_id} removed succesfully!",
     }
+
+
+@router.patch("/{user_id}/role", response_model=schemas.UserRole)
+def assign_role(
+    user_id: int,
+    role_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_role),
+):
+    service.assign_role(db=db, user_id=user_id, role_id=role_id)
+    return schemas.UserRole(id=user_id, role_id=role_id)

@@ -6,10 +6,12 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from typing import Any, Dict
+from src.exceptions import PermissionDenied
 from src.database import get_db
 from src.user.schemas import User
 from src.user import service as user_service
 from src.auth import service
+from src.role import models as role_models
 from .schemas import TokenData
 from .exceptions import InactiveUserError, InvalidCredentialsError, RefreshTokenNotValid
 from .utils import get_user_by_username
@@ -42,6 +44,31 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if current_user.disabled:
         raise InactiveUserError()
     return current_user
+
+
+async def has_role(
+    role_name: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+) -> User:
+    role = db.query(role_models.Role).filter(role_models.Role.name == role_name).first()
+    if role and user.role_id == role.id:
+        return user
+    raise PermissionDenied()
+
+
+async def has_admin_role(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return has_role("admin", db, user)
+
+
+async def has_owner_role(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    return has_role("owner", db, user)
 
 
 async def valid_refresh_token(

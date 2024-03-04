@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi_pagination import add_pagination
 from .database import engine, Base
 from .auth.router import router as auth_router 
 from .device.router import router as device_router
@@ -19,6 +20,7 @@ ROOT_PATH = os.getenv(f"ROOT_PATH_{ENV}")
 
 
 app = FastAPI(root_path=ROOT_PATH)
+add_pagination(app)
 
 
 @app.on_event("startup")
