@@ -1,8 +1,11 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
-from src.auth.dependencies import get_current_active_user
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
+from typing import Union, List
+from src.auth.dependencies import get_current_active_user, has_admin_role
 from src.user.schemas import User
+from src.user.router import router as user_router
 from ..database import get_db
 from . import service, schemas
 
@@ -13,7 +16,7 @@ router = APIRouter(prefix="/tags", tags=["tags"])
 def create_tag(
     tag: schemas.TagCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
     db_tag = service.create_tag(db, tag)
     return db_tag
@@ -23,20 +26,56 @@ def create_tag(
 def read_tag(
     tag_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
     db_tag = service.get_tag(db, tag_id)
     return db_tag
 
 
-@router.get("/", response_model=List[schemas.Tag])
-def read_tags(
-    skip: int = 0,
-    limit: int = 100,
+@user_router.get("/me/tags", response_model=Page[schemas.Tag])
+async def read_my_tags(
+    tenant_id: Union[int, None] = None,
+    folder_id: Union[int, None] = None,
+    device_id: Union[int, None] = None,
+    name: Union[str, None] = None,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
-    return service.get_tags(db, skip=skip, limit=limit)
+    return paginate(
+        service.get_tags(
+            db,
+            user,
+            tenant_id=tenant_id,
+            folder_id=folder_id,
+            device_id=device_id,
+            user_id=user.id,
+            name=name,
+        )
+    )
+
+
+@user_router.get("/{user_id}/tags", response_model=Page[schemas.Tag])
+@router.get("/", response_model=Page[schemas.Tag])
+def read_tags(
+    user_id: Union[int, None] = None,
+    tenant_id: Union[int, None] = None,
+    folder_id: Union[int, None] = None,
+    device_id: Union[int, None] = None,
+    name: Union[str, None] = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_role),
+):
+    return paginate(
+        service.get_tags(
+            db,
+            user,
+            tenant_id=tenant_id,
+            folder_id=folder_id,
+            device_id=device_id,
+            user_id=user_id,
+            name=name,
+        )
+    )
 
 
 @router.patch("/{tag_id}", response_model=schemas.Tag)
@@ -44,7 +83,7 @@ def update_tag(
     tag_id: int,
     tag: schemas.TagUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
     db_tag = read_tag(tag_id, db)
     updated_device = service.update_tag(db, db_tag, updated_tag=tag)
@@ -57,7 +96,7 @@ def update_tag(
 def delete_device(
     tag_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
     db_tag_group = read_tag(tag_id, db)
     deleted_tag_id = service.delete_tag(db, db_tag_group)
