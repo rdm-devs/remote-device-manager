@@ -1,6 +1,11 @@
 from sqlalchemy.orm import Session
-from . import schemas, models
+from typing import Union
+from src.auth.dependencies import has_access_to_tenant
 from src.tenant.exceptions import TenantNameTakenError, TenantNotFoundError
+from src.exceptions import PermissionDenied
+from src.tag import service as tags_service
+from src.user.schemas import User
+from . import schemas, models
 from ..entity.service import create_entity_auto
 
 
@@ -70,3 +75,25 @@ def delete_tenant(db: Session, db_tenant: schemas.Tenant):
     db.delete(db_tenant)
     db.commit()
     return db_tenant.id
+
+
+async def get_tenant_tags(
+    db: Session,
+    user: User,
+    name: Union[str, None] = "",
+    tenant_id: Union[int, None] = None,
+    folder_id: Union[int, None] = None,
+    device_id: Union[int, None] = None,
+):
+    check_tenant_exists(db, tenant_id)
+    if await has_access_to_tenant(tenant_id, db, user):
+        return tags_service.get_tags(
+            db,
+            user,
+            tenant_id=tenant_id,
+            folder_id=folder_id,
+            device_id=device_id,
+            name=name,
+        )
+    else:
+        raise PermissionDenied()
