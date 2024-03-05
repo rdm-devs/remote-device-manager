@@ -120,14 +120,11 @@ def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
 async def has_access_to_tenant(
     tenant_id: int, db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
 ):
-    print("hola")
     if await has_role("owner", db, user):
-        print("if owner")
         result = db.query(tenant_models.tenants_and_users_table).filter(
             tenant_models.tenants_and_users_table.c.tenant_id == tenant_id,
             tenant_models.tenants_and_users_table.c.user_id == user.id,
         ).count() == 1
     elif await has_role("admin", db, user):
-        print(f"{user} user is admin!")
         result = True
     return result
