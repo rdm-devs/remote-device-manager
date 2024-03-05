@@ -32,8 +32,6 @@ async def login(
     refresh_token_value = await service.create_refresh_token(db, user.id)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
 
-    if not user:
-        raise IncorrectUserOrPasswordError()
 
     return Token(
         access_token=create_access_token(user),

@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from src.database import get_db
 from src.user import models, schemas
+from src.auth import exceptions
 
 load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -30,10 +31,8 @@ def get_user_by_username(db: Session, username: str):
 
 def authenticate_user(username: str, password: str, db: Session = Depends(get_db)):
     user = get_user_by_username(db, username)
-    if not user:
-        return exceptions.UserNotFoundError()
     if not verify_password(password, user.hashed_password):
-        return exceptions.IncorrectUserOrPasswordError()
+        raise exceptions.IncorrectUserOrPasswordError()
     return user
 
 
