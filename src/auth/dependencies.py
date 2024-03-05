@@ -12,6 +12,7 @@ from src.user.schemas import User
 from src.user import service as user_service
 from src.auth import service
 from src.role import models as role_models
+from src.tenant import models as tenant_models
 from .schemas import TokenData
 from .exceptions import InactiveUserError, InvalidCredentialsError, RefreshTokenNotValid
 from .utils import get_user_by_username
@@ -63,8 +64,9 @@ async def has_admin_role(
 ) -> User:
     user = await has_role("admin", db, user)
     if user:
-        return user 
+        return user
     raise PermissionDenied()
+
 
 async def has_owner_role(
     db: Session = Depends(get_db),
@@ -84,6 +86,7 @@ async def has_admin_or_owner_role(
     if admin_user or owner_user:
         return user
     raise PermissionDenied()
+
 
 async def valid_refresh_token(
     refresh_token: str,
@@ -112,3 +115,19 @@ async def valid_refresh_token_user(
 
 def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
     return datetime.utcnow() <= db_refresh_token.expires_at
+
+
+async def has_access_to_tenant(
+    tenant_id: int, db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
+):
+    print("hola")
+    if await has_role("owner", db, user):
+        print("if owner")
+        result = db.query(tenant_models.tenants_and_users_table).filter(
+            tenant_models.tenants_and_users_table.c.tenant_id == tenant_id,
+            tenant_models.tenants_and_users_table.c.user_id == user.id,
+        ).count() == 1
+    elif await has_role("admin", db, user):
+        print(f"{user} user is admin!")
+        result = True
+    return result
