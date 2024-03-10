@@ -2,6 +2,7 @@ import os
 import pytest
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
+from fastapi_pagination import add_pagination
 from typing import Generator
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -37,6 +38,7 @@ def override_get_db():
         db.close()
 
 
+add_pagination(app)
 app.dependency_overrides[get_db] = override_get_db
 
 
@@ -67,12 +69,14 @@ def session(
     # create test objects (Entity, Device, Folder, User, Tenant)
     db_roles = [
         Role(id=1, name="admin"),
+        Role(id=2, name="owner"),
+        Role(id=3, name="user"),
     ]
-    db_entities = [Entity() for i in range(7)]
+    db_entities = [Entity() for i in range(9)]
 
     db_tenant = Tenant(id=1, name="tenant1", entity_id=0)
     db_folder = Folder(id=1, name="folder1", tenant_id=1, entity_id=1)
-    db_folder_2 = Folder(id=2, name="folder2", entity_id=2, tenant_id=1)
+    db_folder_2 = Folder(id=2, name="folder2", tenant_id=1, entity_id=2)
     db_device = Device(
         id=1,
         name="dev1",
@@ -97,7 +101,7 @@ def session(
     db_user = User(
         id=1,
         username="test-user-1",
-        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user@sia.com",
         entity_id=5,
         role_id=1,
@@ -106,10 +110,28 @@ def session(
     db_user_2 = User(
         id=2,
         username="test-user-2",
-        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe", #"_s3cr3tp@5sw0rd_",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-2@sia.com",
         entity_id=6,
-        role_id=1,
+        role_id=2,
+    )
+
+    db_user_3 = User(
+        id=3,
+        username="test-user-3",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
+        email="test-user-3@sia.com",
+        entity_id=7,
+        role_id=2,
+    )
+
+    db_user_4 = User(
+        id=4,
+        username="test-user-4",
+        hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
+        email="test-user-4@sia.com",
+        entity_id=8,
+        role_id=3,
     )
 
     db_session.add_all(db_roles)
@@ -123,9 +145,14 @@ def session(
             db_device_2,
             db_user,
             db_user_2,
+            db_user_3,
+            db_user_4,
         ]
     )
+    db_user_2.tenants.append(db_tenant)
     db_session.commit()
+
+    # db_session.commit()
 
     yield db_session
 

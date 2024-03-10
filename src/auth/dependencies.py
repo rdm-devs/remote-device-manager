@@ -121,10 +121,17 @@ async def has_access_to_tenant(
     tenant_id: int, db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
 ):
     if await has_role("owner", db, user):
-        result = db.query(tenant_models.tenants_and_users_table).filter(
-            tenant_models.tenants_and_users_table.c.tenant_id == tenant_id,
-            tenant_models.tenants_and_users_table.c.user_id == user.id,
-        ).count() == 1
+        count = (
+            db.query(tenant_models.tenants_and_users_table)
+            .filter(
+                tenant_models.tenants_and_users_table.c.tenant_id == tenant_id,
+                tenant_models.tenants_and_users_table.c.user_id == user.id,
+            )
+            .count()
+        )
+        if count == 1:
+            return user
     elif await has_role("admin", db, user):
-        result = True
-    return result
+        return user
+
+    raise PermissionDenied()

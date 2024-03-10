@@ -52,14 +52,14 @@ def test_register_user(client: TestClient):
     response = client.post(
         "/auth/register",
         json={
-            "username": "test-user-3",
+            "username": "test-user-5",
             "password": "_s3cr3tp@5sw0rd_",
             "email": "test-user-3@test.com",
             "role_id": None,
         },
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["username"] == "test-user-3"
+    assert response.json()["username"] == "test-user-5"
     assert response.json()["email"] == "test-user-3@test.com"
     assert response.json()["role_id"] == None
     assert response.json()["disabled"] == False
@@ -85,7 +85,7 @@ def test_read_devices_authorized(client: TestClient):
         headers={"Authorization": f"Bearer {response.json()['access_token']}"},
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(response.json()) == 2
+    assert len(response.json()["items"]) == 2 # we need to access "items" as we are using pagination
 
 
 def test_read_devices_expired_token(client: TestClient):
@@ -98,3 +98,77 @@ def test_read_devices_expired_token(client: TestClient):
         headers={"Authorization": f"Bearer {expired_access_token}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.text
+
+
+def test_read_tenant_admin(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-1", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    tenant_id = 1
+    response = client.get(
+        f"/tenants/{tenant_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert data["id"] == tenant_id
+    assert data["name"] == "tenant1"
+    assert len(data["folders"]) == 2
+
+
+def test_read_tenant_authorized_owner(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-2", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    tenant_id = 1
+    response = client.get(
+        f"/tenants/{tenant_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert data["id"] == tenant_id
+    assert data["name"] == "tenant1"
+    assert len(data["folders"]) == 2
+
+
+def test_read_tenant_unauthorized_owner(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-3", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    tenant_id = 1
+    response = client.get(
+        f"/tenants/{tenant_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+
+def test_read_tenant_unauthorized_user(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-4", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    tenant_id = 1
+    response = client.get(
+        f"/tenants/{tenant_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text

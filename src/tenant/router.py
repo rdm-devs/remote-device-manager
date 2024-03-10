@@ -6,6 +6,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import (
     get_current_active_user,
     has_admin_or_owner_role,
+    has_access_to_tenant,
 )
 from src.user.schemas import User
 from src.tag import schemas as tags_schemas
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 def create_tenant(
     tenant: schemas.TenantCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_admin_or_owner_role),
 ):
     db_tenant = service.create_tenant(db, tenant)
     return db_tenant
@@ -29,7 +30,7 @@ def create_tenant(
 def read_tenant(
     tenant_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_access_to_tenant),
 ):
     db_tenant = service.get_tenant(db, tenant_id=tenant_id)
     return db_tenant
@@ -50,7 +51,7 @@ def update_tenant(
     tenant_id: int,
     tenant: schemas.TenantUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_access_to_tenant),
 ):
     db_tenant = read_tenant(tenant_id, db)
     updated_tenant = service.update_tenant(db, db_tenant, updated_tenant=tenant)
@@ -61,7 +62,7 @@ def update_tenant(
 def delete_tenant(
     tenant_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_access_to_tenant),
 ):
     db_tenant = read_tenant(tenant_id, db)
     deleted_tenant_id = service.delete_tenant(db, db_tenant)
@@ -78,7 +79,7 @@ async def read_tags(
     device_id: Union[int, None] = None,
     name: Union[str, None] = None,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_or_owner_role),
+    user: User = Depends(has_access_to_tenant),
 ):
 
     return paginate(
