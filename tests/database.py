@@ -72,7 +72,7 @@ def session(
         Role(id=2, name="owner"),
         Role(id=3, name="user"),
     ]
-    db_entities = [Entity() for i in range(9)]
+    db_entities = [Entity() for i in range(13)]
 
     db_tenant = Tenant(id=1, name="tenant1", entity_id=0)
     db_folder = Folder(id=1, name="folder1", tenant_id=1, entity_id=1)
@@ -134,12 +134,21 @@ def session(
         role_id=3,
     )
 
+    db_subfolder = Folder(id=3, name="subfolder1", tenant_id=1, entity_id=9, parent_id=1)
+
+    db_tenant_2 = Tenant(id=2, name="tenant2", entity_id=10)
+    db_folder_3 = Folder(
+        id=4, name="folder3", tenant_id=2, entity_id=11
+    )
+    db_subfolder_2 = Folder(id=5, name="subfolder2", tenant_id=2, entity_id=12, parent_id=4)
+
     db_session.add_all(db_roles)
     db_session.add_all(db_entities)
     db_session.add_all(
         [
             db_tenant,
             db_folder,
+            db_subfolder,
             db_folder_2,
             db_device,
             db_device_2,
@@ -147,12 +156,14 @@ def session(
             db_user_2,
             db_user_3,
             db_user_4,
+            db_tenant_2,
+            db_folder_3,
+            db_subfolder_2
         ]
     )
     db_user_2.tenants.append(db_tenant)
+    db_user_3.tenants.append(db_tenant_2)
     db_session.commit()
-
-    # db_session.commit()
 
     yield db_session
 

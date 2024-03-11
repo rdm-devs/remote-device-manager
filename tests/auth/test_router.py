@@ -117,7 +117,7 @@ def test_read_tenant_admin(client: TestClient):
     assert response.status_code == status.HTTP_200_OK, response.text
     assert data["id"] == tenant_id
     assert data["name"] == "tenant1"
-    assert len(data["folders"]) == 2
+    assert len(data["folders"]) == 3
 
 
 def test_read_tenant_authorized_owner(client: TestClient):
@@ -137,7 +137,7 @@ def test_read_tenant_authorized_owner(client: TestClient):
     assert response.status_code == status.HTTP_200_OK, response.text
     assert data["id"] == tenant_id
     assert data["name"] == "tenant1"
-    assert len(data["folders"]) == 2
+    assert len(data["folders"]) == 3
 
 
 def test_read_tenant_unauthorized_owner(client: TestClient):
@@ -171,4 +171,76 @@ def test_read_tenant_unauthorized_user(client: TestClient):
         headers={"Authorization": f"Bearer {response.json()['access_token']}"},
     )
     data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+
+def test_read_folder_authorized_owner(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-3", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    folder_id = 4
+    response = client.get(
+        f"/folders/{folder_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert data["id"] == folder_id
+    assert data["name"] == "folder3"
+    assert len(data["subfolders"]) == 1
+
+
+def test_read_folder_authorized_admin(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-1", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    folder_id = 4
+    response = client.get(
+        f"/folders/{folder_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert data["id"] == folder_id
+    assert data["name"] == "folder3"
+    assert len(data["subfolders"]) == 1
+
+
+def test_read_folder_unauthorized_owner(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-2", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    folder_id = 4
+    response = client.get(
+        f"/folders/{folder_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+
+def test_read_folder_unauthorized_user(client: TestClient):
+    response = client.post(
+        "/auth/token", data={"username": "test-user-4", "password": "_s3cr3tp@5sw0rd_"}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+
+    folder_id = 4
+    response = client.get(
+        f"/folders/{folder_id}",
+        headers={"Authorization": f"Bearer {response.json()['access_token']}"},
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
