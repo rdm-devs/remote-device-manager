@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from src.auth.dependencies import get_current_active_user, has_admin_role
+from src.auth.dependencies import (
+    get_current_active_user,
+    has_admin_role,
+    has_access_to_folder,
+)
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
 from ..database import get_db
@@ -22,11 +26,11 @@ def create_folder(
     return db_folder
 
 
-@router.get("/{folder_id}", response_model=schemas.Folder)
+@router.get("/{folder_id}", response_model=schemas.FolderList)
 def read_folder(
     folder_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(has_access_to_folder)
 ):
     db_folder = service.get_folder(db, folder_id)
     return db_folder
