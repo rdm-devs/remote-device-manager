@@ -13,7 +13,7 @@ class TenantCreate(TenantBase):
 
 class Tenant(TenantBase):
     id: int
-    folders: List[Folder] = []
+    folders: List[FolderTenantList] = []
 
     model_config = {"from_attributes": True}
 
