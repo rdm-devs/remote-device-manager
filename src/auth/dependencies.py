@@ -13,6 +13,7 @@ from src.user import service as user_service
 from src.auth import service
 from src.role import models as role_models
 from src.tenant import models as tenant_models
+from src.folder import models as folder_models
 from .schemas import TokenData
 from .exceptions import InactiveUserError, InvalidCredentialsError, RefreshTokenNotValid
 from .utils import get_user_by_username
@@ -135,3 +136,14 @@ async def has_access_to_tenant(
         return user
 
     raise PermissionDenied()
+
+
+async def has_access_to_folder(
+    folder_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_or_owner_role),
+):
+    folder = db.query(folder_models.Folder).filter(folder_models.Folder.id == folder_id).first()
+
+    if await has_access_to_tenant(folder.tenant_id, db, user):
+        return user
