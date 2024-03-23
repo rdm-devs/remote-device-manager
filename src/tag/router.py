@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import Union, List
-from src.auth.dependencies import get_current_active_user, has_admin_role
+from src.auth.dependencies import (
+    get_current_active_user,
+    has_admin_role,
+    has_admin_or_owner_role,
+    has_access_to_tag,
+)
 from src.user.schemas import User
 from src.user.router import router as user_router
 from ..database import get_db
@@ -42,7 +47,7 @@ async def read_my_tags(
     user: User = Depends(get_current_active_user),
 ):
     return paginate(
-        service.get_tags(
+        await service.get_tags(
             db,
             user,
             tenant_id=tenant_id,
@@ -56,17 +61,17 @@ async def read_my_tags(
 
 @user_router.get("/{user_id}/tags", response_model=Page[schemas.Tag])
 @router.get("/", response_model=Page[schemas.Tag])
-def read_tags(
+async def read_tags(
     user_id: Union[int, None] = None,
     tenant_id: Union[int, None] = None,
     folder_id: Union[int, None] = None,
     device_id: Union[int, None] = None,
     name: Union[str, None] = None,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_role),
+    user: User = Depends(has_admin_or_owner_role),
 ):
     return paginate(
-        service.get_tags(
+        await service.get_tags(
             db,
             user,
             tenant_id=tenant_id,
