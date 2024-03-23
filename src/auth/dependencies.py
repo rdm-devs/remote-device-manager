@@ -14,6 +14,7 @@ from src.auth import service
 from src.role import models as role_models
 from src.tenant import models as tenant_models
 from src.folder import models as folder_models
+from src.tag import models as tag_models
 from .schemas import TokenData
 from .exceptions import InactiveUserError, InvalidCredentialsError, RefreshTokenNotValid
 from .utils import get_user_by_username
@@ -119,7 +120,9 @@ def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
 
 
 async def has_access_to_tenant(
-    tenant_id: int, db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_or_owner_role),
 ):
     if await has_role("owner", db, user):
         count = (
@@ -143,7 +146,28 @@ async def has_access_to_folder(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
-    folder = db.query(folder_models.Folder).filter(folder_models.Folder.id == folder_id).first()
+    folder = (
+        db.query(folder_models.Folder)
+        .filter(folder_models.Folder.id == folder_id)
+        .first()
+    )
 
-    if await has_access_to_tenant(folder.tenant_id, db, user):
+    if folder and (await has_access_to_tenant(folder.tenant_id, db, user)):
         return user
+
+
+async def has_access_to_tag(
+    tag_name: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_or_owner_role),
+):
+    tags = (
+        db.query(tag_models.Tag)
+        .filter(tag_models.Tag.name.like(f"%{tag_name}%"))
+        .filter(await has_access_to_tenant(tag_models.Tag.tenant_id, db, user))
+        .all()
+    )
+
+    if tags:
+        return user
+
