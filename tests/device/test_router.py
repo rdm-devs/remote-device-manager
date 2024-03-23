@@ -16,7 +16,7 @@ TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
 TEST_IP_ADDR = "96.119.132.46"
 
 
-def test_read_devices(session: Session, client_authenticated: TestClient):
+def test_read_devices(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/devices/")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) >= 1
@@ -26,8 +26,8 @@ def test_read_device(
     session: Session,
     mock_os_data: dict,
     mock_vendor_data: dict,
-    client_authenticated: TestClient
-):
+    client_authenticated: TestClient,
+) -> None:
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -66,7 +66,7 @@ def test_create_device(
     mock_os_data: dict,
     mock_vendor_data: dict,
     client_authenticated: TestClient,
-):
+) -> None:
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -91,8 +91,8 @@ def test_create_duplicated_device(
     session: Session,
     mock_os_data: dict,
     mock_vendor_data: dict,
-    client_authenticated: TestClient
-):
+    client_authenticated: TestClient,
+) -> None:
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -114,8 +114,8 @@ def test_create_incomplete_device(
     session: Session,
     mock_os_data: dict,
     mock_vendor_data: dict,
-    client_authenticated: TestClient
-):
+    client_authenticated: TestClient,
+) -> None:
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -135,8 +135,8 @@ def test_create_device_with_non_existing_folder(
     session: Session,
     mock_os_data: dict,
     mock_vendor_data: dict,
-    client_authenticated: TestClient
-):
+    client_authenticated: TestClient,
+) -> None:
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -154,7 +154,7 @@ def test_create_device_with_non_existing_folder(
     assert response.json()["detail"] == FolderErrorCode.FOLDER_NOT_FOUND
 
 
-def test_update_device(session: Session, client_authenticated: TestClient):
+def test_update_device(session: Session, client_authenticated: TestClient) -> None:
     # Device with id=1 already exists in the session. See: tests/database.py
     device_id = 1
 
@@ -175,7 +175,9 @@ def test_update_device(session: Session, client_authenticated: TestClient):
     assert data["folder_id"] == 1
 
 
-def test_update_non_existent_device(session: Session, client_authenticated: TestClient):
+def test_update_non_existent_device(
+    session: Session, client_authenticated: TestClient
+) -> None:
     device_id = 5
 
     response = client_authenticated.patch(
@@ -187,7 +189,7 @@ def test_update_non_existent_device(session: Session, client_authenticated: Test
 
 def test_update_non_existent_device_attrs(
     session: Session, client_authenticated: TestClient
-):
+) -> None:
     device_id = 1
 
     response = client_authenticated.patch(
@@ -196,7 +198,7 @@ def test_update_non_existent_device_attrs(
     assert response.status_code == 422, status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_delete_device(session: Session, client_authenticated: TestClient):
+def test_delete_device(session: Session, client_authenticated: TestClient) -> None:
     device_id = 1  # Device with id=1 already exists in the session
 
     response = client_authenticated.delete(f"/devices/{device_id}")
@@ -206,7 +208,9 @@ def test_delete_device(session: Session, client_authenticated: TestClient):
     assert data["id"] == device_id
 
 
-def test_delete_non_existent_device(session: Session, client_authenticated: TestClient):
+def test_delete_non_existent_device(
+    session: Session, client_authenticated: TestClient
+) -> None:
     device_id = 5
 
     response = client_authenticated.delete(f"/devices/{device_id}")

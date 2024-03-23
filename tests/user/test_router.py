@@ -12,13 +12,13 @@ from tests.database import (
 )
 
 
-def test_read_users(session: Session, client_authenticated: TestClient):
+def test_read_users(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/users/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 2
+    assert len(response.json()["items"]) == 4
 
 
-def test_read_user(session: Session, client_authenticated: TestClient):
+def test_read_user(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post(
         "/auth/register",
         json={
@@ -39,13 +39,15 @@ def test_read_user(session: Session, client_authenticated: TestClient):
     assert data["email"] == "test-user@email.com"
 
 
-def test_read_non_existent_user(session: Session, client_authenticated: TestClient):
+def test_read_non_existent_user(
+    session: Session, client_authenticated: TestClient
+) -> None:
     user_id = 5
     response = client_authenticated.get(f"/users/{user_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_create_user(session: Session, client_authenticated: TestClient):
+def test_create_user(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post(
         "/auth/register",
         json={
@@ -61,7 +63,9 @@ def test_create_user(session: Session, client_authenticated: TestClient):
     assert data["email"] == "test-user@email.com"
 
 
-def test_create_duplicated_user(session: Session, client_authenticated: TestClient):
+def test_create_duplicated_user(
+    session: Session, client_authenticated: TestClient
+) -> None:
     response = client_authenticated.post(
         "/auth/register",
         json={
@@ -77,7 +81,7 @@ def test_create_duplicated_user(session: Session, client_authenticated: TestClie
 
 def test_create_user_with_invalid_password(
     session: Session, client_authenticated: TestClient
-):
+) -> None:
     response = client_authenticated.post(
         "/auth/register",
         json={
@@ -103,7 +107,7 @@ def test_create_user_with_invalid_password(
     assert response.json()["detail"] == ErrorCode.USER_INVALID_PASSWORD
 
 
-def test_update_user(session: Session, client_authenticated: TestClient):
+def test_update_user(session: Session, client_authenticated: TestClient) -> None:
     # user with id=1 already exists in the session. See: tests/database.py
     user_id = 1
 
@@ -119,7 +123,7 @@ def test_update_user(session: Session, client_authenticated: TestClient):
 
 def test_update_user_invalid_password(
     session: Session, client_authenticated: TestClient
-):
+) -> None:
     # user with id=1 already exists in the session. See: tests/database.py
     user_id = 1
 
@@ -134,7 +138,7 @@ def test_update_user_invalid_password(
 
 def test_update_user_with_email_taken(
     session: Session, client_authenticated: TestClient
-):
+) -> None:
     # user with id=1 already exists in the session. See: tests/database.py
     user_id = 1
 
@@ -147,7 +151,9 @@ def test_update_user_with_email_taken(
     assert response.json()["detail"] == ErrorCode.USER_EMAIL_TAKEN
 
 
-def test_update_non_existent_user(session: Session, client_authenticated: TestClient):
+def test_update_non_existent_user(
+    session: Session, client_authenticated: TestClient
+) -> None:
     user_id = 5
 
     response = client_authenticated.patch(
@@ -173,7 +179,7 @@ def test_update_non_existent_user_attrs(
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_delete_user(session: Session, client_authenticated: TestClient):
+def test_delete_user(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post(
         "/auth/register",
         json={
@@ -194,7 +200,9 @@ def test_delete_user(session: Session, client_authenticated: TestClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_non_existent_user(session: Session, client_authenticated: TestClient):
+def test_delete_non_existent_user(
+    session: Session, client_authenticated: TestClient
+) -> None:
     user_id = 5
     response = client_authenticated.delete(f"/users/{user_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND

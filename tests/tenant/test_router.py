@@ -12,14 +12,14 @@ from tests.database import (
 )
 
 
-def test_read_tenants(session: Session, client_authenticated: TestClient):
+def test_read_tenants(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/tenants/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 1
+    assert len(response.json()) == 2
 
 
-def test_read_tenant(session: Session, client_authenticated: TestClient):
-    response = client_authenticated.post("/tenants/", json={"name": "tenant2"})
+def test_read_tenant(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post("/tenants/", json={"name": "tenant3"})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     tenant_id = data["id"]
@@ -28,26 +28,30 @@ def test_read_tenant(session: Session, client_authenticated: TestClient):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["id"] == tenant_id
-    assert data["name"] == "tenant2"
+    assert data["name"] == "tenant3"
     assert len(data["folders"]) == 0
 
 
-def test_read_non_existent_tenant(session: Session, client_authenticated: TestClient):
+def test_read_non_existent_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     tenant_id = 5
     response = client_authenticated.get(f"/tenants/{tenant_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_create_tenant(session: Session, client_authenticated: TestClient):
-    response = client_authenticated.post("/tenants/", json={"name": "tenant2"})
+def test_create_tenant(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post("/tenants/", json={"name": "tenant3"})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
-    assert data["name"] == "tenant2"
+    assert data["name"] == "tenant3"
     assert len(data["folders"]) == 0
 
 
-def test_create_tenant_with_folder(session: Session, client_authenticated: TestClient):
+def test_create_tenant_with_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
     folder_id = 2
     response = client_authenticated.get(f"/folders/{folder_id}")
     folder_data = response.json()
@@ -58,7 +62,9 @@ def test_create_tenant_with_folder(session: Session, client_authenticated: TestC
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_create_duplicated_tenant(session: Session, client_authenticated: TestClient):
+def test_create_duplicated_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     response = client_authenticated.post(
         "/tenants/", json={"name": "tenant1"}
     )  # "tenant1" was created in session, see: tests/database.py
@@ -66,13 +72,15 @@ def test_create_duplicated_tenant(session: Session, client_authenticated: TestCl
     assert response.json()["detail"] == ErrorCode.TENANT_NAME_TAKEN
 
 
-def test_create_incomplete_tenant(session: Session, client_authenticated: TestClient):
+def test_create_incomplete_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     # attempting to create a new tenant without a "name" value
     response = client_authenticated.post("/tenants/", json={"groups": []})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_update_tenant(session: Session, client_authenticated: TestClient):
+def test_update_tenant(session: Session, client_authenticated: TestClient) -> None:
     # Tenant with id=1 already exists in the session. See: tests/database.py
     tenant_id = 1
 
@@ -84,10 +92,12 @@ def test_update_tenant(session: Session, client_authenticated: TestClient):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "tenant1-updated"
-    assert len(data["folders"]) == 2
+    assert len(data["folders"]) == 3
 
 
-def test_update_non_existent_tenant(session: Session, client_authenticated: TestClient):
+def test_update_non_existent_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     tenant_id = 5
 
     response = client_authenticated.patch(
@@ -97,7 +107,9 @@ def test_update_non_existent_tenant(session: Session, client_authenticated: Test
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_non_existent_tenant_attrs(session: Session, client_authenticated: TestClient):
+def test_update_non_existent_tenant_attrs(
+    session: Session, client_authenticated: TestClient
+) -> None:
     tenant_id = 1
     response = client_authenticated.patch(
         f"/tenants/{tenant_id}",
@@ -110,7 +122,7 @@ def test_update_non_existent_tenant_attrs(session: Session, client_authenticated
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_delete_tenant(session: Session, client_authenticated: TestClient):
+def test_delete_tenant(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post("/tenants/", json={"name": "tenant5"})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -123,7 +135,9 @@ def test_delete_tenant(session: Session, client_authenticated: TestClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_non_existent_tenant(session: Session, client_authenticated: TestClient):
+def test_delete_non_existent_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     tenant_id = 5
     response = client_authenticated.delete(f"/tenants/{tenant_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND

@@ -59,7 +59,7 @@ def test_get_tenant_by_name(session: Session) -> None:
     tenant = get_tenant_by_name(session, tenant_name="tenant1")
     assert tenant.name == "tenant1"
     assert tenant.id == 1
-    assert len(tenant.folders) == 2  # see tests/database.py
+    assert len(tenant.folders) == 3  # see tests/database.py
 
 
 def test_get_tenant_with_invalid_name(session: Session) -> None:
@@ -70,7 +70,7 @@ def test_get_tenant_with_invalid_name(session: Session) -> None:
 def test_get_tenants(session: Session) -> None:
     # a tenant was created in tests/database.py
     tenants = get_tenants(session)
-    assert len(tenants) == 1
+    assert len(tenants) == 2
 
 
 def test_update_tenant(session: Session) -> None:

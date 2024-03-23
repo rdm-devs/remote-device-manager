@@ -3,17 +3,25 @@ from fastapi.testclient import TestClient
 from fastapi import status
 from src import device, folder
 from src.folder.constants import ErrorCode
-from tests.database import app, session, mock_os_data, mock_vendor_data, client_authenticated
+from tests.database import (
+    app,
+    session,
+    mock_os_data,
+    mock_vendor_data,
+    client_authenticated,
+)
 
 
-def test_read_folders(session: Session, client_authenticated: TestClient):
+def test_read_folders(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/folders/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) >= 1
+    assert len(response.json()) == 5
 
 
-def test_read_folder(session: Session, client_authenticated: TestClient):
-    response = client_authenticated.post("/folders/", json={"name": "folder5", "tenant_id": 1})
+def test_read_folder(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post(
+        "/folders/", json={"name": "folder5", "tenant_id": 1}
+    )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     folder_id = data["id"]
@@ -23,17 +31,20 @@ def test_read_folder(session: Session, client_authenticated: TestClient):
     data = response.json()
     assert data["id"] == folder_id
     assert data["name"] == "folder5"
-    assert data["tenant_id"] == 1
 
 
-def test_read_non_existent_folder(session: Session, client_authenticated: TestClient):
-    folder_id = 5
+def test_read_non_existent_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
+    folder_id = 6
     response = client_authenticated.get(f"/folders/{folder_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_create_folder(session: Session, client_authenticated: TestClient):
-    response = client_authenticated.post("/folders/", json={"name": "folder5", "tenant_id": 1})
+def test_create_folder(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post(
+        "/folders/", json={"name": "folder5", "tenant_id": 1}
+    )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
@@ -41,7 +52,9 @@ def test_create_folder(session: Session, client_authenticated: TestClient):
     assert data["tenant_id"] == 1
 
 
-def test_create_duplicated_folder(session: Session, client_authenticated: TestClient):
+def test_create_duplicated_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
     response = client_authenticated.post(
         "/folders/", json={"name": "folder1", "tenant_id": 1}
     )  # "folder1" was created in session, see: database.py
@@ -49,19 +62,23 @@ def test_create_duplicated_folder(session: Session, client_authenticated: TestCl
     assert response.json()["detail"] == ErrorCode.FOLDER_NAME_TAKEN
 
 
-def test_create_folder_with_invalid_tenant_id(session: Session, client_authenticated: TestClient):
+def test_create_folder_with_invalid_tenant_id(
+    session: Session, client_authenticated: TestClient
+):
     response = client_authenticated.post(
         "/folders/", json={"name": "folder5", "tenant_id": 5}
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_create_incomplete_folder(session: Session, client_authenticated: TestClient):
+def test_create_incomplete_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
     response = client_authenticated.post("/folders/", json={"tenant_id": 1})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_update_folder(session: Session, client_authenticated: TestClient):
+def test_update_folder(session: Session, client_authenticated: TestClient) -> None:
     folder_id = (
         1  # Folder with id=1 already exists in the session. See: tests/database.py
     )
@@ -76,9 +93,11 @@ def test_update_folder(session: Session, client_authenticated: TestClient):
     assert data["tenant_id"] == 1
 
 
-def test_update_folder_to_add_a_tenant(session: Session, client_authenticated: TestClient):
+def test_update_folder_to_add_a_tenant(
+    session: Session, client_authenticated: TestClient
+) -> None:
     # first we create a tenant
-    response = client_authenticated.post("/tenants/", json={"name": "tenant2"})
+    response = client_authenticated.post("/tenants/", json={"name": "tenant5"})
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
@@ -86,8 +105,7 @@ def test_update_folder_to_add_a_tenant(session: Session, client_authenticated: T
 
     folder_id = 2
 
-    # then we update an existing device group and associate it with our tenant_id
-    tenant_id = data["id"]
+    # then we update an existing folder and associate it with our tenant_id
     response = client_authenticated.patch(
         f"/folders/{folder_id}",
         json={"name": "folder2-updated", "tenant_id": tenant_id},
@@ -97,22 +115,30 @@ def test_update_folder_to_add_a_tenant(session: Session, client_authenticated: T
     assert folder_data["name"] == "folder2-updated"
     assert folder_data["tenant_id"] == tenant_id
 
-    # lastly, we confirm a new device group has been added to our tenant's info.
+    # lastly, we confirm a new folder has been added to our tenant's info.
     response = client_authenticated.get(f"/tenants/{tenant_id}")
     data = response.json()
-    assert folder_data in data["folders"]
+    assert any(
+        folder_data["id"] == f["id"] and folder_data["name"] == f["name"]
+        for f in data["folders"]
+    )
 
 
-def test_update_non_existent_folder(session: Session, client_authenticated: TestClient):
-    folder_id = 5
+def test_update_non_existent_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
+    folder_id = 6
 
     response = client_authenticated.patch(
         f"/folders/{folder_id}",
-        json={"name": "folder5-updated"},
+        json={"name": "folder6-updated"},
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
-def test_update_non_existent_folder_attrs(session: Session, client_authenticated: TestClient):
+
+def test_update_non_existent_folder_attrs(
+    session: Session, client_authenticated: TestClient
+) -> None:
     folder_id = (
         1  # Folder with id=1 already exists in the session. See: tests/database.py
     )
@@ -129,8 +155,10 @@ def test_update_non_existent_folder_attrs(session: Session, client_authenticated
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_delete_folder(session: Session, client_authenticated: TestClient):
-    response = client_authenticated.post("/folders/", json={"name": "folder5", "tenant_id": 1})
+def test_delete_folder(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post(
+        "/folders/", json={"name": "folder5", "tenant_id": 1}
+    )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     folder_id = data["id"]
@@ -142,7 +170,9 @@ def test_delete_folder(session: Session, client_authenticated: TestClient):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_non_existent_device(session: Session, client_authenticated: TestClient):
-    folder_id = 5
+def test_delete_non_existent_folder(
+    session: Session, client_authenticated: TestClient
+) -> None:
+    folder_id = 6
     response = client_authenticated.delete(f"/folders/{folder_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND

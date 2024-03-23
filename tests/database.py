@@ -17,6 +17,7 @@ from src.user.models import User
 from src.tenant.models import Tenant
 from src.entity.models import Entity
 from src.role.models import Role
+from src.tag.models import Tag
 
 load_dotenv()
 
@@ -72,16 +73,16 @@ def session(
         Role(id=2, name="owner"),
         Role(id=3, name="user"),
     ]
-    db_entities = [Entity() for i in range(13)]
+    db_entities = [Entity() for i in range(21)]
 
-    db_tenant = Tenant(id=1, name="tenant1", entity_id=0)
-    db_folder = Folder(id=1, name="folder1", tenant_id=1, entity_id=1)
-    db_folder_2 = Folder(id=2, name="folder2", tenant_id=1, entity_id=2)
-    db_device = Device(
+    db_tenant_1 = Tenant(id=1, name="tenant1", entity_id=1)
+    db_folder_1 = Folder(id=1, name="folder1", tenant_id=1, entity_id=2)
+    db_folder_2 = Folder(id=2, name="folder2", tenant_id=1, entity_id=3)
+    db_device_1 = Device(
         id=1,
         name="dev1",
         folder_id=1,
-        entity_id=3,
+        entity_id=4,
         mac_address="61:68:0C:1E:93:8F",
         ip_address="96.119.132.44",
         **mock_os_data,
@@ -91,19 +92,19 @@ def session(
         id=2,
         name="dev2",
         folder_id=1,
-        entity_id=4,
+        entity_id=5,
         mac_address="61:68:0C:1E:93:9F",
         ip_address="96.119.132.45",
         **mock_os_data,
         **mock_vendor_data
     )
 
-    db_user = User(
+    db_user_1 = User(
         id=1,
         username="test-user-1",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user@sia.com",
-        entity_id=5,
+        entity_id=6,
         role_id=1,
     )
 
@@ -112,7 +113,7 @@ def session(
         username="test-user-2",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-2@sia.com",
-        entity_id=6,
+        entity_id=7,
         role_id=2,
     )
 
@@ -121,7 +122,7 @@ def session(
         username="test-user-3",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-3@sia.com",
-        entity_id=7,
+        entity_id=8,
         role_id=2,
     )
 
@@ -130,39 +131,75 @@ def session(
         username="test-user-4",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-4@sia.com",
-        entity_id=8,
+        entity_id=9,
         role_id=3,
     )
 
-    db_subfolder = Folder(id=3, name="subfolder1", tenant_id=1, entity_id=9, parent_id=1)
-
-    db_tenant_2 = Tenant(id=2, name="tenant2", entity_id=10)
-    db_folder_3 = Folder(
-        id=4, name="folder3", tenant_id=2, entity_id=11
+    db_subfolder_1 = Folder(
+        id=3, name="subfolder1", tenant_id=1, entity_id=10, parent_id=1
     )
-    db_subfolder_2 = Folder(id=5, name="subfolder2", tenant_id=2, entity_id=12, parent_id=4)
+
+    db_tenant_2 = Tenant(id=2, name="tenant2", entity_id=11)
+    db_folder_3 = Folder(id=4, name="folder3", tenant_id=2, entity_id=12)
+    db_subfolder_2 = Folder(
+        id=5, name="subfolder2", tenant_id=2, entity_id=13, parent_id=4
+    )
 
     db_session.add_all(db_roles)
     db_session.add_all(db_entities)
     db_session.add_all(
         [
-            db_tenant,
-            db_folder,
-            db_subfolder,
+            db_tenant_1,
+            db_folder_1,
+            db_subfolder_1,
             db_folder_2,
-            db_device,
+            db_device_1,
             db_device_2,
-            db_user,
+            db_user_1,
             db_user_2,
             db_user_3,
             db_user_4,
             db_tenant_2,
             db_folder_3,
-            db_subfolder_2
+            db_subfolder_2,
         ]
     )
-    db_user_2.tenants.append(db_tenant)
+    db_user_2.tenants.append(db_tenant_1)
     db_user_3.tenants.append(db_tenant_2)
+    db_session.commit()
+
+    # para testear tags, tag_1 debe crearse antes.
+    tag_1 = Tag(name="tag-tenant-1", tenant_id=1)
+    tag_1.entities.append(db_user_2.entity)
+    tag_1.entities.append(db_tenant_1.entity)
+    tag_1.entities.append(db_device_1.entity)
+    tag_1.entities.append(db_folder_1.entity)
+
+    tag_2 = Tag(name="tag-user-1", tenant_id=1)
+    tag_2.entities.append(db_user_1.entity)
+
+    tag_3 = Tag(name="tag-folder-1", tenant_id=1)
+    tag_3.entities.append(db_folder_1.entity)
+
+    tag_4 = Tag(name="tag-dev-1", tenant_id=1)
+    tag_4.entities.append(db_device_1.entity)
+
+    tag_5 = Tag(name="tag-subfolder-1", tenant_id=1)
+    tag_5.entities.append(db_subfolder_1.entity)
+
+    tag_6 = Tag(name="tag-tenant-2", tenant_id=2)
+    tag_6.entities.append(db_user_3.entity)
+    tag_6.entities.append(db_tenant_2.entity)
+    tag_6.entities.append(db_device_2.entity)
+    tag_6.entities.append(db_folder_2.entity)
+
+    tag_7 = Tag(name="tag-subfolder-2", tenant_id=2)
+    tag_7.entities.append(db_subfolder_2.entity)
+
+    tag_8 = Tag(name="tag-user-2", tenant_id=1)
+    tag_8.entities.append(db_user_2.entity)
+
+    db_session.add_all([tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8])
     db_session.commit()
 
     yield db_session
@@ -185,13 +222,15 @@ def client_fixture(session: Session):
 
 
 @pytest.fixture
-def client_authenticated():
+def client_authenticated(session: Session):
     """
     Returns an API client which skips the authentication
     """
 
     def skip_auth():
-        pass
+        # returning an admin user
+        user = session.query(User).filter(User.role_id == 1).first()
+        return user
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_active_user] = skip_auth

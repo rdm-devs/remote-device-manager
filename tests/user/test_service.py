@@ -99,8 +99,9 @@ def test_get_user_with_invalid_email(session: Session) -> None:
 
 def test_get_users(session: Session) -> None:
     # Two users were created in tests/database.py
-    users = get_users(session)
-    assert len(users) == 2
+    query_users = get_users(session)
+    users = query_users.all() # need to resolve query as in the route we use it for pagination but do not resolve it ourselves
+    assert len(users) == 4
 
 
 def test_update_user(session: Session) -> None:
@@ -197,6 +198,6 @@ def test_delete_user_with_invalid_id(session: Session) -> None:
     )
     db_user = get_user(session, user.id)
 
-    db_user.id = 5
+    db_user.id = 6
     with pytest.raises(UserNotFoundError):
         delete_user(session, db_user=db_user)
