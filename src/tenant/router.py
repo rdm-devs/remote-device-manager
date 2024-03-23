@@ -41,7 +41,7 @@ def read_tenants(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_admin_or_owner_role),
 ):
     return service.get_tenants(db, skip=skip, limit=limit)
 
