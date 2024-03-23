@@ -22,6 +22,9 @@ class User(Base, AuditMixin):
         default=func.now(), onupdate=func.now()
     )
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
+    entity: Mapped["src.entity.models.Entity"] = relationship(
+        "src.entity.models.Entity", foreign_keys=entity_id
+    )
     role_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Role.id))
     tenants: Mapped[List["src.tenant.models.Tenant"]] = relationship(
         secondary=tenants_and_users_table, back_populates="users"
