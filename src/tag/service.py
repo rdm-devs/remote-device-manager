@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import Union
-from src.auth.dependencies import has_role
+from src.auth.dependencies import has_role, has_admin_role
 from src.user.schemas import User
 from src.user import models as user_models
 from src.tenant import models as tenant_models
@@ -30,7 +30,7 @@ def get_entity_id(db, model, obj_id):
     return entity_id[0] if entity_id else None
 
 
-def get_tags(
+async def get_tags(
     db: Session,
     user: User,
     name: Union[str, None] = "",
@@ -39,15 +39,30 @@ def get_tags(
     folder_id: Union[int, None] = None,
     device_id: Union[int, None] = None,
 ):
-    filters = []
 
+    # if user is not admin, we query only tags created for tenants owned by the current user
+    user_is_admin = await has_role("admin", db, user) is not None
+    tenant_ids = db.query(tenant_models.tenants_and_users_table.c.tenant_id)
+
+    if not user_is_admin:
+        tenant_ids = tenant_ids.filter(
+            tenant_models.tenants_and_users_table.c.user_id == user.id
+        )
+
+    tenant_ids = [t[0] for t in tenant_ids.all()]
+    tags_from_tenants = db.query(models.Tag).filter(
+        models.Tag.tenant_id.in_(tenant_ids)
+    )
+
+    entity_ids = []
     user_entity_id = get_entity_id(db, user_models.User, user_id)
-    tenant_entity_id = get_entity_id(db, tenant_models.Tenant, tenant_id)
     folder_entity_id = get_entity_id(db, folder_models.Folder, folder_id)
     device_entity_id = get_entity_id(db, device_models.Device, device_id)
 
-    entity_ids = [user_entity_id, tenant_entity_id, folder_entity_id, device_entity_id]
-    # adding filters conditionally
+    entity_ids.extend([user_entity_id, folder_entity_id, device_entity_id])
+
+    # if extra filters are sent, we apply them conditionally
+    filters = []
     if entity_ids and any(entity_ids):
         filters.append(models.entities_and_tags_table.columns.entity_id.in_(entity_ids))
 
@@ -55,7 +70,7 @@ def get_tags(
         name = f"%{name}%"
         filters.append(models.Tag.name.like(name))
 
-    return db.query(models.Tag).join(models.entities_and_tags_table).filter(*filters)
+    return tags_from_tenants.join(models.entities_and_tags_table).filter(*filters)
 
 
 def create_tag(db: Session, tag: schemas.TagCreate):
