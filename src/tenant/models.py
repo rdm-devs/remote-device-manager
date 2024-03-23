@@ -29,3 +29,8 @@ class Tenant(Base, AuditMixin):
     users: Mapped[List["src.user.models.User"]] = relationship(
         secondary=tenants_and_users_table, back_populates="tenants"
     )
+    entity: Mapped[Entity] = relationship(Entity)
+
+    @staticmethod
+    def tags(cls):
+        return cls.entity.tags

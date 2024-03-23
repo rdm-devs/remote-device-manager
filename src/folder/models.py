@@ -6,13 +6,15 @@ from typing import Optional, List
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
-
 class Folder(Base, AuditMixin):
     __tablename__ = "folder"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(index=True)
     entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id"))
+    entity: Mapped["src.entity.models.Entity"] = relationship(
+        "src.entity.models.Entity"
+    )
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))
     tenant: Mapped["Tenant"] = relationship(
         "Tenant", back_populates="folders"
@@ -22,3 +24,7 @@ class Folder(Base, AuditMixin):
     )
     parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id"), nullable=True)
     subfolders = relationship("Folder")
+
+    @staticmethod
+    def tags(cls):
+        return cls.entity.tags

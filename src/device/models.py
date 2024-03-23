@@ -23,6 +23,7 @@ class Device(Base, AuditMixin):
     pass_rust: Mapped[Optional[str]]
     last_screenshot_path: Mapped[Optional[str]]
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
+    entity: Mapped[Entity] = relationship(Entity)
 
     # device metadata attrs:
     mac_address: Mapped[Optional[str]] = mapped_column(String(17))
@@ -36,3 +37,7 @@ class Device(Base, AuditMixin):
     vendor_model: Mapped[str] = mapped_column()
     vendor_cores: Mapped[int] = mapped_column()
     vendor_ram_gb: Mapped[int] = mapped_column()
+
+    @staticmethod
+    def tags(cls):
+        return cls.entity.tags
