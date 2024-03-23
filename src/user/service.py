@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
+from src.role import models as role_models
 from src.tenant.schemas import TenantList
 from src.tenant.models import Tenant, tenants_and_users_table
 from . import schemas, models, exceptions
@@ -69,7 +70,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_invalid_password(db, password=user.password)
     if user.role_id:
         check_role_exists(db, role_id=user.role_id)
-
+    else:
+        default_role = db.query(role_models.Role).filter(role_models.Role.name == "user").first() # defaul role
+        user.role_id = default_role.id
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
 
