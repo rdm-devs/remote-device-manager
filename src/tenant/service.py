@@ -1,24 +1,14 @@
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import has_access_to_tenant
-from src.tenant.exceptions import TenantNameTakenError, TenantNotFoundError
 from src.exceptions import PermissionDenied
 from src.tag import service as tags_service
+from src.tag import models as tag_models
 from src.user.schemas import User
-from . import schemas, models
-from ..entity.service import create_entity_auto
-
-
-def check_tenant_exists(db: Session, tenant_id: int):
-    tenant = db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
-    if not tenant:
-        raise TenantNotFoundError()
-
-
-def check_tenant_name_taken(db: Session, tenant_name: str):
-    tenant = db.query(models.Tenant).filter(models.Tenant.name == tenant_name).first()
-    if tenant:
-        raise TenantNameTakenError()
+from src.tenant import schemas, models
+from src.tenant import exceptions
+from src.tenant.utils import check_tenant_exists, check_tenant_name_taken
+from src.entity.service import create_entity_auto
 
 
 def get_tenant(db: Session, tenant_id: int):
@@ -35,7 +25,7 @@ def get_tenant_by_name(db: Session, tenant_name: str):
         db.query(models.Tenant).filter(models.Tenant.name == tenant_name).first()
     )
     if not db_tenant:
-        raise TenantNotFoundError()
+        raise exceptions.TenantNotFound()
     return db_tenant
 
 
@@ -80,20 +70,15 @@ def delete_tenant(db: Session, db_tenant: schemas.Tenant):
 async def get_tenant_tags(
     db: Session,
     user: User,
-    name: Union[str, None] = "",
     tenant_id: Union[int, None] = None,
-    folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
 ):
     check_tenant_exists(db, tenant_id)
     if await has_access_to_tenant(tenant_id, db, user):
-        return tags_service.get_tags(
-            db,
-            user,
-            tenant_id=tenant_id,
-            folder_id=folder_id,
-            device_id=device_id,
-            name=name,
+        return (
+            db.query(tag_models.Tag)
+            .join(models.Tenant)
+            .filter(models.Tenant.id == tenant_id)
+            .filter(tag_models.Tag.tenant_id == tenant_id)
         )
     else:
         raise PermissionDenied()
