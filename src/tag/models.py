@@ -24,3 +24,4 @@ class Tag(Base, AuditMixin):
         secondary=entities_and_tags_table, back_populates="tags"
     )
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))
+    tenant: Mapped["src.tenant.models.Tenant"] = relationship("src.tenant.models.Tenant", back_populates="tags")
