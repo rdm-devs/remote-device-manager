@@ -12,31 +12,31 @@ from ..entity.service import create_entity_auto
 def check_user_exists(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
-        raise exceptions.UserNotFoundError()
+        raise exceptions.UserNotFound()
 
 
 def check_username_exists(db: Session, username: str, user_id: Optional[int] = None):
     user = db.query(models.User).filter(models.User.username == username).first()
     if user_id and user:
         if user_id != user.id:
-            raise exceptions.UsernameTakenError()
+            raise exceptions.UsernameTaken()
     if user:
-        raise exceptions.UsernameTakenError()
+        raise exceptions.UsernameTaken()
 
 
 def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user_id and user:
         if user_id != user.id:
-            raise exceptions.UserEmailTakenError()
+            raise exceptions.UserEmailTaken()
     if user:
-        raise exceptions.UserEmailTakenError()
+        raise exceptions.UserEmailTaken()
 
 
 def check_invalid_password(db: Session, password: str):
     valid = len(password.strip()) >= 8
     if not valid:
-        raise exceptions.UserInvalidPasswordError()
+        raise exceptions.UserInvalidPassword()
 
 
 def get_user(db: Session, user_id: int):
@@ -47,7 +47,7 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
-        raise exceptions.UserNotFoundError()
+        raise exceptions.UserNotFound()
     return user
 
 
@@ -71,7 +71,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     if user.role_id:
         check_role_exists(db, role_id=user.role_id)
     else:
-        default_role = db.query(role_models.Role).filter(role_models.Role.name == "user").first() # defaul role
+        default_role = (
+            db.query(role_models.Role).filter(role_models.Role.name == "user").first()
+        )  # defaul role
         user.role_id = default_role.id
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
