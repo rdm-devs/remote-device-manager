@@ -75,20 +75,14 @@ def delete_tenant(
 @router.get("/{tenant_id}/tags", response_model=Page[tags_schemas.Tag])
 async def read_tags(
     tenant_id: int,
-    folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
-    name: Union[str, None] = None,
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
-
+    #TODO: make it work with filters (folder_id, device_id, tag name) 
     return paginate(
         await service.get_tenant_tags(
             db,
             user,
-            tenant_id=tenant_id,
-            folder_id=folder_id,
-            device_id=device_id,
-            name=name,
+            tenant_id=tenant_id
         )
     )
