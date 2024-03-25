@@ -3,19 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from src.exceptions import PermissionDenied
 from src.tenant.service import check_tenant_exists
-from src.folder.exceptions import (
-    FolderNameTakenError,
-    FolderNotFoundError,
-    InvalidFolderAttrsError,
-)
-from . import schemas, models
-from ..entity.service import create_entity_auto
+from src.folder import exceptions, schemas, models
+from src.entity.service import create_entity_auto
 
 
 def check_folder_exist(db: Session, folder_id: int):
     db_folder = db.query(models.Folder).filter(models.Folder.id == folder_id).first()
     if not db_folder:
-        raise FolderNotFoundError()
+        raise exceptions.FolderNotFound()
 
 
 def check_folder_name_taken(db: Session, folder_name: str):
@@ -23,7 +18,7 @@ def check_folder_name_taken(db: Session, folder_name: str):
         db.query(models.Folder).filter(models.Folder.name == folder_name).first()
     )
     if device_name_taken:
-        raise FolderNameTakenError()
+        raise exceptions.FolderNameTaken()
 
 
 def create_folder(db: Session, folder: schemas.FolderCreate):
@@ -43,7 +38,7 @@ def create_folder(db: Session, folder: schemas.FolderCreate):
 def get_folder(db: Session, folder_id: int):
     db_folder = db.query(models.Folder).filter(models.Folder.id == folder_id).first()
     if db_folder is None:
-        raise FolderNotFoundError()
+        raise exceptions.FolderNotFound()
     return db_folder
 
 
@@ -59,7 +54,7 @@ def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:
 def get_folder_by_name(db: Session, folder_name: str):
     folder = db.query(models.Folder).filter(models.Folder.name == folder_name).first()
     if not folder:
-        raise FolderNotFoundError()
+        raise exceptions.FolderNotFound()
     return folder
 
 
@@ -124,7 +119,7 @@ def update_subfolder(
     # sanity check
     parent_folder = get_folder(db, parent_folder_id)
     if not subfolder.parent_id or subfolder.parent_id != parent_folder_id:
-        raise exceptions.SubfolderParentMismatchError()
+        raise exceptions.SubfolderParentMismatch()
     db_folder = update_folder(db, db_subfolder, subfolder)
     return db_folder
 
@@ -136,4 +131,4 @@ def delete_subfolder(db: Session, parent_folder_id: int, subfolder: schemas.Fold
         db_folder = delete_folder(db, subfolder)
         return db_folder
     else:
-        raise exceptions.SubfolderParentMismatchError()
+        raise exceptions.SubfolderParentMismatch()
