@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from src import folder
 from src.main import app
 from src.auth.dependencies import oauth2_scheme, get_current_active_user
+from src.auth import service as auth_service
+from src.auth import utils as auth_utils
 from src.database import get_db, Base
 from src.device.models import Device
 from src.folder.models import Folder
@@ -235,3 +237,33 @@ def client_authenticated(session: Session):
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_active_user] = skip_auth
     return TestClient(app)
+
+
+async def get_auth_tokens(session: Session, user: User):
+    refresh_token = await auth_service.create_refresh_token(session, user.id)
+    access_token = auth_utils.create_access_token(user)
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
+
+@pytest.fixture
+async def admin_auth_tokens(session: Session):
+    user = session.query(User).filter(User.role_id == 1).first()
+    return await get_auth_tokens(session, user)
+
+@pytest.fixture
+async def owner_2_auth_tokens(session: Session):
+    user = session.query(User).filter(User.role_id == 2, User.id == 2).first()
+    return await get_auth_tokens(session, user)
+
+
+@pytest.fixture
+async def owner_3_auth_tokens(session: Session):
+    user = session.query(User).filter(User.role_id == 2, User.id == 3).first()
+    return await get_auth_tokens(session, user)
+
+
+@pytest.fixture
+async def user_auth_tokens(session: Session):
+    user = session.query(User).filter(User.role_id == 3).first()
+    return await get_auth_tokens(session, user)

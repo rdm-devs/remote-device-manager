@@ -1,12 +1,12 @@
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
-from src.tenant.exceptions import TenantNotFoundError
+from src.tenant.exceptions import TenantNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
 
 from src.folder.exceptions import (
-    FolderNameTakenError,
-    FolderNotFoundError,
+    FolderNameTaken,
+    FolderNotFound,
 )
 from src.folder.service import (
     create_folder,
@@ -29,7 +29,7 @@ def test_create_folder(session: Session) -> None:
 
 
 def test_create_duplicated_folder(session: Session) -> None:
-    with pytest.raises(FolderNameTakenError):
+    with pytest.raises(FolderNameTaken):
         create_folder(session, FolderCreate(name="folder1", tenant_id=1))
 
 
@@ -39,7 +39,7 @@ def test_create_incomplete_folder(session: Session) -> None:
 
 
 def test_create_folder_with_invalid_tenant(session: Session) -> None:
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         create_folder(session, FolderCreate(name="folder5", tenant_id=5))
 
 
@@ -50,7 +50,7 @@ def test_get_folder(session: Session) -> None:
 
 
 def test_get_folder_with_invalid_id(session: Session) -> None:
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         get_folder(session, folder_id=6)
 
 
@@ -61,7 +61,7 @@ def test_get_folder_by_name(session: Session) -> None:
 
 
 def test_get_folder_with_invalid_name(session: Session) -> None:
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         get_folder_by_name(session, folder_name="folder5")
 
 
@@ -92,7 +92,7 @@ def test_update_folder_with_invalid_tenant(session: Session) -> None:
     )
     db_folder = get_folder(session, folder.id)
 
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         folder = update_folder(
             session,
             db_folder=db_folder,
@@ -106,7 +106,7 @@ def test_update_folder_with_invalid_id(session: Session) -> None:
     db_folder = get_folder(session, 1)
     db_folder.id = 6
 
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         update_folder(
             session,
             db_folder=db_folder,
@@ -128,7 +128,7 @@ def test_delete_folder(session: Session) -> None:
     )
     assert deleted_folder_id == folder_id
 
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         get_folder(session, folder.id)
 
 
@@ -136,5 +136,5 @@ def test_delete_folder_with_invalid_id(session: Session) -> None:
     db_folder = get_folder(session, 5)
 
     db_folder.id = 6 # this id must not exist
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         delete_folder(session, db_folder=db_folder)
