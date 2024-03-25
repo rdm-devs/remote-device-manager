@@ -2,9 +2,9 @@ from src.role.constants import ErrorCode
 from src.exceptions import NotFound, BadRequest
 
 
-class RoleNotFoundError(NotFound):
+class RoleNotFound(NotFound):
     DETAIL = ErrorCode.ROLE_NOT_FOUND
 
 
-class RoleNameTakenError(BadRequest):
+class RoleNameTaken(BadRequest):
     DETAIL = ErrorCode.ROLE_NAME_TAKEN
