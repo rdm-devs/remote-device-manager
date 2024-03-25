@@ -2,15 +2,15 @@ from src.auth.constants import ErrorCode
 from src.exceptions import BadRequest, NotAuthenticated
 
 
-class IncorrectUserOrPasswordError(BadRequest):
+class IncorrectUserOrPassword(BadRequest):
     DETAIL = ErrorCode.INCORRECT_USER_OR_PASSWORD
 
 
-class InactiveUserError(BadRequest):
+class InactiveUser(BadRequest):
     DETAIL = ErrorCode.INACTIVE_USER
 
 
-class InvalidCredentialsError(NotAuthenticated):
+class InvalidCredentials(NotAuthenticated):
     DETAIL = ErrorCode.AUTHENTICATION_REQUIRED
 
 
