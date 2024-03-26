@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
-from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
-from src.folder.exceptions import FolderNotFoundError
-from src.folder.service import check_folder_exist
 from src.folder import models as folder_models
-from . import schemas, models
-from ..entity.service import create_entity_auto
+from src.device import schemas, models, exceptions
+from src.folder.service import check_folder_exist
+from src.entity.service import create_entity_auto
 
 
 def check_device_name_taken(db: Session, device_name: str):
@@ -12,13 +10,13 @@ def check_device_name_taken(db: Session, device_name: str):
         db.query(models.Device).filter(models.Device.name == device_name).first()
     )
     if device_name_taken is not None:
-        raise DeviceNameTakenError()
+        raise exceptions.DeviceNameTaken()
 
 
 def get_device(db: Session, device_id: int):
     device = db.query(models.Device).filter(models.Device.id == device_id).first()
     if not device:
-        raise DeviceNotFoundError()
+        raise exceptions.DeviceNotFound()
     return device
 
 
@@ -39,7 +37,7 @@ def get_devices(db: Session):
 def get_device_by_name(db: Session, device_name: str):
     device = db.query(models.Device).filter(models.Device.name == device_name).first()
     if not device:
-        raise DeviceNotFoundError()
+        raise exceptions.DeviceNotFound()
     return device
 
 

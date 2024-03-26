@@ -10,14 +10,13 @@ from src.exceptions import PermissionDenied
 from src.database import get_db
 from src.user.schemas import User
 from src.user import service as user_service
-from src.auth import service
 from src.role import models as role_models
 from src.tenant import models as tenant_models
 from src.folder import models as folder_models
 from src.tag import models as tag_models
-from .schemas import TokenData
-from .exceptions import InactiveUserError, InvalidCredentialsError, RefreshTokenNotValid
-from .utils import get_user_by_username
+from src.auth import service, exceptions
+from src.auth.schemas import TokenData
+from src.auth.utils import get_user_by_username
 
 load_dotenv()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -33,19 +32,19 @@ async def get_current_user(
         )
         username: str = payload.get("sub")
         if username is None:
-            raise InvalidCredentialsError()
+            raise exceptions.InvalidCredentials()
         token_data = TokenData(username=username)
     except JWTError:
-        raise InvalidCredentialsError()
+        raise exceptions.InvalidCredentials()
     user = get_user_by_username(db, username=token_data.username)
     if user is None:
-        raise InvalidCredentialsError()
+        raise exceptions.InvalidCredentials()
     return user
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if current_user.disabled:
-        raise InactiveUserError()
+        raise exceptions.InactiveUser()
     return current_user
 
 
@@ -96,10 +95,10 @@ async def valid_refresh_token(
 ) -> Dict[str, Any]:
     db_refresh_token = await service.get_refresh_token(db, refresh_token)
     if not db_refresh_token:
-        raise RefreshTokenNotValid()
+        raise exceptions.RefreshTokenNotValid()
 
     if not _is_valid_refresh_token(db_refresh_token):
-        raise RefreshTokenNotValid()
+        raise exceptions.RefreshTokenNotValid()
 
     return db_refresh_token
 
@@ -110,7 +109,7 @@ async def valid_refresh_token_user(
 ) -> Dict[str, Any]:
     user = user_service.get_user(db, refresh_token.user_id)
     if not user:
-        raise RefreshTokenNotValid()
+        raise exceptions.RefreshTokenNotValid()
 
     return user
 
@@ -170,4 +169,3 @@ async def has_access_to_tag(
 
     if tags:
         return user
-

@@ -25,14 +25,14 @@ def get_password_hash(password):
 def get_user_by_username(db: Session, username: str):
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user:
-        raise exceptions.UserNotFoundError()
+        raise exceptions.UserNotFound()
     return user
 
 
 def authenticate_user(username: str, password: str, db: Session = Depends(get_db)):
     user = get_user_by_username(db, username)
     if not verify_password(password, user.hashed_password):
-        raise exceptions.IncorrectUserOrPasswordError()
+        raise exceptions.IncorrectUserOrPassword()
     return user
 
 

@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from tests.database import session, mock_os_data, mock_vendor_data
 
 from src.tenant.exceptions import (
-    TenantNameTakenError,
-    TenantNotFoundError,
+    TenantNameTaken,
+    TenantNotFound,
 )
 from src.tenant.service import (
     create_tenant,
@@ -30,7 +30,7 @@ def test_create_tenant(session: Session) -> None:
 
 
 def test_create_duplicated_tenant(session: Session) -> None:
-    with pytest.raises(TenantNameTakenError):
+    with pytest.raises(TenantNameTaken):
         create_tenant(session, TenantCreate(name="tenant1"))
 
 
@@ -52,7 +52,7 @@ def test_get_tenant(session: Session) -> None:
 
 def test_get_tenant_with_invalid_id(session: Session) -> None:
     tenant_id = 5
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         get_tenant(session, tenant_id)
 
 
@@ -64,7 +64,7 @@ def test_get_tenant_by_name(session: Session) -> None:
 
 
 def test_get_tenant_with_invalid_name(session: Session) -> None:
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         tenant = get_tenant_by_name(session, tenant_name="tenant5")
 
 
@@ -130,7 +130,7 @@ def test_update_tenant_with_invalid_id(session: Session) -> None:
     db_tenant = get_tenant(session, 1)
     db_tenant.id = 5
 
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         update_tenant(
             session,
             db_tenant=db_tenant,
@@ -146,7 +146,7 @@ def test_delete_tenant(session: Session) -> None:
     deleted_tenant_id = delete_tenant(session, db_tenant=db_tenant)
     assert deleted_tenant_id == tenant_id
 
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         get_tenant(session, tenant.id)
 
 
@@ -155,5 +155,5 @@ def test_delete_tenant_with_invalid_id(session: Session) -> None:
     db_tenant = get_tenant(session, tenant.id)
 
     db_tenant.id = 5
-    with pytest.raises(TenantNotFoundError):
+    with pytest.raises(TenantNotFound):
         delete_tenant(session, db_tenant=db_tenant)

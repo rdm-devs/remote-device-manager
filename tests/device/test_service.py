@@ -1,8 +1,8 @@
 from pydantic import ValidationError
 import pytest
 from sqlalchemy.orm import Session
-from src.device.exceptions import DeviceNameTakenError, DeviceNotFoundError
-from src.folder.exceptions import FolderNotFoundError
+from src.device.exceptions import DeviceNameTaken, DeviceNotFound
+from src.folder.exceptions import FolderNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.device.service import (
     create_device,
@@ -41,7 +41,7 @@ def test_create_device(
 def test_create_duplicated_device(
     session: Session, mock_os_data: dict, mock_vendor_data: dict
 ) -> None:
-    with pytest.raises(DeviceNameTakenError):
+    with pytest.raises(DeviceNameTaken):
         device = create_device(
             session,
             DeviceCreate(
@@ -69,7 +69,7 @@ def test_get_device(session: Session) -> None:
 
 
 def test_get_device_with_invalid_id(session: Session) -> None:
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFound):
         device = get_device(session, device_id=5)
 
 
@@ -80,7 +80,7 @@ def test_get_device_by_name(session: Session) -> None:
 
 
 def test_get_device_with_invalid_name(session: Session) -> None:
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFound):
         device = get_device_by_name(session, device_name="dev5")
 
 
@@ -135,7 +135,7 @@ def test_update_device_with_invalid_data(
     db_device = get_device(session, device.id)
 
     folder_id = 6 # this folder id must not exist
-    with pytest.raises(FolderNotFoundError):
+    with pytest.raises(FolderNotFound):
         device = update_device(
             session,
             db_device=db_device,
@@ -147,7 +147,7 @@ def test_update_device_with_invalid_id(session: Session) -> None:
     db_device = get_device(session, 1)
     db_device.id = 5
 
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFound):
         device = update_device(
             session,
             db_device=db_device,
@@ -177,7 +177,7 @@ def test_delete_device(
     deleted_device_id = delete_device(session, db_device=db_device)
     assert deleted_device_id == device_id
 
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFound):
         get_device(session, device.id)
 
 
@@ -200,5 +200,5 @@ def test_delete_device_with_invalid_id(
     db_device = get_device(session, device.id)
 
     db_device.id = 5
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFound):
         deleted_device_id = delete_device(session, db_device=db_device)

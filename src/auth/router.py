@@ -8,14 +8,17 @@ from src.database import get_db
 from src.user.schemas import User, UserCreate
 from src.user.service import check_email_exists, check_username_exists, create_user
 from typing import Any, Dict
-from .exceptions import IncorrectUserOrPasswordError
-from .utils import authenticate_user, create_access_token, get_refresh_token_settings
-from .dependencies import (
+from src.auth.utils import (
+    authenticate_user,
+    create_access_token,
+    get_refresh_token_settings,
+)
+from src.auth.dependencies import (
     get_current_active_user,
     valid_refresh_token,
     valid_refresh_token_user,
 )
-from .schemas import Token
+from src.auth.schemas import Token
 from src.auth import service
 
 load_dotenv()
@@ -32,10 +35,8 @@ async def login(
     refresh_token_value = await service.create_refresh_token(db, user.id)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
 
-
     return Token(
-        access_token=create_access_token(user),
-        refresh_token=refresh_token_value
+        access_token=create_access_token(user), refresh_token=refresh_token_value
     )
 
 
@@ -54,10 +55,7 @@ async def refresh_tokens(
     response.set_cookie(**get_refresh_token_settings(new_refresh_token))
 
     # worker.add_task(service.expire_refresh_token, refresh_token_id=refresh_token.id, db=db)
-    return Token(
-        access_token=new_access_token,
-        refresh_token=new_refresh_token
-    )
+    return Token(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
 @router.post("/register", response_model=User)

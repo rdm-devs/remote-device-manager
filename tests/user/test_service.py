@@ -3,9 +3,9 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.user.exceptions import (
-    UserEmailTakenError,
-    UserInvalidPasswordError,
-    UserNotFoundError,
+    UserEmailTaken,
+    UserInvalidPassword,
+    UserNotFound,
 )
 from src.user.service import (
     create_user,
@@ -30,7 +30,7 @@ def test_create_user(session: Session) -> None:
 
 
 def test_create_duplicated_user(session: Session) -> None:
-    with pytest.raises(UserEmailTakenError):
+    with pytest.raises(UserEmailTaken):
         create_user(
             session,
             UserCreate(
@@ -43,7 +43,7 @@ def test_create_duplicated_user(session: Session) -> None:
 
 
 def test_create_user_with_invalid_password(session: Session) -> None:
-    with pytest.raises(UserInvalidPasswordError):
+    with pytest.raises(UserInvalidPassword):
         create_user(
             session,
             UserCreate(
@@ -81,7 +81,7 @@ def test_get_user(session: Session) -> None:
 
 def test_get_user_with_invalid_id(session: Session) -> None:
     user_id = 5
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(UserNotFound):
         get_user(session, user_id)
 
 
@@ -93,7 +93,7 @@ def test_get_user_by_email(session: Session) -> None:
 
 
 def test_get_user_with_invalid_email(session: Session) -> None:
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(UserNotFound):
         get_user_by_email(session, email="test-user-5@sia.com")
 
 
@@ -156,7 +156,7 @@ def test_update_user_with_invalid_id(session: Session) -> None:
     db_user = get_user(session, 1)
     db_user.id = 5
 
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(UserNotFound):
         update_user(
             session,
             db_user=db_user,
@@ -182,7 +182,7 @@ def test_delete_user(session: Session) -> None:
     deleted_user_id = delete_user(session, db_user=db_user)
     assert deleted_user_id == user_id
 
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(UserNotFound):
         get_user(session, user.id)
 
 
@@ -199,5 +199,5 @@ def test_delete_user_with_invalid_id(session: Session) -> None:
     db_user = get_user(session, user.id)
 
     db_user.id = 6
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(UserNotFound):
         delete_user(session, db_user=db_user)

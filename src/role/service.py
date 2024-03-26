@@ -7,12 +7,12 @@ def check_role_name_taken(db: Session, role_name: str):
         db.query(models.Role).filter(models.Role.name == role_name).first()
     )
     if role_name_taken is not None:
-        raise exceptions.RoleNameTakenError()
+        raise exceptions.RoleNameTaken()
 
 def check_role_exists(db: Session, role_id: int):
     role = db.query(models.Role).filter(models.Role.id == role_id).first()
     if not role:
-        raise exceptions.RoleNotFoundError()
+        raise exceptions.RoleNotFound()
 
 def get_role(db: Session, role_id: int):
     check_role_exists(db, role_id=role_id)
@@ -22,7 +22,7 @@ def get_role(db: Session, role_id: int):
 def get_role_by_name(db: Session, name: str):
     role = db.query(models.Role).filter(models.Role.name == name).first()
     if not role:
-        raise exceptions.RoleNotFoundError()
+        raise exceptions.RoleNotFound()
     return role
 
 

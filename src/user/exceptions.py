@@ -2,17 +2,17 @@ from src.user.constants import ErrorCode
 from src.exceptions import NotFound, BadRequest
 
 
-class UserNotFoundError(NotFound):
+class UserNotFound(NotFound):
     DETAIL = ErrorCode.USER_NOT_FOUND
 
 
-class UserEmailTakenError(BadRequest):
+class UserEmailTaken(BadRequest):
     DETAIL = ErrorCode.USER_EMAIL_TAKEN
 
 
-class UsernameTakenError(BadRequest):
+class UsernameTaken(BadRequest):
     DETAIL = ErrorCode.USERNAME_TAKEN
 
 
-class UserInvalidPasswordError(BadRequest):
+class UserInvalidPassword(BadRequest):
     DETAIL = ErrorCode.USER_INVALID_PASSWORD
