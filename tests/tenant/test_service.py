@@ -20,6 +20,7 @@ from src.tenant.schemas import (
     TenantCreate,
     TenantUpdate,
 )
+from src.user import models as user_models
 
 
 def test_create_tenant(session: Session) -> None:
@@ -68,9 +69,24 @@ def test_get_tenant_with_invalid_name(session: Session) -> None:
 
 
 def test_get_tenants(session: Session) -> None:
-    # a tenant was created in tests/database.py
-    tenants = get_tenants(session)
-    assert len(tenants) == 2
+    # two tenants were created in tests/database.py
+    admin = session.query(user_models.User).filter(user_models.User.role_id == 1).first()
+    tenants = get_tenants(session, admin).all()
+    assert len(tenants) == 2 # admin can access them all
+
+    owner_2 = session.query(user_models.User).filter(user_models.User.id == 2).first()
+    tenants = get_tenants(session, owner_2).all()
+    assert len(tenants) == 1
+    assert tenants[0].id == 1 # each owner has a different tenant
+
+    owner_3 = session.query(user_models.User).filter(user_models.User.id == 3).first()
+    tenants = get_tenants(session, owner_3).all()
+    assert len(tenants) == 1
+    assert tenants[0].id == 2
+
+    user = session.query(user_models.User).filter(user_models.User.id == 4).first()
+    tenants = get_tenants(session, user).all()
+    assert len(tenants) == 0 # user can't access any tenant
 
 
 def test_update_tenant(session: Session) -> None:

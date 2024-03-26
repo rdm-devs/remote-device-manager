@@ -5,20 +5,11 @@ from src.tenant.exceptions import TenantNameTakenError, TenantNotFoundError
 from src.exceptions import PermissionDenied
 from src.tag import service as tags_service
 from src.user.schemas import User
-from . import schemas, models
-from ..entity.service import create_entity_auto
-
-
-def check_tenant_exists(db: Session, tenant_id: int):
-    tenant = db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
-    if not tenant:
-        raise TenantNotFoundError()
-
-
-def check_tenant_name_taken(db: Session, tenant_name: str):
-    tenant = db.query(models.Tenant).filter(models.Tenant.name == tenant_name).first()
-    if tenant:
-        raise TenantNameTakenError()
+from src.user.models import tenants_and_users_table
+from src.tenant import schemas, models
+from src.tenant import exceptions
+from src.tenant.utils import check_tenant_exists, check_tenant_name_taken
+from src.entity.service import create_entity_auto
 
 
 def get_tenant(db: Session, tenant_id: int):
@@ -26,8 +17,14 @@ def get_tenant(db: Session, tenant_id: int):
     return db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
 
 
-def get_tenants(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Tenant).offset(skip).limit(limit).all()
+def get_tenants(db: Session, user: User):
+    tenants = db.query(models.Tenant)
+    if user.role_id != 1:
+        tenants = tenants.join(tenants_and_users_table).filter(
+            models.Tenant.id == tenants_and_users_table.c.tenant_id,
+            user.id == tenants_and_users_table.c.user_id,
+        )
+    return tenants
 
 
 def get_tenant_by_name(db: Session, tenant_name: str):

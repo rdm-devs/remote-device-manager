@@ -15,7 +15,7 @@ from tests.database import (
 def test_read_tenants(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/tenants/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 2
+    assert len(response.json()["items"]) == 2
 
 
 def test_read_tenant(session: Session, client_authenticated: TestClient) -> None:
