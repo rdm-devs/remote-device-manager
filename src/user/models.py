@@ -29,3 +29,7 @@ class User(Base, AuditMixin):
     tenants: Mapped[List["src.tenant.models.Tenant"]] = relationship(
         secondary=tenants_and_users_table, back_populates="users"
     )
+
+    @property
+    def is_admin(self):
+        return self.role_id == 1
