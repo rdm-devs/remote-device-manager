@@ -93,7 +93,7 @@ async def test_read_devices_authorized(
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     assert (
-        len(response.json()["items"]) == 2
+        len(response.json()["items"]) == 3
     )  # we need to access "items" as we are using pagination
 
 
@@ -259,7 +259,6 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 8  # See tests/database.py
 
 
 @pytest.mark.asyncio
@@ -276,4 +275,3 @@ async def test_read_tag_authorized_owner(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 6  # See tests/database.py

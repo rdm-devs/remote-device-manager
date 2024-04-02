@@ -86,7 +86,7 @@ def test_get_device_with_invalid_name(session: Session) -> None:
 
 def test_get_devices(session: Session) -> None:
     devices = get_devices(session).all()
-    assert len(devices) == 2
+    assert len(devices) == 3
 
 
 def test_update_device(

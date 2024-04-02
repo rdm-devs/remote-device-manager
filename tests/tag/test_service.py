@@ -66,8 +66,7 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 @pytest.mark.asyncio
 async def test_get_tags(session: Session) -> None:
     # eight tags were created in tests/database.py
-    user = session.query(user_models.User).filter(user_models.User.id == 1).first()
-    tags = (await get_tags(session, user)).all()  # resolving the query
+    tags = (await get_tags(session, user_id=1)).all()  # resolving the query
     assert len(tags) == 8
 
 

@@ -19,7 +19,7 @@ TEST_IP_ADDR = "96.119.132.46"
 def test_read_devices(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/devices/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) >= 1
+    assert len(response.json()["items"]) == 3
 
 
 def test_read_device(
