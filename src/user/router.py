@@ -9,19 +9,12 @@ from src.auth.dependencies import (
     has_admin_or_owner_role,
 )
 from src.tenant.schemas import TenantList
+from src.device.schemas import DeviceList
+from src.folder.schemas import FolderList
 from . import service, schemas
 from ..database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-# @router.post("/", response_model=schemas.User)
-# def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-#     # sanity check:
-#     service.check_email_exists(db, email=user.email)
-
-#     db_user = service.create_user(db=db, user=user)
-#     return db_user
 
 
 @router.get("/", response_model=Page[schemas.User])
@@ -31,27 +24,6 @@ def read_users(
 ):
     users = service.get_users(db)
     return paginate(users)
-
-
-@router.get("/me/tenants", response_model=Page[TenantList])
-async def read_my_tenants(
-    db: Session = Depends(get_db),
-    user: schemas.User = Depends(has_admin_or_owner_role),
-):
-    tenants = service.get_tenants(db, user_id=user.id)
-    return paginate(tenants)
-
-
-@router.get("/{user_id}/tenants", response_model=Page[TenantList])
-async def read_tenants(
-    user_id: str = Path(),
-    db: Session = Depends(get_db),
-    user: schemas.User = Depends(has_admin_role),
-):
-    if user_id == "me":
-        user_id = (await user).id
-    tenants = service.get_tenants(db, user_id=int(user_id))
-    return paginate(tenants)
 
 
 @router.get("/{user_id}", response_model=schemas.User)
@@ -101,3 +73,39 @@ def assign_role(
 ):
     service.assign_role(db=db, user_id=user_id, role_id=role_id)
     return schemas.UserRole(id=user_id, role_id=role_id)
+
+
+@router.get("/{user_id}/tenants", response_model=Page[TenantList])
+async def read_tenants(
+    user_id: str = Path(),
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_admin_or_owner_role),
+):
+    if user_id == "me":
+        user_id = user.id
+    tenants = service.get_tenants(db, user_id=int(user_id))
+    return paginate(tenants)
+
+
+@router.get("/{user_id}/devices", response_model=Page[DeviceList])
+async def read_devices(
+    user_id: str = Path(),
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_admin_or_owner_role),
+):
+    if user_id == "me":
+        user_id = user.id
+    devices = service.get_devices(db, user_id=int(user_id))
+    return paginate(devices)
+
+
+@router.get("/{user_id}/folders", response_model=Page[FolderList])
+async def read_folders(
+    user_id: str = Path(),
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_admin_or_owner_role),
+):
+    if user_id == "me":
+        user_id = user.id
+    folders = service.get_folders(db, user_id=int(user_id))
+    return paginate(folders)
