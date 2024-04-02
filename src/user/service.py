@@ -3,8 +3,11 @@ from typing import Optional, List
 from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
 from src.role import models as role_models
-from src.tenant.schemas import TenantList
 from src.tenant.models import Tenant, tenants_and_users_table
+from src.folder.models import Folder
+from src.device.models import Device
+from src.user.models import User
+from src.tag.models import Tag
 from . import schemas, models, exceptions
 from ..entity.service import create_entity_auto
 
@@ -55,12 +58,38 @@ def get_users(db: Session):
     return db.query(models.User)
 
 
-def get_tenants(db: Session, user_id: int) -> List[TenantList]:
-    return (
-        db.query(Tenant)
-        .join(tenants_and_users_table)
-        .filter(tenants_and_users_table.columns.user_id == user_id)
+def get_tenants(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user.is_admin:
+        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
+            tenants_and_users_table.c.user_id == user_id
+        )
+        return db.query(Tenant).filter(Tenant.id.in_(tenant_ids))
+    return db.query(Tenant)
+
+def get_folders(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user.is_admin:
+        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
+            tenants_and_users_table.c.user_id == user_id
+        )
+        return db.query(Folder).filter(Folder.tenant_id.in_(tenant_ids))
+    return db.query(Folder)
+
+
+def get_devices(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
+        tenants_and_users_table.c.user_id == user_id
     )
+    
+    tenant_folder_ids = db.query(Folder.id).filter(Folder.tenant_id.in_(tenant_ids))
+    devices = db.query(Device)
+    if user.role_id != 1:
+        devices = devices.filter(
+            Device.folder_id.in_(tenant_folder_ids),
+        )
+    return devices
 
 
 def create_user(db: Session, user: schemas.UserCreate):
