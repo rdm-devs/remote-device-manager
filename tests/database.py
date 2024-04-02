@@ -79,12 +79,22 @@ def session(
 
     db_tenant_1 = Tenant(id=1, name="tenant1", entity_id=1)
     db_folder_1 = Folder(id=1, name="folder1", tenant_id=1, entity_id=2)
-    db_folder_2 = Folder(id=2, name="folder2", tenant_id=1, entity_id=3)
+    db_subfolder_1 = Folder(
+        id=3, name="subfolder1", tenant_id=1, entity_id=3, parent_id=1
+    )
+    db_folder_2 = Folder(id=2, name="folder2", tenant_id=1, entity_id=4)
+
+    db_tenant_2 = Tenant(id=2, name="tenant2", entity_id=5)
+    db_folder_3 = Folder(id=4, name="folder3", tenant_id=2, entity_id=6)
+    db_subfolder_2 = Folder(
+        id=5, name="subfolder2", tenant_id=2, entity_id=7, parent_id=4
+    )
+
     db_device_1 = Device(
         id=1,
         name="dev1",
         folder_id=1,
-        entity_id=4,
+        entity_id=8,
         mac_address="61:68:0C:1E:93:8F",
         ip_address="96.119.132.44",
         **mock_os_data,
@@ -94,9 +104,20 @@ def session(
         id=2,
         name="dev2",
         folder_id=1,
-        entity_id=5,
+        entity_id=9,
         mac_address="61:68:0C:1E:93:9F",
         ip_address="96.119.132.45",
+        **mock_os_data,
+        **mock_vendor_data
+    )
+
+    db_device_3 = Device(
+        id=3,
+        name="dev3",
+        folder_id=4,
+        entity_id=10,
+        mac_address="61:68:0C:1E:93:8A",
+        ip_address="96.119.132.49",
         **mock_os_data,
         **mock_vendor_data
     )
@@ -106,7 +127,7 @@ def session(
         username="test-user-1",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user@sia.com",
-        entity_id=6,
+        entity_id=11,
         role_id=1,
     )
 
@@ -115,7 +136,7 @@ def session(
         username="test-user-2",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-2@sia.com",
-        entity_id=7,
+        entity_id=12,
         role_id=2,
     )
 
@@ -124,7 +145,7 @@ def session(
         username="test-user-3",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-3@sia.com",
-        entity_id=8,
+        entity_id=13,
         role_id=2,
     )
 
@@ -133,18 +154,8 @@ def session(
         username="test-user-4",
         hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
         email="test-user-4@sia.com",
-        entity_id=9,
+        entity_id=14,
         role_id=3,
-    )
-
-    db_subfolder_1 = Folder(
-        id=3, name="subfolder1", tenant_id=1, entity_id=10, parent_id=1
-    )
-
-    db_tenant_2 = Tenant(id=2, name="tenant2", entity_id=11)
-    db_folder_3 = Folder(id=4, name="folder3", tenant_id=2, entity_id=12)
-    db_subfolder_2 = Folder(
-        id=5, name="subfolder2", tenant_id=2, entity_id=13, parent_id=4
     )
 
     db_session.add_all(db_roles)
@@ -155,15 +166,16 @@ def session(
             db_folder_1,
             db_subfolder_1,
             db_folder_2,
+            db_tenant_2,
+            db_folder_3,
+            db_subfolder_2,
             db_device_1,
             db_device_2,
+            db_device_3,
             db_user_1,
             db_user_2,
             db_user_3,
             db_user_4,
-            db_tenant_2,
-            db_folder_3,
-            db_subfolder_2,
         ]
     )
     db_user_2.tenants.append(db_tenant_1)
@@ -177,8 +189,8 @@ def session(
     tag_1.entities.append(db_device_1.entity)
     tag_1.entities.append(db_folder_1.entity)
 
-    tag_2 = Tag(name="tag-user-1", tenant_id=1)
-    tag_2.entities.append(db_user_1.entity)
+    tag_2 = Tag(name="tag-user-3", tenant_id=2)
+    tag_2.entities.append(db_user_3.entity)
 
     tag_3 = Tag(name="tag-folder-1", tenant_id=1)
     tag_3.entities.append(db_folder_1.entity)
@@ -250,6 +262,7 @@ async def get_auth_tokens(session: Session, user: User):
 async def admin_auth_tokens(session: Session):
     user = session.query(User).filter(User.role_id == 1).first()
     return await get_auth_tokens(session, user)
+
 
 @pytest.fixture
 async def owner_2_auth_tokens(session: Session):
