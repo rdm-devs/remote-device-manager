@@ -37,32 +37,10 @@ def read_tag(
     return db_tag
 
 
-@user_router.get("/me/tags", response_model=Page[schemas.Tag])
-async def read_my_tags(
-    tenant_id: Union[int, None] = None,
-    folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
-    name: Union[str, None] = None,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
-):
-    return paginate(
-        await service.get_tags(
-            db,
-            user,
-            tenant_id=tenant_id,
-            folder_id=folder_id,
-            device_id=device_id,
-            user_id=user.id,
-            name=name,
-        )
-    )
-
-
 @user_router.get("/{user_id}/tags", response_model=Page[schemas.Tag])
 @router.get("/", response_model=Page[schemas.Tag])
 async def read_tags(
-    user_id: Union[int, None] = None,
+    user_id: Union[int, str, None] = None,
     tenant_id: Union[int, None] = None,
     folder_id: Union[int, None] = None,
     device_id: Union[int, None] = None,
@@ -70,10 +48,11 @@ async def read_tags(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
+    if not user_id or user_id == "me":
+        user_id = user.id
     return paginate(
         await service.get_tags(
             db,
-            user,
             tenant_id=tenant_id,
             folder_id=folder_id,
             device_id=device_id,
