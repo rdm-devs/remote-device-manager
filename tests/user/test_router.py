@@ -206,3 +206,111 @@ def test_delete_non_existent_user(
     user_id = 5
     response = client_authenticated.delete(f"/users/{user_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_read_devices(session: Session, client_authenticated: TestClient) -> None:
+    user_id = "me" # client_authenticated is admin
+    response = client_authenticated.get(f"/users/{user_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 3
+
+    user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 3
+
+    user_id = 2
+    response = client_authenticated.get(f"/users/{user_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 2
+
+    user_id = 3
+    response = client_authenticated.get(f"/users/{user_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 1
+
+    user_id = 4
+    response = client_authenticated.get(f"/users/{user_id}/devices")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 0
+
+
+def test_read_folders(session: Session, client_authenticated: TestClient) -> None:
+    user_id = "me"
+    response = client_authenticated.get(f"/users/{user_id}/folders")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 5
+
+    user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}/folders")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 5
+
+    user_id = 2
+    response = client_authenticated.get(f"/users/{user_id}/folders")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 3
+
+    user_id = 3
+    response = client_authenticated.get(f"/users/{user_id}/folders")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 2
+
+    user_id = 4
+    response = client_authenticated.get(f"/users/{user_id}/folders")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 0
+
+
+def test_read_tenants(session: Session, client_authenticated: TestClient) -> None:
+    user_id = "me"
+    response = client_authenticated.get(f"/users/{user_id}/tenants")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 2
+
+    user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}/tenants")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 2
+
+    user_id = 2
+    response = client_authenticated.get(f"/users/{user_id}/tenants")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 1
+
+    user_id = 3
+    response = client_authenticated.get(f"/users/{user_id}/tenants")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 1
+
+    user_id = 4
+    response = client_authenticated.get(f"/users/{user_id}/tenants")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 0
+
+
+def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
+    user_id = "me"
+    response = client_authenticated.get(f"/users/{user_id}/tags")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 8
+
+    user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}/tags")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 8
+
+    user_id = 2
+    response = client_authenticated.get(f"/users/{user_id}/tags")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 5
+
+    user_id = 3
+    response = client_authenticated.get(f"/users/{user_id}/tags")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 3
+
+    user_id = 4
+    response = client_authenticated.get(f"/users/{user_id}/tags")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["items"]) == 0
