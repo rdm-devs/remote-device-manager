@@ -101,7 +101,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     default_role = (
         db.query(role_models.Role).filter(role_models.Role.name == "user").first()
     )  # defaul role
-    user.role_id = default_role.id
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
 
@@ -109,7 +108,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     values = user.model_dump()
     values.pop("password")
     db_user = models.User(
-        **values, hashed_password=hashed_password, entity_id=entity.id
+        **values, hashed_password=hashed_password, entity_id=entity.id, role_id=default_role.id
     )
     db.add(db_user)
     db.commit()
