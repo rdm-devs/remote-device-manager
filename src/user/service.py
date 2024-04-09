@@ -97,13 +97,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_username_exists(db, username=user.username)
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
-    if user.role_id:
-        check_role_exists(db, role_id=user.role_id)
-    else:
-        default_role = (
-            db.query(role_models.Role).filter(role_models.Role.name == "user").first()
-        )  # defaul role
-        user.role_id = default_role.id
+    
+    default_role = (
+        db.query(role_models.Role).filter(role_models.Role.name == "user").first()
+    )  # defaul role
+    user.role_id = default_role.id
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
 
