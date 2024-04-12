@@ -39,7 +39,7 @@ def read_folder(
 @router.get("/", response_model=Page[schemas.FolderList])
 def read_folders(
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_role),
+    user: User = Depends(has_access_to_folder),
 ):
     return paginate(service.get_folders(db))
 

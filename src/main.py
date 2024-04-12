@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_pagination import add_pagination
 from .database import engine, Base
@@ -20,6 +21,21 @@ ROOT_PATH = os.getenv(f"ROOT_PATH_{ENV}")
 
 
 app = FastAPI(root_path=ROOT_PATH)
+origins = [
+    # "http://localhost",
+    "http://localhost:4200",
+    # "http://kvmvm.eastus.cloudapp.azure.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], #["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+
 add_pagination(app)
 
 
