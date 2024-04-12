@@ -5,6 +5,10 @@ from src.exceptions import PermissionDenied
 from src.tenant.service import check_tenant_exists
 from src.folder import exceptions, schemas, models
 from src.entity.service import create_entity_auto
+from src.auth.dependencies import has_role
+from src.user.models import User
+from src.user.exceptions import UserNotFound
+from src.tenant import models as tenant_models
 
 
 def check_folder_exist(db: Session, folder_id: int):
@@ -43,8 +47,25 @@ def get_folder(db: Session, folder_id: int):
 
 
 # def get_folders(db: Session, skip: int = 0, limit: int = 100):
-def get_folders(db: Session) -> List[models.Folder]:
-    return db.query(models.Folder)  # .all()
+def get_folders(db: Session, user_id: int) -> List[models.Folder]:
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if user:
+        if user.is_admin:
+            return db.query(models.Folder)  # .all()
+        else:
+            tenant = db.query(tenant_models.tenants_and_users_table).filter(
+                tenant_models.tenants_and_users_table.c.tenant_id == models.Folder.tenant_id,
+                tenant_models.tenants_and_users_table.c.user_id == user.id
+            ).first()
+            if tenant:
+                return db.query(models.Folder).filter(
+                    models.Folder.tenant_id == tenant.tenant_id
+                )
+            else:
+                raise None
+    else:
+        raise UserNotFound()
 
 
 def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:

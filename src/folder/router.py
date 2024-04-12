@@ -39,9 +39,9 @@ def read_folder(
 @router.get("/", response_model=Page[schemas.FolderList])
 def read_folders(
     db: Session = Depends(get_db),
-    user: User = Depends(has_access_to_folder),
+    user: User = Depends(get_current_active_user),
 ):
-    return paginate(service.get_folders(db))
+    return paginate(service.get_folders(db, user.id))
 
 
 @tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.FolderList])
