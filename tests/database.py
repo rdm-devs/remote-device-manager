@@ -180,6 +180,7 @@ def session(
     )
     db_user_2.tenants.append(db_tenant_1)
     db_user_3.tenants.append(db_tenant_2)
+    db_user_4.tenants.append(db_tenant_1)
     db_session.commit()
 
     # para testear tags, tag_1 debe crearse antes.

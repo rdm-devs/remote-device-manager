@@ -25,7 +25,6 @@ def test_read_user(session: Session, client_authenticated: TestClient) -> None:
             "email": "test-user@email.com",
             "username": "test-user",
             "password": "_s3cr3tp@5sw0rd_",
-            "role_id": 1,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -54,7 +53,6 @@ def test_create_user(session: Session, client_authenticated: TestClient) -> None
             "email": "test-user@email.com",
             "username": "test-user",
             "password": "_s3cr3tp@5sw0rd_",
-            "role_id": 1,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -72,7 +70,6 @@ def test_create_duplicated_user(
             "email": "test-user@sia.com",
             "username": "test-user",
             "password": "_s3cr3tp@5sw0rd_",
-            "role_id": 1,
         },
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -88,7 +85,6 @@ def test_create_user_with_invalid_password(
             "email": "test-user3@sia.com",
             "username": "test-user",
             "password": "",
-            "role_id": 1,
         },
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -100,7 +96,6 @@ def test_create_user_with_invalid_password(
             "email": "test-user3@sia.com",
             "username": "test-user",
             "password": "123",
-            "role_id": 1,
         },
     )  # a user with email "test-user@sia.com" was created in session, see: tests/database.py
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -186,7 +181,6 @@ def test_delete_user(session: Session, client_authenticated: TestClient) -> None
             "email": "test-user-delete@sia.com",
             "username": "test-user",
             "password": "12345678",
-            "role_id": 1,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -232,7 +226,7 @@ def test_read_devices(session: Session, client_authenticated: TestClient) -> Non
     user_id = 4
     response = client_authenticated.get(f"/users/{user_id}/devices")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 0
+    assert len(response.json()["items"]) == 2
 
 
 def test_read_folders(session: Session, client_authenticated: TestClient) -> None:
@@ -259,7 +253,7 @@ def test_read_folders(session: Session, client_authenticated: TestClient) -> Non
     user_id = 4
     response = client_authenticated.get(f"/users/{user_id}/folders")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 0
+    assert len(response.json()["items"]) == 3
 
 
 def test_read_tenants(session: Session, client_authenticated: TestClient) -> None:
@@ -286,7 +280,7 @@ def test_read_tenants(session: Session, client_authenticated: TestClient) -> Non
     user_id = 4
     response = client_authenticated.get(f"/users/{user_id}/tenants")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 0
+    assert len(response.json()["items"]) == 1
 
 
 def test_read_tags(session: Session, client_authenticated: TestClient) -> None:

@@ -57,7 +57,6 @@ def test_register_user(client: TestClient) -> None:
             "username": "test-user-5",
             "password": "_s3cr3tp@5sw0rd_",
             "email": "test-user-3@test.com",
-            "role_id": None,
         },
     )
     assert response.status_code == status.HTTP_200_OK, response.text

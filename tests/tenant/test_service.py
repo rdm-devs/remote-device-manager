@@ -86,7 +86,7 @@ def test_get_tenants(session: Session) -> None:
 
     user = session.query(user_models.User).filter(user_models.User.id == 4).first()
     tenants = get_tenants(session, user).all()
-    assert len(tenants) == 0 # user can't access any tenant
+    assert len(tenants) == 1
 
 
 def test_update_tenant(session: Session) -> None:

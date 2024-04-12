@@ -16,7 +16,7 @@ from src.user.service import (
     update_user,
     get_devices,
     get_folders,
-    get_tenants
+    get_tenants,
 )
 from src.user.schemas import (
     UserCreate,
@@ -27,7 +27,11 @@ from src.user.schemas import (
 def test_create_user(session: Session) -> None:
     user = create_user(
         session,
-        UserCreate(email="test-user-5@sia.com", username="test-user-5", password="_s3cr3tp@5sw0rd_", role_id=1),
+        UserCreate(
+            email="test-user-5@sia.com",
+            username="test-user-5",
+            password="_s3cr3tp@5sw0rd_",
+        ),
     )
     assert user.email == "test-user-5@sia.com"
 
@@ -40,7 +44,6 @@ def test_create_duplicated_user(session: Session) -> None:
                 email="test-user@sia.com",
                 username="test-user-5",
                 password="_s3cr3tp@5sw0rd_",
-                role_id=1,
             ),
         )
 
@@ -53,7 +56,6 @@ def test_create_user_with_invalid_password(session: Session) -> None:
                 email="test-user-5@sia.com",
                 username="test-user-5",
                 password="123",
-                role_id=1,
             ),
         )
 
@@ -103,7 +105,9 @@ def test_get_user_with_invalid_email(session: Session) -> None:
 def test_get_users(session: Session) -> None:
     # Two users were created in tests/database.py
     query_users = get_users(session)
-    users = query_users.all() # need to resolve query as in the route we use it for pagination but do not resolve it ourselves
+    users = (
+        query_users.all()
+    )  # need to resolve query as in the route we use it for pagination but do not resolve it ourselves
     assert len(users) == 4
 
 
@@ -114,7 +118,6 @@ def test_update_user(session: Session) -> None:
             email="test-user-5@sia.com",
             username="test-user-5",
             password="_s3cr3tp@5sw0rd_",
-            role_id=1,
         ),
     )
     db_user = get_user(session, user.id)
@@ -140,7 +143,6 @@ def test_update_user_with_invalid_attrs(session: Session) -> None:
             email="test-user-5@sia.com",
             username="test-user-5",
             password="_s3cr3tp@5sw0rd_",
-            role_id=1,
         ),
     )
     db_user = get_user(session, user.id)
@@ -176,7 +178,6 @@ def test_delete_user(session: Session) -> None:
             email="test-user-delete@sia.com",
             username="test-user-5",
             password="_s3cr3tp@5sw0rd_",
-            role_id=1,
         ),
     )
     db_user = get_user(session, user.id)
@@ -196,7 +197,6 @@ def test_delete_user_with_invalid_id(session: Session) -> None:
             email="test-user-delete@sia.com",
             username="test-user-5",
             password="_s3cr3tp@5sw0rd_",
-            role_id=1,
         ),
     )
     db_user = get_user(session, user.id)

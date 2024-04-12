@@ -67,8 +67,23 @@ def test_get_folder_with_invalid_name(session: Session) -> None:
 
 def test_get_folders(session: Session) -> None:
     # five folders/subfolders were created in tests/database.py
-    folders = get_folders(session).all() # resolving the query as we are using fastapi-pagination in routers
+    folders = get_folders(session, user_id=1).all() # resolving the query as we are using fastapi-pagination in routers
     assert len(folders) == 5
+
+    folders = get_folders(
+        session, user_id=2
+    ).all()  # resolving the query as we are using fastapi-pagination in routers
+    assert len(folders) == 3
+
+    folders = get_folders(
+        session, user_id=3
+    ).all()  # resolving the query as we are using fastapi-pagination in routers
+    assert len(folders) == 2
+
+    folders = get_folders(
+        session, user_id=4
+    ).all()  # resolving the query as we are using fastapi-pagination in routers
+    assert len(folders) == 3
 
 
 def test_update_folder(session: Session) -> None:
