@@ -63,7 +63,7 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
                     models.Folder.tenant_id == tenant.tenant_id
                 )
             else:
-                raise None
+                return None
     else:
         raise UserNotFound()
 
