@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from src.database import get_db
 from src.user import models, schemas
+from src.user import exceptions as user_exceptions
 from src.auth import exceptions
 
 load_dotenv()
@@ -25,7 +26,7 @@ def get_password_hash(password):
 def get_user_by_username(db: Session, username: str):
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user:
-        raise exceptions.UserNotFound()
+        raise user_exceptions.UserNotFound()
     return user
 
 
