@@ -7,7 +7,7 @@ from src.folder import exceptions, schemas, models
 from src.entity.service import create_entity_auto
 from src.auth.dependencies import has_role
 from src.user.models import User
-from src.user.exceptions import UserNotFound
+from src.user.exceptions import UserNotFound, UserTenantNotAssigned
 from src.tenant import models as tenant_models
 
 
@@ -63,7 +63,7 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
                     models.Folder.tenant_id == tenant.tenant_id
                 )
             else:
-                return None
+               raise UserTenantNotAssigned()
     else:
         raise UserNotFound()
 

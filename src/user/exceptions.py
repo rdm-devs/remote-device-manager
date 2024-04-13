@@ -16,3 +16,6 @@ class UsernameTaken(BadRequest):
 
 class UserInvalidPassword(BadRequest):
     DETAIL = ErrorCode.USER_INVALID_PASSWORD
+
+class UserTenantNotAssigned(NotFound):
+    DETAIL = ErrorCode.USER_TENANT_NOT_ASSIGNED

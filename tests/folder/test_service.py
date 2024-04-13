@@ -20,7 +20,9 @@ from src.folder.schemas import (
     FolderCreate,
     FolderUpdate,
 )
-
+from src.user.service import create_user
+from src.user.schemas import UserCreate
+from src.user.exceptions import UserTenantNotAssigned
 
 def test_create_folder(session: Session) -> None:
     folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
@@ -84,6 +86,20 @@ def test_get_folders(session: Session) -> None:
         session, user_id=4
     ).all()  # resolving the query as we are using fastapi-pagination in routers
     assert len(folders) == 3
+
+    
+    user5 = create_user(
+        session,
+        UserCreate(
+            email="test-user-5@sia.com",
+            username="test-user-5",
+            password="_s3cr3tp@5sw0rd_",
+        ),
+    )
+    with pytest.raises(UserTenantNotAssigned):        
+        folders = get_folders(
+            session, user_id=5
+        ).all() # this user has no tenant asigned so it will raise an exception
 
 
 def test_update_folder(session: Session) -> None:
