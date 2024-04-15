@@ -13,6 +13,7 @@ from src.user import service as user_service
 from src.role import models as role_models
 from src.tenant import models as tenant_models
 from src.folder import models as folder_models
+from src.device import models as device_models
 from src.tag import models as tag_models
 from src.auth import service, exceptions
 from src.auth.schemas import TokenData
@@ -123,7 +124,9 @@ async def has_access_to_tenant(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
-    if await has_role("owner", db, user):
+    if await has_role("admin", db, user):
+        return user
+    else:  # owner or user role verification
         count = (
             db.query(tenant_models.tenants_and_users_table)
             .filter(
@@ -134,8 +137,6 @@ async def has_access_to_tenant(
         )
         if count == 1:
             return user
-    elif await has_role("admin", db, user):
-        return user
 
     raise PermissionDenied()
 
@@ -143,7 +144,7 @@ async def has_access_to_tenant(
 async def has_access_to_folder(
     folder_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_or_owner_role),
+    user: User = Depends(get_current_active_user),
 ):
     folder = (
         db.query(folder_models.Folder)
@@ -158,7 +159,7 @@ async def has_access_to_folder(
 async def has_access_to_tag(
     tag_name: str,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_or_owner_role),
+    user: User = Depends(get_current_active_user),
 ):
     tags = (
         db.query(tag_models.Tag)
@@ -169,3 +170,26 @@ async def has_access_to_tag(
 
     if tags:
         return user
+
+
+async def has_access_to_device(
+    device_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    device = (
+        db.query(device_models.Device)
+        .filter(device_models.Device.id == device_id)
+        .first()
+    )
+
+    if device and (await has_access_to_folder(device.folder_id, db, user)):
+        return user
+
+
+async def can_edit_device(
+    device_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_admin_or_owner_role),
+):
+    return has_access_to_device(device_id, db, user)

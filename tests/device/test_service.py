@@ -85,8 +85,18 @@ def test_get_device_with_invalid_name(session: Session) -> None:
 
 
 def test_get_devices(session: Session) -> None:
-    devices = get_devices(session).all()
+    devices = get_devices(session, user_id=1).all()  # admin
     assert len(devices) == 3
+
+    devices_owner_2 = get_devices(session, user_id=2).all()  # owner
+    assert len(devices_owner_2) == 2
+
+    devices_user = get_devices(session, user_id=4).all()  # user
+    assert len(devices_user) == 2
+    assert devices_owner_2 == devices_user
+
+    devices = get_devices(session, user_id=3).all()  # owner
+    assert len(devices) == 1
 
 
 def test_update_device(
@@ -134,7 +144,7 @@ def test_update_device_with_invalid_data(
     )
     db_device = get_device(session, device.id)
 
-    folder_id = 6 # this folder id must not exist
+    folder_id = 6  # this folder id must not exist
     with pytest.raises(FolderNotFound):
         device = update_device(
             session,

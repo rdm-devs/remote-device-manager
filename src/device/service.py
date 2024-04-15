@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
-from src.folder import models as folder_models
+from sqlalchemy.sql import select
+from src.folder.models import Folder
+from src.tenant.models import tenants_and_users_table
 from src.device import schemas, models, exceptions
 from src.folder.service import check_folder_exist
 from src.entity.service import create_entity_auto
+from src.user.service import get_user
 
 
 def check_device_name_taken(db: Session, device_name: str):
@@ -28,10 +31,19 @@ def get_devices_from_tenant(db: Session, tenant_id: int):
     )
 
 
-def get_devices(db: Session):
-    return (
-        db.query(models.Device)
-    )
+def get_devices(db: Session, user_id: int):
+    user = get_user(db, user_id)
+    if user.is_admin:
+        return db.query(models.Device)
+    else:
+        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
+            tenants_and_users_table.c.user_id == user.id
+        )
+        folder_ids = db.query(Folder.id).filter(Folder.tenant_id.in_(tenant_ids))
+        devices = db.query(models.Device).filter(
+            models.Device.folder_id.in_(folder_ids)
+        )
+        return devices
 
 
 def get_device_by_name(db: Session, device_name: str):
