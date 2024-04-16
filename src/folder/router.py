@@ -6,7 +6,10 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import (
     get_current_active_user,
     has_admin_role,
+    has_admin_or_owner_role,
     has_access_to_folder,
+    has_access_to_tenant,
+    can_edit_folder
 )
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
@@ -20,7 +23,7 @@ router = APIRouter(prefix="/folders", tags=["folders"])
 def create_folder(
     folder: schemas.FolderCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(has_admin_or_owner_role)
 ):
     db_folder = service.create_folder(db, folder)
     return db_folder
@@ -48,7 +51,7 @@ def read_folders(
 def read_folders(
     tenant_id: Optional[int] = Path(),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    user: User = Depends(has_access_to_tenant),
 ):
     return paginate(service.get_folders_from_tenant(db, tenant_id=tenant_id))
 
@@ -58,7 +61,7 @@ def update_folder(
     folder_id: int,
     folder: schemas.FolderUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(can_edit_folder)
 ):
     db_folder = read_folder(folder_id, db)
     updated_device = service.update_folder(db, db_folder, updated_folder=folder)
@@ -69,7 +72,7 @@ def update_folder(
 def delete_folder(
     folder_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(can_edit_folder)
 ):
     db_folder = read_folder(folder_id, db)
     deleted_folder_id = service.delete_folder(db, db_folder)
@@ -83,7 +86,7 @@ def delete_folder(
 def read_subfolders(
     folder_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(has_access_to_folder)
 ):
     return service.get_subfolders(
         db, parent_folder_id=folder_id, skip=skip, limit=limit
@@ -95,7 +98,7 @@ def create_subfolder(
     folder_id: int,
     subfolder: schemas.FolderCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(can_edit_folder)
 ):
     db_folder = service.create_subfolder(
         db, parent_folder_id=folder_id, subfolder=subfolder
@@ -109,7 +112,7 @@ def update_subfolder(
     subfolder_id: int,
     subfolder: schemas.FolderUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(can_edit_folder)
 ):
     db_subfolder = read_folder(subfolder_id, db)
     updated_device = service.update_subfolder(
@@ -125,7 +128,7 @@ def delete_subfolder(
     folder_id: int,
     subfolder_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(can_edit_folder)
 ):
     db_subfolder = read_folder(subfolder_id, db)
     deleted_folder_id = service.delete_subfolder(

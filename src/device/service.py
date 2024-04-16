@@ -3,7 +3,7 @@ from sqlalchemy.sql import select
 from src.folder.models import Folder
 from src.tenant.models import tenants_and_users_table
 from src.device import schemas, models, exceptions
-from src.folder.service import check_folder_exist
+from src.folder.service import check_folder_exist, get_folders
 from src.entity.service import create_entity_auto
 from src.user.service import get_user
 
@@ -36,15 +36,11 @@ def get_devices(db: Session, user_id: int):
     if user.is_admin:
         return db.query(models.Device)
     else:
-        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
-            tenants_and_users_table.c.user_id == user.id
-        )
-        folder_ids = db.query(Folder.id).filter(Folder.tenant_id.in_(tenant_ids))
+        folders = get_folders(db, user.id).subquery()
         devices = db.query(models.Device).filter(
-            models.Device.folder_id.in_(folder_ids)
+            models.Device.folder_id == folders.c.id
         )
         return devices
-
 
 def get_device_by_name(db: Session, device_name: str):
     device = db.query(models.Device).filter(models.Device.name == device_name).first()

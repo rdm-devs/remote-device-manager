@@ -7,8 +7,9 @@ from src.folder import exceptions, schemas, models
 from src.entity.service import create_entity_auto
 from src.auth.dependencies import has_role
 from src.user.models import User
-from src.user.exceptions import UserNotFound, UserTenantNotAssigned
-from src.tenant import models as tenant_models
+from src.user.exceptions import UserTenantNotAssigned
+from src.user.service import get_user
+from src.tenant.models import tenants_and_users_table
 
 
 def check_folder_exist(db: Session, folder_id: int):
@@ -46,26 +47,28 @@ def get_folder(db: Session, folder_id: int):
     return db_folder
 
 
-# def get_folders(db: Session, skip: int = 0, limit: int = 100):
 def get_folders(db: Session, user_id: int) -> List[models.Folder]:
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user(db, user_id)
 
-    if user:
-        if user.is_admin:
-            return db.query(models.Folder)  # .all()
-        else:
-            tenant = db.query(tenant_models.tenants_and_users_table).filter(
-                tenant_models.tenants_and_users_table.c.tenant_id == models.Folder.tenant_id,
-                tenant_models.tenants_and_users_table.c.user_id == user.id
-            ).first()
-            if tenant:
-                return db.query(models.Folder).filter(
-                    models.Folder.tenant_id == tenant.tenant_id
-                )
-            else:
-               raise UserTenantNotAssigned()
+    if user.is_admin:
+        return db.query(models.Folder)
     else:
-        raise UserNotFound()
+        tenant_ids = (
+            db.query(tenants_and_users_table.c.tenant_id)
+            .filter(
+                tenants_and_users_table.c.tenant_id == models.Folder.tenant_id,
+                tenants_and_users_table.c.user_id == user.id,
+            )
+            .distinct()
+            .all()
+        )
+        if tenant_ids:
+            tenant_ids = (tid[0] for tid in tenant_ids)
+            return db.query(models.Folder).filter(
+                models.Folder.tenant_id.in_(tenant_ids)
+            )
+        else:
+            raise UserTenantNotAssigned()
 
 
 def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:
