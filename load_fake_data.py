@@ -35,19 +35,26 @@ roles = [
     Role(name="owner"),
     Role(name="user"),
 ]
-entities = [Entity() for i in range(12)]
+entities = [Entity() for i in range(17)]
 
 tenant_1 = Tenant(name="tenant1", entity_id=1)
 tenant_2 = Tenant(name="tenant2", entity_id=2)
 
 folder_1 = Folder(name="folder1", entity_id=3, tenant_id=1)
-folder_2 = Folder(name="folder2", entity_id=4, tenant_id=1)
-folder_3 = Folder(name="folder3", entity_id=5, tenant_id=2)
+subfolder_1_1 = Folder(name="sub11", entity_id=4, tenant_id=1, parent_id=1)
+subfolder_1_2 = Folder(name="sub12", entity_id=5, tenant_id=1, parent_id=1)
+
+folder_2 = Folder(name="folder2", entity_id=6, tenant_id=1)
+subfolder_2_1 = Folder(name="sub21", entity_id=7, tenant_id=1, parent_id=4)
+subfolder_2_2 = Folder(name="sub22", entity_id=8, tenant_id=1, parent_id=4)
+
+folder_3 = Folder(name="folder3", entity_id=9, tenant_id=2)
+subfolder_3_1 = Folder(name="sub31", entity_id=10, tenant_id=1, parent_id=7)
 
 device_1 = Device(
     name="dev1",
     folder_id=1,
-    entity_id=6,
+    entity_id=11,
     mac_address="61:68:0C:1E:93:8F",
     ip_address="96.119.132.44",
     **mock_os_data_1,
@@ -57,7 +64,7 @@ device_1 = Device(
 device_2 = Device(
     name="dev2",
     folder_id=2,
-    entity_id=7,
+    entity_id=12,
     mac_address="61:68:0C:1E:93:9F",
     ip_address="96.119.132.45",
     **mock_os_data_1,
@@ -67,7 +74,7 @@ device_2 = Device(
 device_3 = Device(
     name="dev3",
     folder_id=3,
-    entity_id=8,
+    entity_id=13,
     mac_address="61:68:00:1F:95:AA",
     ip_address="96.119.132.46",
     **mock_os_data_2,
@@ -78,7 +85,7 @@ user_1 = User(
     username="test-user-1",
     hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
     email="test-user@sia.com",
-    entity_id=9,
+    entity_id=14,
     role_id=1,
 )
 
@@ -86,7 +93,7 @@ user_2 = User(
     username="test-user-2",
     hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
     email="test-user-2@sia.com",
-    entity_id=10,
+    entity_id=15,
     role_id=2,
 )
 
@@ -94,7 +101,7 @@ user_3 = User(
     username="test-user-3",
     hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
     email="test-user-3@sia.com",
-    entity_id=11,
+    entity_id=16,
     role_id=3,
 )
 
@@ -113,8 +120,13 @@ db.add_all(
         tenant_1,
         tenant_2,
         folder_1,
+        subfolder_1_1,
+        subfolder_1_2,
         folder_2,
+        subfolder_2_1,
+        subfolder_2_2,
         folder_3,
+        subfolder_3_1,
         device_1,
         device_2,
         device_3,

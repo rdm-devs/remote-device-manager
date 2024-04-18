@@ -51,7 +51,7 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
     user = get_user(db, user_id)
 
     if user.is_admin:
-        return db.query(models.Folder)
+        return db.query(models.Folder).filter(models.Folder.parent_id == None)
     else:
         tenant_ids = (
             db.query(tenants_and_users_table.c.tenant_id)
@@ -65,7 +65,8 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
         if tenant_ids:
             tenant_ids = (tid[0] for tid in tenant_ids)
             return db.query(models.Folder).filter(
-                models.Folder.tenant_id.in_(tenant_ids)
+                models.Folder.tenant_id.in_(tenant_ids), 
+                models.Folder.parent_id == None
             )
         else:
             raise UserTenantNotAssigned()

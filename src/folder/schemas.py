@@ -27,7 +27,7 @@ class FolderList(BaseModel):
     name: str
     parent_id: Optional[int] = None
     devices: List[DeviceList] = []
-    subfolders: List[SubfolderList] = []
+    subfolders: List["FolderList"] = []
 
 
 class FolderTenantList(BaseModel):
