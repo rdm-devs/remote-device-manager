@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional
-
+from typing import Optional, List
+from src.tag.schemas import Tag
 
 class DeviceBase(BaseModel):
     name: str
@@ -29,6 +29,7 @@ class Device(DeviceCreate):
     id: int
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()
+    tags: List[Tag] = []
 
     model_config = {"from_attributes": True, "extra": "forbid"}
 
