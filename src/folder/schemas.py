@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from ..device.schemas import DeviceList
 from typing import Optional, List
+from src.device.schemas import Device, DeviceList
+from src.tag.schemas import Tag
 
 
 class SubfolderList(BaseModel):
@@ -18,7 +19,7 @@ class FolderBase(BaseModel):
 class Folder(FolderBase):
     id: int
     parent_id: Optional[int] = None
-    devices: List[DeviceList]
+    devices: List[Device]
     model_config = {"from_attributes": True}
 
 
@@ -26,7 +27,8 @@ class FolderList(BaseModel):
     id: int
     name: str
     parent_id: Optional[int] = None
-    devices: List[DeviceList] = []
+    tags: List[Tag] = []
+    devices: List[Device] = []
     subfolders: List["FolderList"] = []
 
 
