@@ -28,6 +28,7 @@ def test_create_folder(session: Session) -> None:
     folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
     assert folder.name == "folder5"
     assert folder.tenant_id == 1
+    assert len(folder.tags) == 1
 
 
 def test_create_duplicated_folder(session: Session) -> None:
@@ -49,6 +50,8 @@ def test_get_folder(session: Session) -> None:
     folder = get_folder(session, folder_id=1)
     assert folder.name == "folder1"
     assert folder.tenant_id == 1
+    assert len(folder.tags) == 1
+    assert folder.tags[0].name == "folder-folder1-tag"
 
 
 def test_get_folder_with_invalid_id(session: Session) -> None:
