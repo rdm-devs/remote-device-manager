@@ -38,6 +38,6 @@ class Device(Base, AuditMixin):
     vendor_cores: Mapped[int] = mapped_column()
     vendor_ram_gb: Mapped[int] = mapped_column()
 
-    @staticmethod
-    def tags(cls):
-        return cls.entity.tags
+    @property
+    def tags(self):
+        return self.entity.tags
