@@ -25,6 +25,6 @@ class Folder(Base, AuditMixin):
     parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id"), nullable=True)
     subfolders = relationship("Folder")
 
-    @staticmethod
-    def tags(cls):
-        return cls.entity.tags
+    @property
+    def tags(self):
+        return self.entity.tags
