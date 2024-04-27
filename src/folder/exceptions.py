@@ -15,3 +15,6 @@ class InvalidFolderAttrs(BadRequest):
 
 class SubfolderParentMismatch(BadRequest):
     DETAIL = ErrorCode.SUBFOLDER_PARENT_MISMATCH
+
+class RootFolderNotFound(NotFound):
+    DETAIL = ErrorCode.ROOT_FOLDER_NOT_FOUND

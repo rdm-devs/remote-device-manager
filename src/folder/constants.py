@@ -3,3 +3,4 @@ class ErrorCode:
     FOLDER_NAME_TAKEN = "Folder name is already taken."
     FOLDER_INVALID_ATTRS = "Invalid Folder attributes."
     SUBFOLDER_PARENT_MISMATCH = "Subfolder parent id and supplied parent folder id do not match."
+    ROOT_FOLDER_NOT_FOUND = "A root folder has not been found for this tenant."
