@@ -49,7 +49,7 @@ subfolder_2_1 = Folder(name="sub21", entity_id=7, tenant_id=1, parent_id=4)
 subfolder_2_2 = Folder(name="sub22", entity_id=8, tenant_id=1, parent_id=4)
 
 folder_3 = Folder(name="folder3", entity_id=9, tenant_id=2)
-subfolder_3_1 = Folder(name="sub31", entity_id=10, tenant_id=1, parent_id=7)
+subfolder_3_1 = Folder(name="sub31", entity_id=10, tenant_id=2, parent_id=7)
 
 device_1 = Device(
     name="dev1",
@@ -145,21 +145,25 @@ tag_1 = Tag(name="tag-1", tenant_id=1)
 tag_1.entities.append(get_entity_for_obj(db, user_1))
 tag_1.entities.append(get_entity_for_obj(db, device_1))
 tag_1.entities.append(get_entity_for_obj(db, tenant_1))
+tag_1.entities.append(get_entity_for_obj(db, folder_1))
 
 tag_2 = Tag(name="tag-2", tenant_id=1)
 tag_2.entities.append(get_entity_for_obj(db, user_1))
 tag_2.entities.append(get_entity_for_obj(db, user_2))
 tag_2.entities.append(get_entity_for_obj(db, device_2))
+tag_2.entities.append(get_entity_for_obj(db, folder_1))
 
 tag_3 = Tag(name="tag-3", tenant_id=2)
 tag_3.entities.append(get_entity_for_obj(db, user_2))
 tag_3.entities.append(get_entity_for_obj(db, device_1))
 tag_3.entities.append(get_entity_for_obj(db, device_2))
 tag_3.entities.append(get_entity_for_obj(db, tenant_2))
+tag_3.entities.append(get_entity_for_obj(db, folder_2))
 
 tag_4 = Tag(name="tag-4", tenant_id=2)
 tag_4.entities.append(get_entity_for_obj(db, user_3))
 tag_4.entities.append(get_entity_for_obj(db, tenant_1))
+tag_4.entities.append(get_entity_for_obj(db, folder_2))
 
 tags = [tag_1, tag_2, tag_3, tag_4]
 
