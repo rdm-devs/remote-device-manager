@@ -1,13 +1,19 @@
 import os
 from dotenv import load_dotenv
 from src.database import SessionLocal
-from src.device.models import Device
-from src.folder.models import Folder
-from src.user.models import User
-from src.tenant.models import Tenant
-from src.entity.models import Entity
-from src.role.models import Role
-from src.tag.models import Tag
+from src.tenant.service import create_tenant
+from src.tenant.schemas import TenantCreate
+from src.folder.service import create_folder
+from src.folder.schemas import FolderCreate
+from src.device.service import create_device
+from src.device.schemas import DeviceCreate
+from src.user.service import create_user, assign_role
+from src.user.schemas import UserCreate
+from src.entity.service import create_entity_auto
+from src.role.service import create_role
+from src.role.schemas import RoleCreate
+from src.tag.service import create_tag
+from src.tag.schemas import TagCreate
 
 db = SessionLocal()
 
@@ -31,144 +37,149 @@ mock_vendor_data_2 = {
 
 # create test objects (Entity, Device, Folder, User, Tenant)
 roles = [
-    Role(name="admin"),
-    Role(name="owner"),
-    Role(name="user"),
+    create_role(db, RoleCreate(name="admin")),
+    create_role(db, RoleCreate(name="owner")),
+    create_role(db, RoleCreate(name="user")),
 ]
-entities = [Entity() for i in range(17)]
+# entities = [Entity() for i in range(17)]
 
-tenant_1 = Tenant(name="tenant1", entity_id=1)
-tenant_2 = Tenant(name="tenant2", entity_id=2)
+tenant_1 = create_tenant(db, TenantCreate(name="tenant1"))
+tenant_2 = create_tenant(db, TenantCreate(name="tenant2"))
 
-folder_1 = Folder(name="folder1", entity_id=3, tenant_id=1)
-subfolder_1_1 = Folder(name="sub11", entity_id=4, tenant_id=1, parent_id=1)
-subfolder_1_2 = Folder(name="sub12", entity_id=5, tenant_id=1, parent_id=1)
+folder_1 = create_folder(db, FolderCreate(name="folder1", tenant_id=tenant_1.id))
 
-folder_2 = Folder(name="folder2", entity_id=6, tenant_id=1)
-subfolder_2_1 = Folder(name="sub21", entity_id=7, tenant_id=1, parent_id=4)
-subfolder_2_2 = Folder(name="sub22", entity_id=8, tenant_id=1, parent_id=4)
-
-folder_3 = Folder(name="folder3", entity_id=9, tenant_id=2)
-subfolder_3_1 = Folder(name="sub31", entity_id=10, tenant_id=2, parent_id=7)
-
-device_1 = Device(
-    name="dev1",
-    folder_id=1,
-    entity_id=11,
-    mac_address="61:68:0C:1E:93:8F",
-    ip_address="96.119.132.44",
-    **mock_os_data_1,
-    **mock_vendor_data_1
+subfolder_1_1 = create_folder(
+    db, FolderCreate(name="sub11", tenant_id=tenant_1.id, parent_id=folder_1.id)
+)
+subfolder_1_2 = create_folder(
+    db, FolderCreate(name="sub12", tenant_id=tenant_1.id, parent_id=folder_1.id)
 )
 
-device_2 = Device(
-    name="dev2",
-    folder_id=2,
-    entity_id=12,
-    mac_address="61:68:0C:1E:93:9F",
-    ip_address="96.119.132.45",
-    **mock_os_data_1,
-    **mock_vendor_data_2
+folder_2 = create_folder(db, FolderCreate(name="folder2", tenant_id=tenant_1.id))
+subfolder_2_1 = create_folder(
+    db, FolderCreate(name="sub21", tenant_id=tenant_1.id, parent_id=folder_2.id)
+)
+subfolder_2_2 = create_folder(
+    db, FolderCreate(name="sub22", tenant_id=tenant_1.id, parent_id=folder_2.id)
 )
 
-device_3 = Device(
-    name="dev3",
-    folder_id=3,
-    entity_id=13,
-    mac_address="61:68:00:1F:95:AA",
-    ip_address="96.119.132.46",
-    **mock_os_data_2,
-    **mock_vendor_data_2
+folder_3 = create_folder(db, FolderCreate(name="folder3", tenant_id=tenant_2.id))
+subfolder_3_1 = create_folder(
+    db, FolderCreate(name="sub31", tenant_id=tenant_2.id, parent_id=folder_3.id)
 )
 
-user_1 = User(
-    username="test-user-1",
-    hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
-    email="test-user@sia.com",
-    entity_id=14,
-    role_id=1,
+device_1 = create_device(
+    db,
+    DeviceCreate(
+        name="dev1",
+        folder_id=folder_1.id,
+        mac_address="61:68:0C:1E:93:8F",
+        ip_address="96.119.132.44",
+        **mock_os_data_1,
+        **mock_vendor_data_1
+    ),
 )
 
-user_2 = User(
-    username="test-user-2",
-    hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
-    email="test-user-2@sia.com",
-    entity_id=15,
-    role_id=2,
+device_2 = create_device(
+    db,
+    DeviceCreate(
+        name="dev2",
+        folder_id=folder_2.id,
+        mac_address="61:68:0C:1E:93:9F",
+        ip_address="96.119.132.45",
+        **mock_os_data_1,
+        **mock_vendor_data_2
+    ),
 )
 
-user_3 = User(
-    username="test-user-3",
-    hashed_password="$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",  # "_s3cr3tp@5sw0rd_",
-    email="test-user-3@sia.com",
-    entity_id=16,
-    role_id=3,
+device_3 = create_device(
+    db,
+    DeviceCreate(
+        name="dev3",
+        folder_id=folder_3.id,
+        mac_address="61:68:00:1F:95:AA",
+        ip_address="96.119.132.46",
+        **mock_os_data_2,
+        **mock_vendor_data_2
+    ),
 )
+
+user_1 = create_user(
+    db,
+    UserCreate(
+        username="test-user-1",
+        password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+        email="test-user@sia.com",
+    ),
+)
+assign_role(db, user_1.id, roles[0].id)
+
+user_2 = create_user(
+    db,
+    UserCreate(
+        username="test-user-2",
+        password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+        email="test-user-2@sia.com",
+    ),
+)
+assign_role(db, user_2.id, roles[1].id)
+
+user_3 = create_user(
+    db,
+    UserCreate(
+        username="test-user-3",
+        password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+        email="test-user-3@sia.com",
+    ),
+)
+assign_role(db, user_3.id, roles[2].id)
 
 
 tenants_and_users = [
-    user_1.tenants.append(tenant_1),
-    user_1.tenants.append(tenant_2),
-    user_3.tenants.append(tenant_1),
-    user_2.tenants.append(tenant_2),
+    user_1.add_tenant(tenant_1),
+    user_1.add_tenant(tenant_2),
+    user_3.add_tenant(tenant_1),
+    user_2.add_tenant(tenant_2),
 ]
 
-db.add_all(roles)
-db.add_all(entities)
+tag_1 = create_tag(db, TagCreate(name="tag-1", tenant_id=tenant_1.id))
+user_1.add_tag(tag_1)
+device_1.add_tag(tag_1)
+tenant_1.add_tag(tag_1)
+folder_1.add_tag(tag_1)
+
+tag_2 = create_tag(db, TagCreate(name="tag-2", tenant_id=tenant_1.id))
+user_1.add_tag(tag_2)
+user_2.add_tag(tag_2)
+device_2.add_tag(tag_2)
+folder_1.add_tag(tag_2)
+
+tag_3 = create_tag(db, TagCreate(name="tag-3", tenant_id=tenant_2.id))
+user_2.add_tag(tag_3)
+device_1.add_tag(tag_3)
+device_2.add_tag(tag_3)
+tenant_2.add_tag(tag_3)
+folder_2.add_tag(tag_3)
+
+tag_4 = create_tag(db, TagCreate(name="tag-4", tenant_id=tenant_2.id))
+user_3.add_tag(tag_4)
+tenant_1.add_tag(tag_4)
+folder_2.add_tag(tag_4)
+
+# guardamos modificaciones (tags) a objetos previamente creados
 db.add_all(
     [
         tenant_1,
         tenant_2,
         folder_1,
-        subfolder_1_1,
-        subfolder_1_2,
         folder_2,
-        subfolder_2_1,
-        subfolder_2_2,
-        folder_3,
-        subfolder_3_1,
         device_1,
         device_2,
-        device_3,
         user_1,
         user_2,
         user_3,
     ]
 )
-db.commit()
-
-
-def get_entity_for_obj(db, obj):
-    return db.query(Entity).filter(Entity.id == obj.entity_id).first()
-
-tag_1 = Tag(name="tag-1", tenant_id=1)
-tag_1.entities.append(get_entity_for_obj(db, user_1))
-tag_1.entities.append(get_entity_for_obj(db, device_1))
-tag_1.entities.append(get_entity_for_obj(db, tenant_1))
-tag_1.entities.append(get_entity_for_obj(db, folder_1))
-
-tag_2 = Tag(name="tag-2", tenant_id=1)
-tag_2.entities.append(get_entity_for_obj(db, user_1))
-tag_2.entities.append(get_entity_for_obj(db, user_2))
-tag_2.entities.append(get_entity_for_obj(db, device_2))
-tag_2.entities.append(get_entity_for_obj(db, folder_1))
-
-tag_3 = Tag(name="tag-3", tenant_id=2)
-tag_3.entities.append(get_entity_for_obj(db, user_2))
-tag_3.entities.append(get_entity_for_obj(db, device_1))
-tag_3.entities.append(get_entity_for_obj(db, device_2))
-tag_3.entities.append(get_entity_for_obj(db, tenant_2))
-tag_3.entities.append(get_entity_for_obj(db, folder_2))
-
-tag_4 = Tag(name="tag-4", tenant_id=2)
-tag_4.entities.append(get_entity_for_obj(db, user_3))
-tag_4.entities.append(get_entity_for_obj(db, tenant_1))
-tag_4.entities.append(get_entity_for_obj(db, folder_2))
-
-tags = [tag_1, tag_2, tag_3, tag_4]
-
-
-db.add_all(tags)
 db.commit()
 
 
