@@ -21,10 +21,10 @@ def check_folder_exist(db: Session, folder_id: int):
 
 
 def check_folder_name_taken(
-    db: Session, folder_name: str, folder_id: Optional[int] = None
+    db: Session, folder_name: str, tenant_id: int, folder_id: Optional[int] = None
 ):
     folder_name_taken = db.query(models.Folder).filter(
-        models.Folder.name == folder_name
+        models.Folder.name == folder_name, models.Folder.tenant_id == tenant_id
     )
 
     if folder_id:
@@ -34,45 +34,59 @@ def check_folder_name_taken(
         raise exceptions.FolderNameTaken()
 
 
+def create_root_folder(db: Session, tenant_id: int):
+    folder = schemas.FolderCreate(name="/", tenant_id=tenant_id)
+    entity = create_entity_auto(db)
+    db_folder = models.Folder(**folder.model_dump(), entity_id=entity.id)
+    db.add(db_folder)
+    db.commit()
+    db.refresh(db_folder)
+
+    return db_folder
+
+
 def get_root_folder(db: Session, tenant_id: int):
-    root_folder = db.query(
-        models.Folder.name == "root",
-        models.Folder.tenant_id == tenant_id,
-        models.Folder.parent_id == None,
-    ).first()
+    root_folder = (
+        db.query(models.Folder)
+        .filter(
+            models.Folder.name == "/",
+            models.Folder.tenant_id == tenant_id,
+            models.Folder.parent_id == None,
+        )
+        .first()
+    )
     if root_folder:
         return root_folder
     else:
-        raise exceptions.RootFolderNotFound()
+        return create_root_folder(db, tenant_id)
 
 
 def create_folder(db: Session, folder: schemas.FolderCreate):
     # sanity check
-    check_folder_name_taken(db, folder.name)
     check_tenant_exists(db, folder.tenant_id)
+    check_folder_name_taken(db, folder.name, folder.tenant_id)
 
     entity = create_entity_auto(db)
 
-    root_folder_id = (get_root_folder()).id
-    parent_id = (
-        root_folder_id
-        if not folder.parent_id
-        else get_folder(db, folder_id=folder.parent_id)
-    )
+    root_folder = get_root_folder(db, folder.tenant_id)
 
-    db_folder = models.Folder(
-        **folder.model_dump(), parent_id=parent_id, entity_id=entity.id
-    )
+    if folder.parent_id:
+        check_folder_exist(db, folder_id=folder.parent_id)
+    else:
+        folder.parent_id = root_folder.id
+
+    db_folder = models.Folder(**folder.model_dump(), entity_id=entity.id)
     db.add(db_folder)
     db.commit()
     db.refresh(db_folder)
 
     formatted_name = db_folder.tenant.name.lower().replace(" ", "-")
+    formatted_name += f"-{db_folder.name.lower().replace(' ', '-')}"
     folder_tag = create_tag(
         db,
         TagCreate(name=f"folder-{formatted_name}-tag", tenant_id=db_folder.tenant_id),
     )
-    db_folder.tags.append(folder_tag)
+    db_folder.add_tag(folder_tag)
     return db_folder
 
 
@@ -89,19 +103,14 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
     if user.is_admin:
         return db.query(models.Folder).filter(models.Folder.parent_id == None)
     else:
-        tenant_ids = (
-            db.query(tenants_and_users_table.c.tenant_id)
-            .filter(
-                tenants_and_users_table.c.tenant_id == models.Folder.tenant_id,
-                tenants_and_users_table.c.user_id == user.id,
-            )
-            .distinct()
-            .all()
-        )
-        if tenant_ids:
-            tenant_ids = (tid[0] for tid in tenant_ids)
+        if user.tenants:
+            # tenant_ids = user.get_tenants_ids()
+            # if tenant_ids:
+            #     return db.query(models.Folder).filter(
+            #         models.Folder.tenant_id.in_(tenant_ids), models.Folder.parent_id == None
+            #     )
             return db.query(models.Folder).filter(
-                models.Folder.tenant_id.in_(tenant_ids), models.Folder.parent_id == None
+                models.Folder.id.in_(user.get_folder_tree_ids())
             )
         else:
             raise UserTenantNotAssigned()
@@ -125,9 +134,11 @@ def update_folder(
 ):
     # sanity checks
     get_folder(db, db_folder.id)
-    check_folder_name_taken(db, updated_folder.name, updated_folder.id)
     if updated_folder.tenant_id:
         check_tenant_exists(db, updated_folder.tenant_id)
+    check_folder_name_taken(
+        db, updated_folder.name, updated_folder.tenant_id, updated_folder.id
+    )
 
     db.query(models.Folder).filter(models.Folder.id == db_folder.id).update(
         values=updated_folder.model_dump(exclude_unset=True)
