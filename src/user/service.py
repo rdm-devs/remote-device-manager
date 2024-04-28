@@ -42,12 +42,12 @@ def check_invalid_password(db: Session, password: str):
         raise exceptions.UserInvalidPassword()
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: int) -> User:
     check_user_exists(db, user_id=user_id)
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_user_by_email(db: Session, email: str):
+def get_user_by_email(db: Session, email: str) -> User:
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise exceptions.UserNotFound()
