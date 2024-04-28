@@ -33,3 +33,26 @@ class User(Base, AuditMixin):
     @property
     def is_admin(self):
         return self.role_id == 1
+
+    @property
+    def tags(self):
+        return self.entity.tags
+
+    def add_tenant(self, tenant: "src.tenant.models.Tenant") -> None:
+        self.tenants.append(tenant)
+
+    def add_tag(self, tag: "src.tag.models.Tag") -> None:
+        self.tags.append(tag)
+
+    #def get_tenants_ids(self) -> List[int]:
+    #    return [t.id for t in self.tenants]
+
+    def get_folder_tree(self) -> List["src.folder.models.Folder"]:
+        folders = []
+        for t in self.tenants:
+            folders.extend([f for f in t.folders if f.parent_id is None])
+        return folders
+
+    def get_folder_tree_ids(self) -> List[int]:
+        folders = self.get_folder_tree()
+        return [f.id for f in folders]
