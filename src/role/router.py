@@ -1,6 +1,8 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import get_current_active_user
 from src.user.schemas import User
 from ..database import get_db
@@ -29,14 +31,12 @@ def read_role(
     return db_role
 
 
-@router.get("/", response_model=List[schemas.Role])
+@router.get("/", response_model=Page[schemas.Role])
 def read_roles(
-    skip: int = 0,
-    limit: int = 100,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user)
 ):
-    return service.get_roles(db, skip=skip, limit=limit)
+    return paginate(service.get_roles(db, user.id))
 
 
 @router.patch("/{role_id}", response_model=schemas.Role)

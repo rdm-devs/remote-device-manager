@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+from src.exceptions import PermissionDenied
 from . import schemas, models, exceptions
+from src.user.models import User
 
 
 def check_role_name_taken(db: Session, role_name: str):
@@ -26,8 +28,12 @@ def get_role_by_name(db: Session, name: str):
     return role
 
 
-def get_roles(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Role).offset(skip).limit(limit).all()
+def get_roles(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user.is_admin:
+        return db.query(models.Role)
+    else:
+        raise PermissionDenied()
 
 
 def create_role(db: Session, role: schemas.RoleCreate):
