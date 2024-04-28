@@ -170,3 +170,8 @@ panto-nginx.conf
 
 # vscode's python debug config
 .vscode
+
+# db related files
+fastapi-sia-backup.sql
+fastapi-sia-backup.db
+fastapi-sia.db.bk
