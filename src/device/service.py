@@ -1,5 +1,5 @@
+from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import select
 from src.folder.models import Folder
 from src.tenant.models import tenants_and_users_table
 from src.device import schemas, models, exceptions
