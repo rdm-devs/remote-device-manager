@@ -10,7 +10,7 @@ from src.tenant import schemas, models
 from src.tenant import exceptions
 from src.tenant.utils import check_tenant_exists, check_tenant_name_taken
 from src.entity.service import create_entity_auto
-from src.folder.service import create_folder
+from src.folder.service import create_root_folder
 from src.folder.schemas import FolderCreate
 from src.tag.service import create_tag
 from src.tag.schemas import TagCreate
@@ -54,10 +54,7 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
     tenant_tag = create_tag(
         db, TagCreate(name=f"tenant-{formatted_name}-tag", tenant_id=db_tenant.id)
     )
-    folder = create_folder(
-        db,
-        FolderCreate(name="/", tenant_id=db_tenant.id),
-    )
+    folder = create_root_folder(db, db_tenant.id)
 
     return db_tenant
 
