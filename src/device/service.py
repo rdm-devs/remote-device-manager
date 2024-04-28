@@ -8,11 +8,13 @@ from src.entity.service import create_entity_auto
 from src.user.service import get_user
 
 
-def check_device_name_taken(db: Session, device_name: str):
-    device_name_taken = (
-        db.query(models.Device).filter(models.Device.name == device_name).first()
+def check_device_name_taken(db: Session, device_name: str, device_id: Optional[int]):
+    device_name_taken = db.query(models.Device).filter(
+        models.Device.name == device_name
     )
-    if device_name_taken is not None:
+    if device_id:
+        device_name_taken.filter(models.Device.id != device_id)
+    if device_name_taken.first():
         raise exceptions.DeviceNameTaken()
 
 
@@ -42,6 +44,7 @@ def get_devices(db: Session, user_id: int):
         )
         return devices
 
+
 def get_device_by_name(db: Session, device_name: str):
     device = db.query(models.Device).filter(models.Device.name == device_name).first()
     if not device:
@@ -69,9 +72,9 @@ def update_device(
     get_device(db, db_device.id)
     if updated_device.folder_id:
         check_folder_exist(db, updated_device.folder_id)
-    check_device_name_taken(db, updated_device.name)
+    check_device_name_taken(db, updated_device.name, update_device.id)
 
-    dev = db.query(models.Device).filter(models.Device.id == db_device.id).first()
+    #dev = db.query(models.Device).filter(models.Device.id == db_device.id).first()
     db.query(models.Device).filter(models.Device.id == db_device.id).update(
         values=updated_device.model_dump(exclude_unset=True)
     )
