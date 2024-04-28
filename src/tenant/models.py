@@ -33,3 +33,6 @@ class Tenant(Base, AuditMixin):
     tags: Mapped[List["src.tag.models.Tag"]] = relationship(
         "src.tag.models.Tag", back_populates="tenant"
     )
+
+    def add_tag(self, tag: "src.tag.models.Tag") -> None:
+        self.tags.append(tag)

@@ -41,3 +41,6 @@ class Device(Base, AuditMixin):
     @property
     def tags(self):
         return self.entity.tags
+
+    def add_tag(self, tag: "src.tag.models.Tag") -> None:
+        self.tags.append(tag)
