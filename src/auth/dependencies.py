@@ -192,7 +192,7 @@ async def can_edit_device(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
-    return has_access_to_device(device_id, db, user)
+    return await has_access_to_device(device_id, db, user)
 
 
 async def can_edit_folder(
