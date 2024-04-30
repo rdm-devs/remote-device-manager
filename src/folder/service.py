@@ -1,4 +1,5 @@
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from src.exceptions import PermissionDenied
@@ -28,7 +29,7 @@ def check_folder_name_taken(
     )
 
     if folder_id:
-        folder_name_taken = folder_name_taken.filter(model.Folder.id != folder_id)
+        folder_name_taken = folder_name_taken.filter(models.Folder.id != folder_id)
 
     if folder_name_taken.first():
         raise exceptions.FolderNameTaken()
@@ -90,7 +91,7 @@ def create_folder(db: Session, folder: schemas.FolderCreate):
     return db_folder
 
 
-def get_folder(db: Session, folder_id: int):
+def get_folder(db: Session, folder_id: int) -> models.Folder:
     db_folder = db.query(models.Folder).filter(models.Folder.id == folder_id).first()
     if db_folder is None:
         raise exceptions.FolderNotFound()
@@ -101,17 +102,20 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
     user = get_user(db, user_id)
 
     if user.is_admin:
-        return db.query(models.Folder).filter(models.Folder.parent_id == None)
+        return select(models.Folder).where(models.Folder.parent_id == None)
     else:
         if user.tenants:
-            # tenant_ids = user.get_tenants_ids()
-            # if tenant_ids:
-            #     return db.query(models.Folder).filter(
-            #         models.Folder.tenant_id.in_(tenant_ids), models.Folder.parent_id == None
-            #     )
-            return db.query(models.Folder).filter(
-                models.Folder.id.in_(user.get_folder_tree_ids())
-            )
+            tenant_ids = user.get_tenants_ids()
+            if tenant_ids:
+                return (
+                    select(models.Folder)
+                    .where(models.Folder.tenant_id.in_(tenant_ids))
+                    .where(models.Folder.parent_id == None)
+                )
+            # print(f"folder tree ids: {user.get_folder_tree_ids()}")
+            # return db.query(models.Folder).filter(
+            #     models.Folder.id.in_(user.get_folder_tree_ids())
+            # )
         else:
             raise UserTenantNotAssigned()
 
@@ -137,7 +141,7 @@ def update_folder(
     if updated_folder.tenant_id:
         check_tenant_exists(db, updated_folder.tenant_id)
     check_folder_name_taken(
-        db, updated_folder.name, updated_folder.tenant_id, updated_folder.id
+        db, updated_folder.name, updated_folder.tenant_id, db_folder.id
     )
 
     db.query(models.Folder).filter(models.Folder.id == db_folder.id).update(

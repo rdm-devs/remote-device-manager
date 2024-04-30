@@ -44,8 +44,8 @@ class User(Base, AuditMixin):
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)
 
-    #def get_tenants_ids(self) -> List[int]:
-    #    return [t.id for t in self.tenants]
+    def get_tenants_ids(self) -> List[int]:
+        return [t.id for t in self.tenants]
 
     def get_folder_tree(self) -> List["src.folder.models.Folder"]:
         folders = []
@@ -56,3 +56,12 @@ class User(Base, AuditMixin):
     def get_folder_tree_ids(self) -> List[int]:
         folders = self.get_folder_tree()
         return [f.id for f in folders]
+
+    def get_device_ids(self) -> List[int]:
+        folders = []
+        device_ids = []
+        for t in self.tenants:
+            folders.extend([f for f in t.folders])
+        for f in folders:
+            device_ids.extend([d.id for d in f.devices])
+        return device_ids

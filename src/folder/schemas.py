@@ -48,6 +48,8 @@ class FolderUpdate(FolderCreate):
     tenant_id: Optional[int] = None
     parent_id: Optional[int] = None
 
+    model_config = {"extra": "forbid"}
+
 
 class FolderDelete(BaseModel):
     id: int

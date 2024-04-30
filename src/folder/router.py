@@ -23,7 +23,7 @@ router = APIRouter(prefix="/folders", tags=["folders"])
 def create_folder(
     folder: schemas.FolderCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(can_edit_folder),
+    user: User = Depends(has_admin_or_owner_role),
 ):
     db_folder = service.create_folder(db, folder)
     return db_folder
@@ -44,7 +44,7 @@ def read_folders(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    return paginate(service.get_folders(db, user.id))
+    return paginate(db, service.get_folders(db, user.id))
 
 
 @tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.FolderList])

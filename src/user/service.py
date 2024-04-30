@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from src.auth.utils import get_password_hash
@@ -13,13 +14,17 @@ from ..entity.service import create_entity_auto
 
 
 def check_user_exists(db: Session, user_id: int):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    # user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
     if not user:
         raise exceptions.UserNotFound()
 
 
 def check_username_exists(db: Session, username: str, user_id: Optional[int] = None):
-    user = db.query(models.User).filter(models.User.username == username).first()
+    # user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.scalars(
+        select(models.User).where(models.User.username == username)
+    ).first()
     if user_id and user:
         if user_id != user.id:
             raise exceptions.UsernameTaken()
@@ -28,7 +33,8 @@ def check_username_exists(db: Session, username: str, user_id: Optional[int] = N
 
 
 def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
-    user = db.query(models.User).filter(models.User.email == email).first()
+    # user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.scalars(select(models.User).where(models.User.email == email)).first()
     if user_id and user:
         if user_id != user.id:
             raise exceptions.UserEmailTaken()
@@ -44,49 +50,59 @@ def check_invalid_password(db: Session, password: str):
 
 def get_user(db: Session, user_id: int) -> User:
     check_user_exists(db, user_id=user_id)
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
+    return user
 
 
 def get_user_by_email(db: Session, email: str) -> User:
-    user = db.query(models.User).filter(models.User.email == email).first()
+    # user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.scalars(select(models.User).where(models.User.email == email)).first()
     if not user:
         raise exceptions.UserNotFound()
     return user
 
 
 def get_users(db: Session):
-    return db.query(models.User)
+    return select(models.User)
 
 
 def get_tenants(db: Session, user_id: int):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user.is_admin:
-        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
-            tenants_and_users_table.c.user_id == user_id
-        )
-        return db.query(Tenant).filter(Tenant.id.in_(tenant_ids))
-    return db.query(Tenant)
+    user = get_user(db, user_id)
+    tenants = select(Tenant)
+    if user.is_admin:
+        return tenants
+    else:
+        # tenant_ids = select(tenants_and_users_table.c.tenant_id).where(
+        #     tenants_and_users_table.c.user_id == user_id
+        # )
+        tenant_ids = user.get_tenants_ids()
+        return tenants.where(Tenant.id.in_(tenant_ids))
 
 def get_folders(db: Session, user_id: int):
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user(db, user_id)
     if not user.is_admin:
-        tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
-            tenants_and_users_table.c.user_id == user_id
-        )
-        return db.query(Folder).filter(Folder.tenant_id.in_(tenant_ids))
-    return db.query(Folder)
+        # tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
+        #     tenants_and_users_table.c.user_id == user_id
+        # )
+        tenant_ids = user.get_tenants_ids()
+        return select(Folder).where(Folder.tenant_id.in_(tenant_ids))
+    return select(Folder)
 
 
 def get_devices(db: Session, user_id: int):
-    user = db.query(User).filter(User.id == user_id).first()
-    tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
-        tenants_and_users_table.c.user_id == user_id
+    user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
+    tenant_ids = db.scalars(
+        select(tenants_and_users_table.c.tenant_id).where(
+            tenants_and_users_table.c.user_id == user_id
+        )
     )
-    
-    tenant_folder_ids = db.query(Folder.id).filter(Folder.tenant_id.in_(tenant_ids))
-    devices = db.query(Device)
+
+    tenant_folder_ids = db.scalars(
+        select(Folder.id).where(Folder.tenant_id.in_(tenant_ids))
+    )
+    devices = select(Device)
     if user.role_id != 1:
-        devices = devices.filter(
+        devices = devices.where(
             Device.folder_id.in_(tenant_folder_ids),
         )
     return devices
@@ -97,7 +113,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     check_username_exists(db, username=user.username)
     check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
-    
+
     default_role = (
         db.query(role_models.Role).filter(role_models.Role.name == "user").first()
     )  # defaul role
@@ -108,7 +124,10 @@ def create_user(db: Session, user: schemas.UserCreate):
     values = user.model_dump()
     values.pop("password")
     db_user = models.User(
-        **values, hashed_password=hashed_password, entity_id=entity.id, role_id=default_role.id
+        **values,
+        hashed_password=hashed_password,
+        entity_id=entity.id,
+        role_id=default_role.id
     )
     db.add(db_user)
     db.commit()

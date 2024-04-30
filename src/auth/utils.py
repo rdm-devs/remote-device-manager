@@ -1,6 +1,7 @@
 import os
 from fastapi import Depends
 from dotenv import load_dotenv
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Dict
@@ -24,7 +25,8 @@ def get_password_hash(password):
 
 
 def get_user_by_username(db: Session, username: str):
-    user = db.query(models.User).filter(models.User.username == username).first()
+    #user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.scalars(select(models.User).where(models.User.username == username)).first()
     if not user:
         raise user_exceptions.UserNotFound()
     return user

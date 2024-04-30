@@ -50,7 +50,7 @@ async def read_tags(
 ):
     if not user_id or user_id == "me":
         user_id = user.id
-    return paginate(
+    return paginate(db,
         await service.get_tags(
             db,
             tenant_id=tenant_id,

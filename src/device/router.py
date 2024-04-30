@@ -53,7 +53,7 @@ def read_devices(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    return paginate(service.get_devices(db, user.id))
+    return paginate(db, service.get_devices(db, user.id))
 
 
 @router.patch("/{device_id}", response_model=schemas.Device)

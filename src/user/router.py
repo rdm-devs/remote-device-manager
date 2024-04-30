@@ -23,7 +23,7 @@ def read_users(
     user: schemas.User = Depends(has_admin_role),
 ):
     users = service.get_users(db)
-    return paginate(users)
+    return paginate(db, users)
 
 
 @router.get("/{user_id}", response_model=schemas.User)
@@ -84,7 +84,7 @@ async def read_tenants(
     if user_id == "me":
         user_id = user.id
     tenants = service.get_tenants(db, user_id=int(user_id))
-    return paginate(tenants)
+    return paginate(db, tenants)
 
 
 @router.get("/{user_id}/devices", response_model=Page[DeviceList])
@@ -96,7 +96,7 @@ async def read_devices(
     if user_id == "me":
         user_id = user.id
     devices = service.get_devices(db, user_id=int(user_id))
-    return paginate(devices)
+    return paginate(db, devices)
 
 
 @router.get("/{user_id}/folders", response_model=Page[FolderList])
@@ -108,4 +108,4 @@ async def read_folders(
     if user_id == "me":
         user_id = user.id
     folders = service.get_folders(db, user_id=int(user_id))
-    return paginate(folders)
+    return paginate(db, folders)

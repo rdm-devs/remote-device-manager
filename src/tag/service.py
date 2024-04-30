@@ -1,9 +1,11 @@
-from sqlalchemy.sql import and_
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import has_role, has_admin_role
 from src.user.schemas import User as UserSchema
 from src.user.models import User
+from src.user.service import get_user
+from src.entity.models import entities_and_tags_table
 from src.tenant.models import Tenant, tenants_and_users_table
 from src.folder.models import Folder
 from src.device.models import Device
@@ -70,22 +72,31 @@ async def get_tags(
 ):
 
     # if user is not admin, we query only tags created for tenants owned by the current user
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user(db, user_id)
+    tags = select(models.Tag)
     if user.is_admin:
-        return db.query(models.Tag)
+        return tags
 
-    tags_from_tenants = (
-        db.query(models.Tag)
-        .join(
-            tenants_and_users_table,
-            and_(tenants_and_users_table.c.tenant_id == models.Tag.tenant_id),
-        )
-        .filter(tenants_and_users_table.c.user_id == user.id)
+    user_tag_ids = [t.id for t in user.tags]
+    tags = (
+        tags.join(entities_and_tags_table)
+        .where(entities_and_tags_table.c.tag_id == models.Tag.id)
+        .where(models.Tag.tenant_id.in_(user.get_tenants_ids()))
     )
 
-    filters = get_filters(db, name, tenant_id, folder_id, device_id, user.entity_id)
+    # testing needed:
+    if tenant_id:
+        tags = tags.where(models.Tag.tenant_id == tenant_id)
+    if folder_id:
+        folder = db.scalars(select(Folder.id).where(Folder.id == folder_id)).first()
+        folder_tag_ids = [t.id for t in folder.tags]
+        tags = tags.where(models.Tag.id.in_(folder_tag_ids))
+    if device_id:
+        device = db.scalars(select(Device).where(Device.id == device_id)).first()
+        device_tag_ids = [t.id for t in device.tags]
+        tags = tags.where(models.Tag.id.in_(device_tag_ids))
 
-    return tags_from_tenants.filter(*filters)
+    return tags.distinct()
 
 
 def create_tag(db: Session, tag: schemas.TagCreate):
