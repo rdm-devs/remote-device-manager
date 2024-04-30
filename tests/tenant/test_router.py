@@ -29,7 +29,7 @@ def test_read_tenant(session: Session, client_authenticated: TestClient) -> None
     data = response.json()
     assert data["id"] == tenant_id
     assert data["name"] == "tenant3"
-    assert len(data["folders"]) == 0
+    assert len(data["folders"]) == 1
 
 
 def test_read_non_existent_tenant(
@@ -46,7 +46,7 @@ def test_create_tenant(session: Session, client_authenticated: TestClient) -> No
     data = response.json()
     assert "id" in data
     assert data["name"] == "tenant3"
-    assert len(data["folders"]) == 0
+    assert len(data["folders"]) == 1
 
 
 def test_create_tenant_with_folder(
@@ -92,7 +92,7 @@ def test_update_tenant(session: Session, client_authenticated: TestClient) -> No
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "tenant1-updated"
-    assert len(data["folders"]) == 3
+    assert len(data["folders"]) == 4
 
 
 def test_update_non_existent_tenant(

@@ -26,7 +26,7 @@ from src.user import models as user_models
 def test_create_tenant(session: Session) -> None:
     tenant = create_tenant(session, TenantCreate(name="tenant5"))
     assert tenant.name == "tenant5"
-    assert len(tenant.folders) == 0
+    assert len(tenant.folders) == 1
 
 
 def test_create_duplicated_tenant(session: Session) -> None:
@@ -60,7 +60,7 @@ def test_get_tenant_by_name(session: Session) -> None:
     tenant = get_tenant_by_name(session, tenant_name="tenant1")
     assert tenant.name == "tenant1"
     assert tenant.id == 1
-    assert len(tenant.folders) == 3  # see tests/database.py
+    assert len(tenant.folders) == 4  # see tests/database.py
 
 
 def test_get_tenant_with_invalid_name(session: Session) -> None:

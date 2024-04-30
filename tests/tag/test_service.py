@@ -42,7 +42,7 @@ def test_create_tag_with_invalid_tenant(session: Session) -> None:
 
 def test_get_tag(session: Session) -> None:
     tag = get_tag(session, tag_id=1)
-    assert tag.name == "tag-tenant-1"
+    assert tag.name == "tenant-tenant1-tag"
     assert tag.tenant_id == 1
 
 
@@ -66,8 +66,8 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 @pytest.mark.asyncio
 async def test_get_tags(session: Session) -> None:
     # eight tags were created in tests/database.py
-    tags = (await get_tags(session, user_id=1)).all()  # resolving the query
-    assert len(tags) == 8
+    tags = session.execute(await get_tags(session, user_id=1)).fetchall()
+    assert len(tags) == 12
 
 
 def test_update_tag(session: Session) -> None:

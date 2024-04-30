@@ -36,7 +36,7 @@ def test_read_folder(session: Session, client_authenticated: TestClient) -> None
 def test_read_non_existent_folder(
     session: Session, client_authenticated: TestClient
 ) -> None:
-    folder_id = 6
+    folder_id = 16
     response = client_authenticated.get(f"/folders/{folder_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -127,7 +127,7 @@ def test_update_folder_to_add_a_tenant(
 def test_update_non_existent_folder(
     session: Session, client_authenticated: TestClient
 ) -> None:
-    folder_id = 6
+    folder_id = 16
 
     response = client_authenticated.patch(
         f"/folders/{folder_id}",
@@ -147,12 +147,11 @@ def test_update_non_existent_folder_attrs(
         f"/folders/{folder_id}",
         json={
             "name": "folder1",
-            "tenant_id": None,
-            "devices": [],  # non existing field
-            "tag": "my-cool-device-group-tag",  # non existing field
+            "owners": [],  # non existing field
+            "slug": "my-cool-device-group-tag",  # non existing field
         },
     )
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_delete_folder(session: Session, client_authenticated: TestClient) -> None:
@@ -173,6 +172,6 @@ def test_delete_folder(session: Session, client_authenticated: TestClient) -> No
 def test_delete_non_existent_folder(
     session: Session, client_authenticated: TestClient
 ) -> None:
-    folder_id = 6
+    folder_id = 16
     response = client_authenticated.delete(f"/folders/{folder_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND

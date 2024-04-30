@@ -65,7 +65,7 @@ def test_create_incomplete_device(session: Session) -> None:
 def test_get_device(session: Session) -> None:
     device = get_device(session, device_id=1)
     assert device.name == "dev1"
-    assert device.folder_id == 1
+    assert device.folder_id == 3
 
 
 def test_get_device_with_invalid_id(session: Session) -> None:
@@ -76,7 +76,7 @@ def test_get_device_with_invalid_id(session: Session) -> None:
 def test_get_device_by_name(session: Session) -> None:
     device = get_device_by_name(session, device_name="dev1")
     assert device.name == "dev1"
-    assert device.folder_id == 1
+    assert device.folder_id == 3
 
 
 def test_get_device_with_invalid_name(session: Session) -> None:
@@ -85,17 +85,21 @@ def test_get_device_with_invalid_name(session: Session) -> None:
 
 
 def test_get_devices(session: Session) -> None:
-    devices = get_devices(session, user_id=1).all()  # admin
+    devices = session.execute(get_devices(session, user_id=1)).fetchall()  # admin
+    print(devices)
     assert len(devices) == 3
 
-    devices_owner_2 = get_devices(session, user_id=2).all()  # owner
+    devices_owner_2 = session.execute(get_devices(session, user_id=2)).fetchall()  # owner
+    print(devices_owner_2)
     assert len(devices_owner_2) == 2
 
-    devices_user = get_devices(session, user_id=4).all()  # user
+    devices_user = session.execute(get_devices(session, user_id=4)).fetchall()  # user
+    print(devices_user)
     assert len(devices_user) == 2
     assert devices_owner_2 == devices_user
 
-    devices = get_devices(session, user_id=3).all()  # owner
+    devices = session.execute(get_devices(session, user_id=3)).fetchall()  # owner
+    print(devices)
     assert len(devices) == 1
 
 
@@ -106,7 +110,7 @@ def test_update_device(
         session,
         DeviceCreate(
             name="dev5",
-            folder_id=1,
+            folder_id=3,
             os_id=1,
             vendor_id=1,
             mac_address=TEST_MAC_ADDR,
@@ -123,7 +127,7 @@ def test_update_device(
         updated_device=DeviceUpdate(name="dev-custom"),
     )
     assert device.name == "dev-custom"
-    assert device.folder_id == 1
+    assert device.folder_id == 3
 
 
 def test_update_device_with_invalid_data(
@@ -133,7 +137,7 @@ def test_update_device_with_invalid_data(
         session,
         DeviceCreate(
             name="dev5",
-            folder_id=1,
+            folder_id=3,
             os_id=1,
             vendor_id=1,
             mac_address=TEST_MAC_ADDR,
@@ -144,7 +148,7 @@ def test_update_device_with_invalid_data(
     )
     db_device = get_device(session, device.id)
 
-    folder_id = 6  # this folder id must not exist
+    folder_id = 16  # this folder id must not exist
     with pytest.raises(FolderNotFound):
         device = update_device(
             session,
@@ -161,7 +165,7 @@ def test_update_device_with_invalid_id(session: Session) -> None:
         device = update_device(
             session,
             db_device=db_device,
-            updated_device=DeviceUpdate(name="dev-custom", folder_id=1),
+            updated_device=DeviceUpdate(name="dev-custom", folder_id=3),
         )
 
 
@@ -172,7 +176,7 @@ def test_delete_device(
         session,
         DeviceCreate(
             name="dev5delete",
-            folder_id=1,
+            folder_id=3,
             os_id=1,
             vendor_id=1,
             mac_address=TEST_MAC_ADDR,
@@ -198,7 +202,7 @@ def test_delete_device_with_invalid_id(
         session,
         DeviceCreate(
             name="dev5delete",
-            folder_id=1,
+            folder_id=3,
             os_id=1,
             vendor_id=1,
             mac_address=TEST_MAC_ADDR,

@@ -121,7 +121,7 @@ async def test_read_tenant_admin(client: TestClient, admin_auth_tokens: dict) ->
     assert response.status_code == status.HTTP_200_OK, response.text
     assert data["id"] == tenant_id
     assert data["name"] == "tenant1"
-    assert len(data["folders"]) == 3
+    assert len(data["folders"]) == 4 # 3 manually created +1 (including "/" folder)
 
 
 @pytest.mark.asyncio
@@ -139,7 +139,7 @@ async def test_read_tenant_authorized_owner(
     assert response.status_code == status.HTTP_200_OK, response.text
     assert data["id"] == tenant_id
     assert data["name"] == "tenant1"
-    assert len(data["folders"]) == 3
+    assert len(data["folders"]) == 4
 
 
 @pytest.mark.asyncio
@@ -174,7 +174,7 @@ async def test_read_tenant_unauthorized_user(
 async def test_read_folder_authorized_owner(
     client: TestClient, owner_3_auth_tokens: dict
 ) -> None:
-    folder_id = 4
+    folder_id = 6
     response = client.get(
         f"/folders/{folder_id}",
         headers={
@@ -192,7 +192,7 @@ async def test_read_folder_authorized_owner(
 async def test_read_folder_authorized_admin(
     client: TestClient, admin_auth_tokens: dict
 ) -> None:
-    folder_id = 4
+    folder_id = 6
     response = client.get(
         f"/folders/{folder_id}",
         headers={
@@ -210,7 +210,7 @@ async def test_read_folder_authorized_admin(
 async def test_read_folder_unauthorized_owner(
     client: TestClient, owner_2_auth_tokens: dict
 ) -> None:
-    folder_id = 4
+    folder_id = 6
     response = client.get(
         f"/folders/{folder_id}",
         headers={
@@ -224,7 +224,7 @@ async def test_read_folder_unauthorized_owner(
 async def test_read_folder_unauthorized_user(
     client: TestClient, user_auth_tokens: dict
 ) -> None:
-    folder_id = 4
+    folder_id = 6
     response = client.get(
         f"/folders/{folder_id}",
         headers={"Authorization": f"Bearer {(await user_auth_tokens)['access_token']}"},

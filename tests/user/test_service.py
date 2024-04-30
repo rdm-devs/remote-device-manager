@@ -103,11 +103,8 @@ def test_get_user_with_invalid_email(session: Session) -> None:
 
 
 def test_get_users(session: Session) -> None:
-    # Two users were created in tests/database.py
-    query_users = get_users(session)
-    users = (
-        query_users.all()
-    )  # need to resolve query as in the route we use it for pagination but do not resolve it ourselves
+    # Four users were created in tests/database.py
+    users = session.execute(get_users(session)).fetchall()
     assert len(users) == 4
 
 
@@ -209,49 +206,49 @@ def test_delete_user_with_invalid_id(session: Session) -> None:
 def test_get_devices(session: Session) -> None:
     # user 1 is admin
     user_id = 1
-    devices = get_devices(session, user_id=user_id).all()
+    devices = session.execute(get_devices(session, user_id=user_id)).fetchall()
     assert len(devices) == 3
 
     # user 2 has 2 devices
     user_id = 2
-    devices = get_devices(session, user_id=user_id).all()
+    devices = session.execute(get_devices(session, user_id=user_id)).fetchall()
     assert len(devices) == 2
 
     # user 3 has 1 device
     user_id = 3
-    devices = get_devices(session, user_id=user_id).all()
+    devices = session.execute(get_devices(session, user_id=user_id)).fetchall()
     assert len(devices) == 1
 
 
 def test_get_folders(session: Session) -> None:
     # user 1 is admin
     user_id = 1
-    folders = get_folders(session, user_id=user_id).all()
-    assert len(folders) == 5
+    folders = session.execute(get_folders(session, user_id=user_id)).fetchall()
+    assert len(folders) == 7
 
     # user 2 has 2 folders and 1 subfolder
     user_id = 2
-    folders = get_folders(session, user_id=user_id).all()
-    assert len(folders) == 3
+    folders = session.execute(get_folders(session, user_id=user_id)).fetchall()
+    assert len(folders) == 4
 
     # user 3 has 1 folder and 1 subfolder
     user_id = 3
-    folders = get_folders(session, user_id=user_id).all()
-    assert len(folders) == 2
+    folders = session.execute(get_folders(session, user_id=user_id)).fetchall()
+    assert len(folders) == 3
 
 
 def test_get_tenants(session: Session) -> None:
     # user 1 is admin
     user_id = 1
-    tenants = get_tenants(session, user_id=user_id).all()
+    tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
     assert len(tenants) == 2
 
     # user 2 has 1 tenant
     user_id = 2
-    tenants = get_tenants(session, user_id=user_id).all()
+    tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
     assert len(tenants) == 1
 
     # user 3 has 1 tenant
     user_id = 3
-    tenants = get_tenants(session, user_id=user_id).all()
+    tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
     assert len(tenants) == 1
