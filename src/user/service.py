@@ -1,6 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
+from src.exceptions import BadRequest
 from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
 from src.role import models as role_models
@@ -23,17 +25,19 @@ def check_username_exists(db: Session, username: str, user_id: Optional[int] = N
     user = db.scalars(
         select(models.User).where(models.User.username == username)
     ).first()
-    if user_id and user:
-        if user_id != user.id:
+    if user:
+        if user_id and user_id != user.id:
+            raise exceptions.UsernameTaken()
+        if not user_id:
             raise exceptions.UsernameTaken()
 
 def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
     user = db.scalars(select(models.User).where(models.User.email == email)).first()
-    if user_id and user:
-        if user_id != user.id:
-            raise exceptions.UserEmailTaken()
     if user:
-        raise exceptions.UserEmailTaken()
+        if user_id and user_id != user.id:
+            raise exceptions.UserEmailTaken()
+        if not user_id:
+            raise exceptions.UserEmailTaken()
 
 
 def check_invalid_password(db: Session, password: str):

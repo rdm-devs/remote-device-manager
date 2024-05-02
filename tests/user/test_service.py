@@ -6,6 +6,7 @@ from src.user.exceptions import (
     UserEmailTaken,
     UserInvalidPassword,
     UserNotFound,
+    UsernameTaken,
 )
 from src.user.service import (
     create_user,
@@ -43,6 +44,16 @@ def test_create_duplicated_user(session: Session) -> None:
             UserCreate(
                 email="test-user@sia.com",
                 username="test-user-5",
+                password="_s3cr3tp@5sw0rd_",
+            ),
+        )
+
+    with pytest.raises(UsernameTaken):
+        create_user(
+            session,
+            UserCreate(
+                email="test-user-10@sia.com",
+                username="test-user-1",
                 password="_s3cr3tp@5sw0rd_",
             ),
         )

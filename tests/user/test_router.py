@@ -75,6 +75,17 @@ def test_create_duplicated_user(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.USER_EMAIL_TAKEN
 
+    response = client_authenticated.post(
+        "/auth/register",
+        json={
+            "email": "test-user-10@sia.com",
+            "username": "test-user-1",
+            "password": "_s3cr3tp@5sw0rd_",
+        },
+    )  # a user with username "test-user-1" was created in session, see: tests/database.py
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == ErrorCode.USERNAME_TAKEN
+
 
 def test_create_user_with_invalid_password(
     session: Session, client_authenticated: TestClient
@@ -227,7 +238,7 @@ def test_delete_non_existent_user(
 
 
 def test_read_devices(session: Session, client_authenticated: TestClient) -> None:
-    user_id = "me" # client_authenticated is admin
+    user_id = "me"  # client_authenticated is admin
     response = client_authenticated.get(f"/users/{user_id}/devices")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["items"]) == 3
