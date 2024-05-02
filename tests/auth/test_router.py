@@ -23,8 +23,12 @@ def test_login(client: TestClient) -> None:
         "/auth/token", data={"username": "test-user-1", "password": "_s3cr3tp@5sw0rd_"}
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["access_token"]
-    assert response.json()["refresh_token"]
+    data = response.json()
+    token = data["token"]
+    user = data["user"]
+    assert token["access_token"]
+    assert token["refresh_token"]
+    assert user["username"] == "test-user-1"
 
 
 @pytest.mark.asyncio
@@ -65,6 +69,7 @@ def test_register_user(client: TestClient) -> None:
     assert response.json()["role_id"] == 3  # we assign it to the default "user" role
     assert response.json()["disabled"] == False
     assert response.json()["last_login"]
+    assert response.json()["entity_id"]
 
 
 def test_read_devices_unauthorized(client: TestClient) -> None:

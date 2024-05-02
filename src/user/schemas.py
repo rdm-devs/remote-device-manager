@@ -15,14 +15,13 @@ class UserCreate(BaseModel):  # used when creating user
     email: EmailStr
     username: str
     password: str
-    #role_id: Optional[int] = None
 
     model_config = {"extra": "forbid"}
 
 
 class User(UserBase):  # used when reading user info
     id: int
-    #hashed_password: str
+    entity_id: int
     model_config = {"from_attributes": True}
 
 
