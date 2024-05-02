@@ -105,11 +105,15 @@ def test_create_user_with_invalid_password(
 def test_update_user(session: Session, client_authenticated: TestClient) -> None:
     # user with id=1 already exists in the session. See: tests/database.py
     user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    username = data["username"]
 
     # updating user's email
     response = client_authenticated.patch(
         f"/users/{user_id}",
-        json={"email": "test-user-updated@sia.com"},
+        json={"username": username, "email": "test-user-updated@sia.com"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -144,6 +148,26 @@ def test_update_user_with_email_taken(
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.USER_EMAIL_TAKEN
+
+
+def test_update_user_with_username_taken(
+    session: Session, client_authenticated: TestClient
+) -> None:
+    # user with id=1 already exists in the session. See: tests/database.py
+    user_id = 1
+    response = client_authenticated.get(f"/users/{user_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    username = data["username"]
+
+    # updating user's email
+    user_id = 2
+    response = client_authenticated.patch(
+        f"/users/{user_id}",
+        json={"username": username},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == ErrorCode.USERNAME_TAKEN
 
 
 def test_update_non_existent_user(

@@ -9,31 +9,25 @@ from src.folder.models import Folder
 from src.device.models import Device
 from src.user.models import User
 from src.tag.models import Tag
-from . import schemas, models, exceptions
-from ..entity.service import create_entity_auto
+from src.user import schemas, models, exceptions
+from src.entity.service import create_entity_auto
 
 
 def check_user_exists(db: Session, user_id: int):
-    # user = db.query(models.User).filter(models.User.id == user_id).first()
     user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
     if not user:
         raise exceptions.UserNotFound()
 
 
 def check_username_exists(db: Session, username: str, user_id: Optional[int] = None):
-    # user = db.query(models.User).filter(models.User.username == username).first()
     user = db.scalars(
         select(models.User).where(models.User.username == username)
     ).first()
     if user_id and user:
         if user_id != user.id:
             raise exceptions.UsernameTaken()
-    if user:
-        raise exceptions.UsernameTaken()
-
 
 def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
-    # user = db.query(models.User).filter(models.User.email == email).first()
     user = db.scalars(select(models.User).where(models.User.email == email)).first()
     if user_id and user:
         if user_id != user.id:
@@ -55,7 +49,6 @@ def get_user(db: Session, user_id: int) -> User:
 
 
 def get_user_by_email(db: Session, email: str) -> User:
-    # user = db.query(models.User).filter(models.User.email == email).first()
     user = db.scalars(select(models.User).where(models.User.email == email)).first()
     if not user:
         raise exceptions.UserNotFound()
@@ -72,18 +65,12 @@ def get_tenants(db: Session, user_id: int):
     if user.is_admin:
         return tenants
     else:
-        # tenant_ids = select(tenants_and_users_table.c.tenant_id).where(
-        #     tenants_and_users_table.c.user_id == user_id
-        # )
         tenant_ids = user.get_tenants_ids()
         return tenants.where(Tenant.id.in_(tenant_ids))
 
 def get_folders(db: Session, user_id: int):
     user = get_user(db, user_id)
     if not user.is_admin:
-        # tenant_ids = db.query(tenants_and_users_table.c.tenant_id).filter(
-        #     tenants_and_users_table.c.user_id == user_id
-        # )
         tenant_ids = user.get_tenants_ids()
         return select(Folder).where(Folder.tenant_id.in_(tenant_ids))
     return select(Folder)
@@ -120,7 +107,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     entity = create_entity_auto(db)
     hashed_password = get_password_hash(user.password)
 
-    # import pdb; pdb.set_trace()
     values = user.model_dump()
     values.pop("password")
     db_user = models.User(
