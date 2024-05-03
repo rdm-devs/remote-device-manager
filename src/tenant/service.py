@@ -80,6 +80,8 @@ def update_tenant(
 def delete_tenant(db: Session, db_tenant: schemas.Tenant):
     # sanity check
     check_tenant_exists(db, tenant_id=db_tenant.id)
+    if len(db_tenant.folders) > 0:
+        raise exceptions.TenantCannotBeDeleted()
 
     db.delete(db_tenant)
     db.commit()
