@@ -253,29 +253,223 @@ async def test_read_tag_unauthorized_user(
 async def test_read_tag_authorized_admin(
     client: TestClient, admin_auth_tokens: dict
 ) -> None:
+    access_tokens = (await admin_auth_tokens)['access_token']
+
     tag_name = ""
     response = client.get(
         f"/tags/?name={tag_name}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 14
+
+    # filtering by name
+    tag_name = "tenant1"
+    response = client.get(
+        f"/tags/?name={tag_name}",
         headers={
-            "Authorization": f"Bearer {(await admin_auth_tokens)['access_token']}"
+            "Authorization": f"Bearer {access_tokens}"
         },
     )
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 4
+
+    # filtering by tenant_id
+    tenant_id = 1
+    response = client.get(
+        f"/tags/?tenant_id={tenant_id}",
+        headers={
+            "Authorization": f"Bearer {access_tokens}"
+        },
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 8
+
+    # filtering by tenant_id and name
+    name = "test"
+    tenant_id = 1
+    response = client.get(
+        f"/tags/?name={name}&tenant_id={tenant_id}",
+        headers={
+            "Authorization": f"Bearer {access_tokens}"
+        },
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 0
+
+    # filtering by device_id
+    device_id = 1
+    response = client.get(
+        f"/tags/?device_id={device_id}",
+        headers={
+            "Authorization": f"Bearer {access_tokens}"
+        },
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 2
+
+    # filtering by folder_id
+    folder_id = 3
+    response = client.get(
+        f"/tags/?folder_id={folder_id}",
+        headers={
+            "Authorization": f"Bearer {access_tokens}"
+        },
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 2
+
+@pytest.mark.asyncio
+async def test_read_tag_authorized_owner_2(
+    client: TestClient, owner_2_auth_tokens: dict
+) -> None:
+    access_tokens = (await owner_2_auth_tokens)["access_token"]
+
+    tag_name = ""
+    response = client.get(
+        f"/tags/?name={tag_name}",
+        headers={
+            "Authorization": f"Bearer {access_tokens}"
+        },
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+
+    # filtering by name
+    tag_name = "tenant1"
+    response = client.get(
+        f"/tags/?name={tag_name}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 3
+
+    # filtering by tenant_id
+    tenant_id = 1
+    response = client.get(
+        f"/tags/?tenant_id={tenant_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 7
+
+    # filtering by tenant_id (wrong one) and name. it should reject the request
+    name = "tenant"
+    tenant_id = 2
+    response = client.get(
+        f"/tags/?name={name}&tenant_id={tenant_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+    # filtering by device_id
+    device_id = 1
+    response = client.get(
+        f"/tags/?device_id={device_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 2
+
+    # filtering by folder_id
+    folder_id = 3
+    response = client.get(
+        f"/tags/?folder_id={folder_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 2
 
 
 @pytest.mark.asyncio
-async def test_read_tag_authorized_owner(
-    client: TestClient, owner_2_auth_tokens: dict
+async def test_read_tag_authorized_owner_3(
+    client: TestClient, owner_3_auth_tokens: dict
 ) -> None:
+    access_tokens = (await owner_3_auth_tokens)["access_token"]
+
     tag_name = ""
     response = client.get(
         f"/tags/?name={tag_name}",
-        headers={
-            "Authorization": f"Bearer {(await owner_2_auth_tokens)['access_token']}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
+
+    # filtering by name
+    tag_name = "tenant2"
+    response = client.get(
+        f"/tags/?name={tag_name}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 2
+
+    # filtering by tenant_id
+    tenant_id = 2
+    response = client.get(
+        f"/tags/?tenant_id={tenant_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 5
+
+    # filtering by tenant_id (wrong one) and name. it should reject the request
+    name = "tenant"
+    tenant_id = 1
+    response = client.get(
+        f"/tags/?name={name}&tenant_id={tenant_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+    # filtering by device_id
+    device_id = 3
+    response = client.get(
+        f"/tags/?device_id={device_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 0
+
+    # filtering by folder_id
+    folder_id = 6
+    response = client.get(
+        f"/tags/?folder_id={folder_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["items"]) == 1

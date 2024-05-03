@@ -322,24 +322,24 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
     user_id = "me"
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 12
+    assert len(response.json()["items"]) == 14
 
     user_id = 1
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 12
+    assert len(response.json()["items"]) == 14
 
     user_id = 2
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 6
+    assert len(response.json()["items"]) == 7
 
     user_id = 3
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 4
+    assert len(response.json()["items"]) == 5
 
     user_id = 4
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 6
+    assert len(response.json()["items"]) == 7
