@@ -43,6 +43,16 @@ def create_root_folder(db: Session, tenant_id: int):
     db.commit()
     db.refresh(db_folder)
 
+    formatted_name = f"root-tenant-{tenant_id}"
+    db_folder.add_tag(
+        create_tag(
+            db,
+            TagCreate(
+                name=f"folder-{formatted_name}-tag", tenant_id=db_folder.tenant_id
+            ),
+        )
+    )
+
     return db_folder
 
 
