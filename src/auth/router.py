@@ -18,7 +18,7 @@ from src.auth.dependencies import (
     valid_refresh_token,
     valid_refresh_token_user,
 )
-from src.auth.schemas import Token, LoginResponse
+from src.auth.schemas import Token
 from src.auth import service
 
 load_dotenv()
@@ -30,16 +30,14 @@ async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
-) -> LoginResponse:
+) -> Token:
     user = authenticate_user(form_data.username, form_data.password, db)
     refresh_token_value = await service.create_refresh_token(db, user.id)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
 
-    return LoginResponse(
-        user=user,
-        token=Token(
-            access_token=create_access_token(user), refresh_token=refresh_token_value
-        ),
+    return Token(
+        access_token=create_access_token(user),
+        refresh_token=refresh_token_value,
     )
 
 

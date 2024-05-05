@@ -24,11 +24,8 @@ def test_login(client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    token = data["token"]
-    user = data["user"]
-    assert token["access_token"]
-    assert token["refresh_token"]
-    assert user["username"] == "test-user-1"
+    assert data["access_token"]
+    assert data["refresh_token"]
 
 
 @pytest.mark.asyncio
@@ -126,7 +123,7 @@ async def test_read_tenant_admin(client: TestClient, admin_auth_tokens: dict) ->
     assert response.status_code == status.HTTP_200_OK, response.text
     assert data["id"] == tenant_id
     assert data["name"] == "tenant1"
-    assert len(data["folders"]) == 4 # 3 manually created +1 (including "/" folder)
+    assert len(data["folders"]) == 4  # 3 manually created +1 (including "/" folder)
 
 
 @pytest.mark.asyncio
@@ -253,7 +250,7 @@ async def test_read_tag_unauthorized_user(
 async def test_read_tag_authorized_admin(
     client: TestClient, admin_auth_tokens: dict
 ) -> None:
-    access_tokens = (await admin_auth_tokens)['access_token']
+    access_tokens = (await admin_auth_tokens)["access_token"]
 
     tag_name = ""
     response = client.get(
@@ -269,9 +266,7 @@ async def test_read_tag_authorized_admin(
     tag_name = "tenant1"
     response = client.get(
         f"/tags/?name={tag_name}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
@@ -282,9 +277,7 @@ async def test_read_tag_authorized_admin(
     tenant_id = 1
     response = client.get(
         f"/tags/?tenant_id={tenant_id}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
@@ -296,9 +289,7 @@ async def test_read_tag_authorized_admin(
     tenant_id = 1
     response = client.get(
         f"/tags/?name={name}&tenant_id={tenant_id}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
@@ -309,9 +300,7 @@ async def test_read_tag_authorized_admin(
     device_id = 1
     response = client.get(
         f"/tags/?device_id={device_id}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
@@ -322,14 +311,13 @@ async def test_read_tag_authorized_admin(
     folder_id = 3
     response = client.get(
         f"/tags/?folder_id={folder_id}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
     assert len(data["items"]) == 2
+
 
 @pytest.mark.asyncio
 async def test_read_tag_authorized_owner_2(
@@ -340,9 +328,7 @@ async def test_read_tag_authorized_owner_2(
     tag_name = ""
     response = client.get(
         f"/tags/?name={tag_name}",
-        headers={
-            "Authorization": f"Bearer {access_tokens}"
-        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
 
     data = response.json()

@@ -31,10 +31,13 @@ async def get_current_user(
         payload = jwt.decode(
             token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
         )
-        username: str = payload.get("sub")
-        if username is None:
+        user_str = payload.get("sub")
+        if user_str is None:
             raise exceptions.InvalidCredentials()
-        token_data = TokenData(username=username)
+        user = User.model_validate_json(
+            user_str
+        )  # creating User schema with the data from the token.
+        token_data = TokenData(username=user.username)
     except JWTError:
         raise exceptions.InvalidCredentials()
     user = get_user_by_username(db, username=token_data.username)

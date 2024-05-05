@@ -24,7 +24,7 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user_by_username(db: Session, username: str):
+def get_user_by_username(db: Session, username: str) -> models.User:
     #user = db.query(models.User).filter(models.User.username == username).first()
     user = db.scalars(select(models.User).where(models.User.username == username)).first()
     if not user:
@@ -53,12 +53,13 @@ def encode_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 def create_access_token(
-    user: schemas.User,
+    user: models.User,
     expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
 ):
+    serialized_user = schemas.User.model_validate(user).model_dump_json()
     access_token_expires = timedelta(minutes=expiration_minutes)
     access_token = encode_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": serialized_user}, expires_delta=access_token_expires
     )
     return access_token
 

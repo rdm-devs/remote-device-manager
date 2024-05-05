@@ -9,7 +9,11 @@ from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from src import folder
 from src.main import app
-from src.auth.dependencies import oauth2_scheme, get_current_active_user
+from src.auth.dependencies import (
+    oauth2_scheme,
+    get_current_active_user,
+    get_current_user,
+)
 from src.auth import service as auth_service
 from src.auth import utils as auth_utils
 from src.database import get_db, Base
@@ -90,13 +94,15 @@ def session(
 
     folder_1 = create_folder(db, FolderCreate(name="folder1", tenant_id=tenant_1.id))
     subfolder_1 = create_folder(
-        db, FolderCreate(name="subfolder1", tenant_id=tenant_1.id, parent_id=folder_1.id)
+        db,
+        FolderCreate(name="subfolder1", tenant_id=tenant_1.id, parent_id=folder_1.id),
     )
     folder_2 = create_folder(db, FolderCreate(name="folder2", tenant_id=tenant_1.id))
 
     folder_3 = create_folder(db, FolderCreate(name="folder3", tenant_id=tenant_2.id))
     subfolder_2 = create_folder(
-        db, FolderCreate(name="subfolder2", tenant_id=tenant_2.id, parent_id=folder_3.id)
+        db,
+        FolderCreate(name="subfolder2", tenant_id=tenant_2.id, parent_id=folder_3.id),
     )
 
     device_1 = create_device(
@@ -139,7 +145,7 @@ def session(
         db,
         UserCreate(
             username="test-user-1",
-            password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+            password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
             email="test-user@sia.com",
         ),
     )
@@ -149,7 +155,7 @@ def session(
         db,
         UserCreate(
             username="test-user-2",
-            password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+            password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
             email="test-user-2@sia.com",
         ),
     )
@@ -159,7 +165,7 @@ def session(
         db,
         UserCreate(
             username="test-user-3",
-            password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+            password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
             email="test-user-3@sia.com",
         ),
     )
@@ -169,7 +175,7 @@ def session(
         db,
         UserCreate(
             username="test-user-4",
-            password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
+            password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
             email="test-user-4@sia.com",
         ),
     )
@@ -189,14 +195,14 @@ def session(
     tag_2 = create_tag(db, TagCreate(name="tag-user-3", tenant_id=tenant_2.id))
     user_3.add_tag(tag_2)
 
-    #tag_3 = create_tag(db, TagCreate(name="tag-folder-1", tenant_id=tenant_1.id))
-    #folder_1.add_tag(tag_3)
+    # tag_3 = create_tag(db, TagCreate(name="tag-folder-1", tenant_id=tenant_1.id))
+    # folder_1.add_tag(tag_3)
 
     tag_4 = create_tag(db, TagCreate(name="tag-dev-1", tenant_id=tenant_1.id))
     device_1.add_tag(tag_4)
 
-    #tag_5 = create_tag(db, TagCreate(name="tag-subfolder-1", tenant_id=tenant_1.id))
-    #subfolder_1.add_tag(tag_5)
+    # tag_5 = create_tag(db, TagCreate(name="tag-subfolder-1", tenant_id=tenant_1.id))
+    # subfolder_1.add_tag(tag_5)
 
     tag_6 = create_tag(db, TagCreate(name="tag-tenant-2", tenant_id=tenant_2.id))
     user_3.add_tag(tag_6)
@@ -204,8 +210,8 @@ def session(
     device_2.add_tag(tag_6)
     folder_2.add_tag(tag_6)
 
-    #tag_7 = create_tag(db, TagCreate(name="tag-subfolder-2", tenant_id=tenant_2.id))
-    #subfolder_2.add_tag(tag_7)
+    # tag_7 = create_tag(db, TagCreate(name="tag-subfolder-2", tenant_id=tenant_2.id))
+    # subfolder_2.add_tag(tag_7)
 
     tag_8 = create_tag(db, TagCreate(name="tag-user-2", tenant_id=tenant_1.id))
     user_2.add_tag(tag_8)
