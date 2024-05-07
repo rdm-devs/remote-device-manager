@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.user.schemas import User, UserCreate
-from src.user.service import check_email_exists, check_username_exists, create_user
+from src.user.service import check_username_exists, create_user
 from typing import Any, Dict
 from src.auth.utils import (
     authenticate_user,

@@ -4,16 +4,14 @@ from typing import Optional
 
 
 class UserBase(BaseModel):  # used as common fields
-    email: EmailStr
-    username: str
+    username: EmailStr
     last_login: datetime = datetime.now()
     role_id: Optional[int] = None
     disabled: Optional[bool] = False
 
 
 class UserCreate(BaseModel):  # used when creating user
-    email: EmailStr
-    username: str
+    username: EmailStr
     password: str
 
     model_config = {"extra": "forbid"}
@@ -26,9 +24,8 @@ class User(UserBase):  # used when reading user info
 
 
 class UserUpdate(UserBase):
-    username: Optional[str] = None
+    username: Optional[EmailStr] = None
     password: Optional[str] = None
-    email: Optional[str] = None
     role_id: Optional[int] = None
 
     model_config = {"extra": "forbid"}

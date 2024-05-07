@@ -3,7 +3,6 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.user.exceptions import (
-    UserEmailTaken,
     UserInvalidPassword,
     UserNotFound,
     UsernameTaken,
@@ -11,7 +10,6 @@ from src.user.exceptions import (
 from src.user.service import (
     create_user,
     get_user,
-    get_user_by_email,
     get_users,
     delete_user,
     update_user,
@@ -23,37 +21,25 @@ from src.user.schemas import (
     UserCreate,
     UserUpdate,
 )
-
+from src.auth.utils import get_user_by_username
 
 def test_create_user(session: Session) -> None:
     user = create_user(
         session,
         UserCreate(
-            email="test-user-5@sia.com",
-            username="test-user-5",
+            username="test-user-5@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )
-    assert user.email == "test-user-5@sia.com"
+    assert user.username == "test-user-5@sia.com"
 
 
 def test_create_duplicated_user(session: Session) -> None:
-    with pytest.raises(UserEmailTaken):
-        create_user(
-            session,
-            UserCreate(
-                email="test-user@sia.com",
-                username="test-user-5",
-                password="_s3cr3tp@5sw0rd_",
-            ),
-        )
-
     with pytest.raises(UsernameTaken):
         create_user(
             session,
             UserCreate(
-                email="test-user-10@sia.com",
-                username="test-user-1",
+                username="test-user-1@sia.com",
                 password="_s3cr3tp@5sw0rd_",
             ),
         )
@@ -64,8 +50,7 @@ def test_create_user_with_invalid_password(session: Session) -> None:
         create_user(
             session,
             UserCreate(
-                email="test-user-5@sia.com",
-                username="test-user-5",
+                username="test-user-5@sia.com",
                 password="123",
             ),
         )
@@ -79,8 +64,7 @@ def test_create_invalid_user(session: Session) -> None:
         create_user(
             session,
             UserCreate(
-                email="test-user-5@sia.com",
-                username="test-user-5",
+                username="test-user-5@sia.com",
                 password="1234",
                 tag="my-custom-tag",
             ),
@@ -90,7 +74,7 @@ def test_create_invalid_user(session: Session) -> None:
 def test_get_user(session: Session) -> None:
     user_id = 1  # created in tests/database.py
     user = get_user(session, user_id=user_id)
-    assert user.email == "test-user@sia.com"
+    assert user.username == "test-user-1@sia.com"
     assert user.hashed_password is not None
     assert user.id == 1
 
@@ -101,16 +85,16 @@ def test_get_user_with_invalid_id(session: Session) -> None:
         get_user(session, user_id)
 
 
-def test_get_user_by_email(session: Session) -> None:
-    user = get_user_by_email(session, email="test-user@sia.com")
-    assert user.email == "test-user@sia.com"
+def test_get_user_by_username(session: Session) -> None:
+    user = get_user_by_username(session, username="test-user-1@sia.com")
+    assert user.username == "test-user-1@sia.com"
     assert user.hashed_password is not None
     assert user.id == 1
 
 
-def test_get_user_with_invalid_email(session: Session) -> None:
+def test_get_user_with_invalid_username(session: Session) -> None:
     with pytest.raises(UserNotFound):
-        get_user_by_email(session, email="test-user-5@sia.com")
+        get_user_by_username(session, username="test-user-5@sia.com")
 
 
 def test_get_users(session: Session) -> None:
@@ -123,8 +107,7 @@ def test_update_user(session: Session) -> None:
     user = create_user(
         session,
         UserCreate(
-            email="test-user-5@sia.com",
-            username="test-user-5",
+            username="test-user-5@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )
@@ -134,9 +117,9 @@ def test_update_user(session: Session) -> None:
     user = update_user(
         session,
         db_user=db_user,
-        updated_user=UserUpdate(email="test-user-5-updated@sia.com"),
+        updated_user=UserUpdate(username="test-user-5-updated@sia.com"),
     )
-    assert user.email == "test-user-5-updated@sia.com"
+    assert user.username == "test-user-5-updated@sia.com"
     assert user.hashed_password is not None
     assert (
         user.hashed_password == prev_hashed_password
@@ -148,8 +131,7 @@ def test_update_user_with_invalid_attrs(session: Session) -> None:
     user = create_user(
         session,
         UserCreate(
-            email="test-user-5@sia.com",
-            username="test-user-5",
+            username="test-user-5@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )
@@ -160,7 +142,7 @@ def test_update_user_with_invalid_attrs(session: Session) -> None:
             session,
             db_user=db_user,
             updated_user=UserUpdate(
-                email="test-user-5@sia.com", password="1234", tag="my-custom-tag"
+                username="test-user-5@sia.com", password="1234", tag="my-custom-tag"
             ),
         )
 
@@ -174,7 +156,7 @@ def test_update_user_with_invalid_id(session: Session) -> None:
             session,
             db_user=db_user,
             updated_user=UserUpdate(
-                email="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_"
+                username="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_"
             ),
         )
 
@@ -183,8 +165,7 @@ def test_delete_user(session: Session) -> None:
     user = create_user(
         session,
         UserCreate(
-            email="test-user-delete@sia.com",
-            username="test-user-5",
+            username="test-user-delete@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )
@@ -202,8 +183,7 @@ def test_delete_user_with_invalid_id(session: Session) -> None:
     user = create_user(
         session,
         UserCreate(
-            email="test-user-delete@sia.com",
-            username="test-user-5",
+            username="test-user-delete@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )

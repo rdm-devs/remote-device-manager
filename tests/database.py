@@ -144,9 +144,8 @@ def session(
     user_1 = create_user(
         db,
         UserCreate(
-            username="test-user-1",
+            username="test-user-1@sia.com",
             password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-            email="test-user@sia.com",
         ),
     )
     assign_role(db, user_1.id, roles[0].id)
@@ -154,9 +153,8 @@ def session(
     user_2 = create_user(
         db,
         UserCreate(
-            username="test-user-2",
+            username="test-user-2@sia.com",
             password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-            email="test-user-2@sia.com",
         ),
     )
     assign_role(db, user_2.id, roles[1].id)
@@ -164,9 +162,8 @@ def session(
     user_3 = create_user(
         db,
         UserCreate(
-            username="test-user-3",
+            username="test-user-3@sia.com",
             password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-            email="test-user-3@sia.com",
         ),
     )
     assign_role(db, user_3.id, roles[1].id)
@@ -174,9 +171,8 @@ def session(
     user_4 = create_user(
         db,
         UserCreate(
-            username="test-user-4",
+            username="test-user-4@sia.com",
             password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-            email="test-user-4@sia.com",
         ),
     )
     assign_role(db, user_4.id, roles[2].id)

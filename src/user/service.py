@@ -31,14 +31,6 @@ def check_username_exists(db: Session, username: str, user_id: Optional[int] = N
         if not user_id:
             raise exceptions.UsernameTaken()
 
-def check_email_exists(db: Session, email: str, user_id: Optional[int] = None):
-    user = db.scalars(select(models.User).where(models.User.email == email)).first()
-    if user:
-        if user_id and user_id != user.id:
-            raise exceptions.UserEmailTaken()
-        if not user_id:
-            raise exceptions.UserEmailTaken()
-
 
 def check_invalid_password(db: Session, password: str):
     valid = len(password.strip()) >= 8
@@ -49,13 +41,6 @@ def check_invalid_password(db: Session, password: str):
 def get_user(db: Session, user_id: int) -> User:
     check_user_exists(db, user_id=user_id)
     user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
-    return user
-
-
-def get_user_by_email(db: Session, email: str) -> User:
-    user = db.scalars(select(models.User).where(models.User.email == email)).first()
-    if not user:
-        raise exceptions.UserNotFound()
     return user
 
 
@@ -71,6 +56,7 @@ def get_tenants(db: Session, user_id: int):
     else:
         tenant_ids = user.get_tenants_ids()
         return tenants.where(Tenant.id.in_(tenant_ids))
+
 
 def get_folders(db: Session, user_id: int):
     user = get_user(db, user_id)
@@ -102,7 +88,6 @@ def get_devices(db: Session, user_id: int):
 def create_user(db: Session, user: schemas.UserCreate):
     # sanity checks
     check_username_exists(db, username=user.username)
-    check_email_exists(db, email=user.email)
     check_invalid_password(db, password=user.password)
 
     default_role = (
@@ -134,7 +119,6 @@ def update_user(
     values = updated_user.model_dump(exclude_unset=True)
     check_user_exists(db, user_id=db_user.id)
     check_username_exists(db, username=updated_user.username, user_id=db_user.id)
-    check_email_exists(db, email=updated_user.email, user_id=db_user.id)
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
         values["hashed_password"] = get_password_hash(

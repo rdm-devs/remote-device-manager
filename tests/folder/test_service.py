@@ -89,8 +89,7 @@ def test_get_folders(session: Session) -> None:
     user5 = create_user(
         session,
         UserCreate(
-            email="test-user-5@sia.com",
-            username="test-user-5",
+            username="test-user-5@sia.com",
             password="_s3cr3tp@5sw0rd_",
         ),
     )

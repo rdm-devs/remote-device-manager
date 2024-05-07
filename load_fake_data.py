@@ -107,9 +107,8 @@ device_3 = create_device(
 user_1 = create_user(
     db,
     UserCreate(
-        username="test-user-1",
+        username="test-user-1@sia.com",
         password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-        email="test-user@sia.com",
     ),
 )
 assign_role(db, user_1.id, roles[0].id)
@@ -117,9 +116,8 @@ assign_role(db, user_1.id, roles[0].id)
 user_2 = create_user(
     db,
     UserCreate(
-        username="test-user-2",
+        username="test-user-2@sia.com",
         password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-        email="test-user-2@sia.com",
     ),
 )
 assign_role(db, user_2.id, roles[1].id)
@@ -127,9 +125,8 @@ assign_role(db, user_2.id, roles[1].id)
 user_3 = create_user(
     db,
     UserCreate(
-        username="test-user-3",
-        password="_s3cr3tp@5sw0rd_", #"$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
-        email="test-user-3@sia.com",
+        username="test-user-3@sia.com",
+        password="_s3cr3tp@5sw0rd_",  # "$2b$12$l1p.F3cYgrWgVNNOYVeU5efgjLzGqT3AOaQQsm0oUKoHSWyNwd4oe",
     ),
 )
 assign_role(db, user_3.id, roles[2].id)

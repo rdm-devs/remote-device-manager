@@ -20,7 +20,7 @@ from tests.database import (
 
 def test_login(client: TestClient) -> None:
     response = client.post(
-        "/auth/token", data={"username": "test-user-1", "password": "_s3cr3tp@5sw0rd_"}
+        "/auth/token", data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"}
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -55,14 +55,12 @@ def test_register_user(client: TestClient) -> None:
     response = client.post(
         "/auth/register",
         json={
-            "username": "test-user-5",
+            "username": "test-user-5@test.com",
             "password": "_s3cr3tp@5sw0rd_",
-            "email": "test-user-3@test.com",
         },
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["username"] == "test-user-5"
-    assert response.json()["email"] == "test-user-3@test.com"
+    assert response.json()["username"] == "test-user-5@test.com"
     assert response.json()["role_id"] == 3  # we assign it to the default "user" role
     assert response.json()["disabled"] == False
     assert response.json()["last_login"]
