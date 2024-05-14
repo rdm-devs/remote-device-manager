@@ -1,11 +1,12 @@
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_pagination import add_pagination
 from .database import engine, Base
-from .auth.router import router as auth_router 
+from .auth.router import router as auth_router
 from .device.router import router as device_router
 from .folder.router import router as folder_router
 from .role.router import router as role_router
@@ -20,29 +21,27 @@ ENV = os.getenv("ENV")
 ROOT_PATH = os.getenv(f"ROOT_PATH_{ENV}")
 
 
-app = FastAPI(root_path=ROOT_PATH)
+@asynccontextmanager
+async def db_creation_lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(root_path=ROOT_PATH, lifespan=db_creation_lifespan)
 origins = [
-    # "http://localhost",
     "http://localhost:4200",
-    # "http://kvmvm.eastus.cloudapp.azure.com",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], #["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],  # ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
 
 add_pagination(app)
-
-
-@app.on_event("startup")
-async def startup():
-    Base.metadata.create_all(bind=engine)
-
 
 app.include_router(auth_router)
 app.include_router(device_router)
