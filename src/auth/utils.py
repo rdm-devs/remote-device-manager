@@ -1,9 +1,9 @@
 import os
+import datetime
 from fastapi import Depends
 from dotenv import load_dotenv
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Dict
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -39,12 +39,12 @@ def authenticate_user(username: str, password: str, db: Session = Depends(get_db
     return user
 
 
-def encode_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def encode_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.datetime.now(datetime.UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM")
@@ -57,7 +57,7 @@ def create_access_token(
     expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
 ):
     serialized_user = schemas.User.model_validate(user).model_dump_json()
-    access_token_expires = timedelta(minutes=expiration_minutes)
+    access_token_expires = datetime.timedelta(minutes=expiration_minutes)
     access_token = encode_access_token(
         data={"sub": serialized_user}, expires_delta=access_token_expires
     )

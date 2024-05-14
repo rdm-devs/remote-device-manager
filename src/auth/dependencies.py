@@ -1,6 +1,6 @@
 import os
+import datetime
 from dotenv import load_dotenv
-from datetime import datetime
 from fastapi import Depends, FastAPI, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -119,7 +119,7 @@ async def valid_refresh_token_user(
 
 
 def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
-    return datetime.utcnow() <= db_refresh_token.expires_at
+    return datetime.datetime.now(datetime.UTC) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
 
 
 async def has_access_to_tenant(

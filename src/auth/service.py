@@ -1,7 +1,7 @@
 import os
 import string
 import random
-from datetime import datetime, timedelta
+import datetime
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -32,8 +32,8 @@ async def create_refresh_token(
     db_refresh_token = models.AuthRefreshToken(
         user_id=user_id,
         refresh_token=refresh_token,
-        expires_at=datetime.utcnow()
-        + timedelta(days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))),
+        expires_at=datetime.datetime.now(datetime.UTC)
+        + datetime.timedelta(days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))),
     )
     db.add(db_refresh_token)
     db.commit()
@@ -55,5 +55,5 @@ async def get_refresh_token(
 async def expire_refresh_token(db: Session, refresh_token: str) -> None:
     db.query(models.AuthRefreshToken).filter(
         models.AuthRefreshToken.refresh_token == refresh_token
-    ).update(values={"valid": False, "expires_at": datetime.utcnow()})
+    ).update(values={"valid": False, "expires_at": datetime.datetime.now(datetime.UTC)})
     db.commit()

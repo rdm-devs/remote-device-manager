@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, BackgroundTasks, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.user.schemas import User, UserCreate
