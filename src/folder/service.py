@@ -130,8 +130,8 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
             raise UserTenantNotAssigned()
 
 
-def get_folders_from_tenant(db: Session, tenant_id: int) -> List[models.Folder]:
-    return db.query(models.Folder).filter(models.Folder.tenant_id == tenant_id)
+def get_folders_from_tenant(db: Session, user_id: int, tenant_id: int) -> List[models.Folder]:
+    return get_folders(db, user_id).filter(models.Folder.tenant_id == tenant_id)
 
 
 def get_folder_by_name(db: Session, folder_name: str):

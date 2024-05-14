@@ -41,9 +41,12 @@ def read_folder(
 
 @router.get("/", response_model=Page[schemas.FolderList])
 def read_folders(
+    tenant_id: Optional[int] = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
+    if tenant_id:
+        return paginate(db, service.get_folders_from_tenant(db, user.id, tenant_id))
     return paginate(db, service.get_folders(db, user.id))
 
 
@@ -53,7 +56,7 @@ def read_folders(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
-    return paginate(service.get_folders_from_tenant(db, tenant_id=tenant_id))
+    return paginate(service.get_folders_from_tenant(db, user_id=user.id, tenant_id=tenant_id))
 
 
 @router.patch("/{folder_id}", response_model=schemas.Folder)
