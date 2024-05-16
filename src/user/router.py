@@ -10,7 +10,7 @@ from src.auth.dependencies import (
 )
 from src.tenant.schemas import TenantList
 from src.device.schemas import DeviceList
-from src.folder.schemas import FolderList
+from src.folder.schemas import Folder
 from . import service, schemas
 from ..database import get_db
 
@@ -99,7 +99,7 @@ async def read_devices(
     return paginate(db, devices)
 
 
-@router.get("/{user_id}/folders", response_model=Page[FolderList])
+@router.get("/{user_id}/folders", response_model=Page[Folder])
 async def read_folders(
     user_id: str = Path(),
     db: Session = Depends(get_db),

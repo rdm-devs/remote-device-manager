@@ -4,10 +4,10 @@ from src.device.schemas import Device, DeviceList
 from src.tag.schemas import Tag
 
 
-class SubfolderList(BaseModel):
+class FolderTenantList(BaseModel):
     id: int
     name: str
-    parent_id: int
+    parent_id: Optional[int] = None
 
 
 class FolderBase(BaseModel):
@@ -16,39 +16,36 @@ class FolderBase(BaseModel):
     subfolders: List["Folder"] = []
 
 
-class Folder(FolderBase):
-    id: int
-    parent_id: Optional[int] = None
-    devices: List[Device]
-    model_config = {"from_attributes": True}
+# class Folder(FolderBase):
+#     id: int
+#     parent_id: Optional[int] = None
+#     devices: List[Device]
+#     model_config = {"from_attributes": True}
 
 
-class FolderList(BaseModel):
+class Folder(BaseModel):
     id: int
     name: str
     parent_id: Optional[int] = None
     tenant_id: Optional[int] = None
     tags: List[Tag] = []
     devices: List[Device] = []
-    subfolders: List["FolderList"] = []
-
-
-class FolderTenantList(BaseModel):
-    id: int
-    name: str
-    parent_id: Optional[int] = None
+    subfolders: List["Folder"] = []
+    model_config = {"from_attributes": True}
 
 
 class FolderCreate(FolderBase):
     parent_id: Optional[int] = None
 
 
-class FolderUpdate(FolderCreate):
+class FolderUpdate(FolderBase):
     name: Optional[str] = None
     tenant_id: Optional[int] = None
     parent_id: Optional[int] = None
-
-    model_config = {"extra": "forbid"}
+    tags: Optional[List[Tag]] = None
+    devices: Optional[List[Device]] = None
+    subfolders: Optional[List["Folder"]] = None
+    model_config = {"extra": "ignore"}
 
 
 class FolderDelete(BaseModel):

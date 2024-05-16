@@ -136,24 +136,6 @@ def test_update_non_existent_folder(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_non_existent_folder_attrs(
-    session: Session, client_authenticated: TestClient
-) -> None:
-    folder_id = (
-        1  # Folder with id=1 already exists in the session. See: tests/database.py
-    )
-
-    response = client_authenticated.patch(
-        f"/folders/{folder_id}",
-        json={
-            "name": "folder1",
-            "owners": [],  # non existing field
-            "slug": "my-cool-device-group-tag",  # non existing field
-        },
-    )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
 def test_delete_folder(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post(
         "/folders/", json={"name": "folder5", "tenant_id": 1}

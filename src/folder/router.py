@@ -29,7 +29,7 @@ def create_folder(
     return db_folder
 
 
-@router.get("/{folder_id}", response_model=schemas.FolderList)
+@router.get("/{folder_id}", response_model=schemas.Folder)
 def read_folder(
     folder_id: int,
     db: Session = Depends(get_db),
@@ -39,7 +39,7 @@ def read_folder(
     return db_folder
 
 
-@router.get("/", response_model=Page[schemas.FolderList])
+@router.get("/", response_model=Page[schemas.Folder])
 def read_folders(
     tenant_id: Optional[int] = None,
     db: Session = Depends(get_db),
@@ -48,7 +48,7 @@ def read_folders(
     return paginate(db, service.get_folders_from_tenant(db, user.id, tenant_id))
 
 
-@tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.FolderList])
+@tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.Folder])
 def read_folders_from_tenant(
     tenant_id: int = Path(),
     db: Session = Depends(get_db),
@@ -81,7 +81,7 @@ def delete_folder(
     }
 
 
-@router.get("/{folder_id}/subfolders", response_model=Page[schemas.FolderList])
+@router.get("/{folder_id}/subfolders", response_model=Page[schemas.Folder])
 def read_subfolders(
     folder_id: int,
     db: Session = Depends(get_db),
