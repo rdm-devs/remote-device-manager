@@ -15,12 +15,12 @@ from src.user.service import (
     update_user,
     get_devices,
     get_folders,
-    get_tenants,
 )
 from src.user.schemas import (
     UserCreate,
     UserUpdate,
 )
+from src.tenant.service import get_tenants
 from src.auth.utils import get_user_by_username
 
 def test_create_user(session: Session) -> None:

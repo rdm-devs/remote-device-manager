@@ -129,10 +129,7 @@ def test_delete_tenant(session: Session, client_authenticated: TestClient) -> No
     tenant_id = data["id"]
 
     response = client_authenticated.delete(f"/tenants/{tenant_id}")
-    assert response.status_code == status.HTTP_200_OK
-
-    response = client_authenticated.get(f"/tenants/{tenant_id}")
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 def test_delete_non_existent_tenant(

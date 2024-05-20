@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import has_access_to_tenant
@@ -6,6 +7,7 @@ from src.tag import service as tags_service
 from src.tag import models as tag_models
 from src.user.schemas import User
 from src.user.models import tenants_and_users_table
+from src.user.service import get_user
 from src.tenant import schemas, models
 from src.tenant import exceptions
 from src.tenant.utils import check_tenant_exists, check_tenant_name_taken
@@ -21,14 +23,14 @@ def get_tenant(db: Session, tenant_id: int):
     return db.query(models.Tenant).filter(models.Tenant.id == tenant_id).first()
 
 
-def get_tenants(db: Session, user: User):
-    tenants = db.query(models.Tenant)
-    if user.role_id != 1:
-        tenants = tenants.join(tenants_and_users_table).filter(
-            models.Tenant.id == tenants_and_users_table.c.tenant_id,
-            user.id == tenants_and_users_table.c.user_id,
-        )
-    return tenants
+def get_tenants(db: Session, user_id: int):
+    user = get_user(db, user_id)
+    tenants = select(models.Tenant)
+    if user.is_admin:
+        return tenants
+    else:
+        tenant_ids = user.get_tenants_ids()
+        return tenants.where(models.Tenant.id.in_(tenant_ids))
 
 
 def get_tenant_by_name(db: Session, tenant_name: str):
@@ -48,7 +50,7 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
     db.add(db_tenant)
     db.commit()
     db.refresh(db_tenant)
-    
+
     # TODO: definir una convención de nombres??
     formatted_name = tenant.name.lower().replace(" ", "-")
     tenant_tag = create_tag(

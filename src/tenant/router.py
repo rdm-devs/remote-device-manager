@@ -39,9 +39,9 @@ def read_tenant(
 @router.get("/", response_model=Page[schemas.TenantList])
 def read_tenants(
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_or_owner_role),
+    user: User = Depends(get_current_active_user),
 ):
-    return paginate(service.get_tenants(db, user))
+    return paginate(db, service.get_tenants(db, user.id))
 
 
 @router.patch("/{tenant_id}", response_model=schemas.Tenant)

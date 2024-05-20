@@ -9,7 +9,6 @@ from src.role import models as role_models
 from src.tenant.models import Tenant, tenants_and_users_table
 from src.folder.models import Folder
 from src.device.models import Device
-from src.user.models import User
 from src.tag.models import Tag
 from src.user import schemas, models, exceptions
 from src.entity.service import create_entity_auto
@@ -38,7 +37,7 @@ def check_invalid_password(db: Session, password: str):
         raise exceptions.UserInvalidPassword()
 
 
-def get_user(db: Session, user_id: int) -> User:
+def get_user(db: Session, user_id: int) -> models.User:
     check_user_exists(db, user_id=user_id)
     user = db.scalars(select(models.User).where(models.User.id == user_id)).first()
     return user
@@ -46,16 +45,6 @@ def get_user(db: Session, user_id: int) -> User:
 
 def get_users(db: Session):
     return select(models.User)
-
-
-def get_tenants(db: Session, user_id: int):
-    user = get_user(db, user_id)
-    tenants = select(Tenant)
-    if user.is_admin:
-        return tenants
-    else:
-        tenant_ids = user.get_tenants_ids()
-        return tenants.where(Tenant.id.in_(tenant_ids))
 
 
 def get_folders(db: Session, user_id: int):

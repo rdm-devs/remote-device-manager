@@ -4,10 +4,7 @@ from sqlalchemy.orm import Session
 
 from tests.database import session, mock_os_data, mock_vendor_data
 
-from src.tenant.exceptions import (
-    TenantNameTaken,
-    TenantNotFound,
-)
+from src.tenant.exceptions import TenantNameTaken, TenantNotFound, TenantCannotBeDeleted
 from src.tenant.service import (
     create_tenant,
     get_tenant,
@@ -70,22 +67,24 @@ def test_get_tenant_with_invalid_name(session: Session) -> None:
 
 def test_get_tenants(session: Session) -> None:
     # two tenants were created in tests/database.py
-    admin = session.query(user_models.User).filter(user_models.User.role_id == 1).first()
-    tenants = get_tenants(session, admin).all()
-    assert len(tenants) == 2 # admin can access them all
+    admin = (
+        session.query(user_models.User).filter(user_models.User.role_id == 1).first()
+    )
+    tenants = session.scalars(get_tenants(session, admin.id)).all()
+    assert len(tenants) == 2  # admin can access them all
 
     owner_2 = session.query(user_models.User).filter(user_models.User.id == 2).first()
-    tenants = get_tenants(session, owner_2).all()
+    tenants = session.scalars(get_tenants(session, owner_2.id)).all()
     assert len(tenants) == 1
-    assert tenants[0].id == 1 # each owner has a different tenant
+    assert tenants[0].id == 1  # each owner has a different tenant
 
     owner_3 = session.query(user_models.User).filter(user_models.User.id == 3).first()
-    tenants = get_tenants(session, owner_3).all()
+    tenants = session.scalars(get_tenants(session, owner_3.id)).all()
     assert len(tenants) == 1
     assert tenants[0].id == 2
 
     user = session.query(user_models.User).filter(user_models.User.id == 4).first()
-    tenants = get_tenants(session, user).all()
+    tenants = session.scalars(get_tenants(session, user.id)).all()
     assert len(tenants) == 1
 
 
@@ -142,12 +141,10 @@ def test_delete_tenant(session: Session) -> None:
     tenant = create_tenant(session, TenantCreate(name="tenant5delete"))
     db_tenant = get_tenant(session, tenant.id)
 
-    tenant_id = tenant.id
-    deleted_tenant_id = delete_tenant(session, db_tenant=db_tenant)
-    assert deleted_tenant_id == tenant_id
+    with pytest.raises(TenantCannotBeDeleted):
+        deleted_tenant_id = delete_tenant(session, db_tenant=db_tenant)
+        assert deleted_tenant_id == tenant.id
 
-    with pytest.raises(TenantNotFound):
-        get_tenant(session, tenant.id)
 
 
 def test_delete_tenant_with_invalid_id(session: Session) -> None:

@@ -8,6 +8,7 @@ from src.auth.dependencies import (
     has_admin_role,
     has_admin_or_owner_role,
 )
+from src.tenant.service import get_tenants
 from src.tenant.schemas import TenantList
 from src.device.schemas import DeviceList
 from src.folder.schemas import Folder
@@ -83,7 +84,7 @@ async def read_tenants(
 ):
     if user_id == "me":
         user_id = user.id
-    tenants = service.get_tenants(db, user_id=int(user_id))
+    tenants = get_tenants(db, user_id=int(user_id))
     return paginate(db, tenants)
 
 
