@@ -8,8 +8,6 @@ from src.auth.dependencies import (
     has_access_to_folder,
     has_access_to_device,
 )
-from src.user.schemas import User as UserSchema
-from src.user.models import User
 from src.user.service import get_user
 from src.entity.models import entities_and_tags_table
 from src.tenant.models import Tenant, tenants_and_users_table
