@@ -7,18 +7,19 @@ from src.auth.dependencies import (
     get_current_active_user,
     has_admin_role,
     has_admin_or_owner_role,
+    has_access_to_tenant
 )
 from src.tenant.service import get_tenants
 from src.tenant.schemas import TenantList
 from src.device.schemas import DeviceList
 from src.folder.schemas import Folder
-from . import service, schemas
+from . import service, schemas, utils
 from ..database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/", response_model=Page[schemas.User])
+@router.get("/", response_model=Page[utils.UserTenant])
 def read_users(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_role),
@@ -27,7 +28,7 @@ def read_users(
     return paginate(db, users)
 
 
-@router.get("/{user_id}", response_model=schemas.User)
+@router.get("/{user_id}", response_model=utils.UserTenant)
 def read_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -37,7 +38,7 @@ def read_user(
     return db_user
 
 
-@router.patch("/{user_id}", response_model=schemas.User)
+@router.patch("/{user_id}", response_model=utils.UserTenant)
 def update_user(
     user_id: int,
     user: schemas.UserUpdate,
@@ -74,6 +75,17 @@ def assign_role(
 ):
     service.assign_role(db=db, user_id=user_id, role_id=role_id)
     return schemas.UserRole(id=user_id, role_id=role_id)
+
+
+@router.patch("/{user_id}/tenant", response_model=utils.UserTenant)
+def assign_tenant(
+    user_id: int,
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(has_access_to_tenant),
+):
+    user = service.assign_tenant(db=db, user_id=user_id, tenant_id=tenant_id)
+    return user
 
 
 @router.get("/{user_id}/tenants", response_model=Page[TenantList])

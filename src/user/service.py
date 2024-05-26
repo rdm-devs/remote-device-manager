@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
@@ -7,10 +7,11 @@ from src.auth.utils import get_password_hash
 from src.role.service import check_role_exists
 from src.role import models as role_models
 from src.tenant.models import Tenant, tenants_and_users_table
+from src.tenant.utils import check_tenant_exists
 from src.folder.models import Folder
 from src.device.models import Device
 from src.tag.models import Tag
-from src.user import schemas, models, exceptions
+from src.user import schemas, models, exceptions, utils
 from src.entity.service import create_entity_auto
 
 
@@ -99,6 +100,19 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
+def update_user_tenants(db: Session, user: models.User, tenant_ids: List[int]):
+    tenants = [db.scalars(select(Tenant).where(Tenant.id == t_id)).first() for t_id in tenant_ids]
+    try:
+        user.tenants = []
+        db.commit()
+        user.tenants = tenants
+        db.commit()
+        db.refresh(user)
+        return user
+    except IntegrityError:
+        db.rollback()
+
+
 def update_user(
     db: Session,
     db_user: schemas.User,
@@ -108,6 +122,10 @@ def update_user(
     values = updated_user.model_dump(exclude_unset=True)
     check_user_exists(db, user_id=db_user.id)
     check_username_exists(db, username=updated_user.username, user_id=db_user.id)
+
+    user = get_user(db, db_user.id)
+    if "tenant_ids" in values.keys():
+        user = update_user_tenants(db, user, values.pop("tenant_ids"))
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
         values["hashed_password"] = get_password_hash(
@@ -116,10 +134,10 @@ def update_user(
 
         values.pop("password")
 
-    db.query(models.User).filter(models.User.id == db_user.id).update(values=values)
+    db.execute(update(models.User).where(models.User.id == user.id).values(values))
     db.commit()
-    db.refresh(db_user)
-    return db_user
+    db.refresh(user)
+    return user
 
 
 def delete_user(db: Session, db_user: schemas.User):
@@ -139,3 +157,16 @@ def assign_role(db: Session, user_id: int, role_id: int):
         values={"role_id": role_id}
     )
     db.commit()
+
+
+def assign_tenant(db: Session, user_id: int, tenant_id: int) -> utils.UserTenant:
+    check_user_exists(db, user_id)
+    check_tenant_exists(db, tenant_id)
+    tenant = db.scalar(select(Tenant).where(Tenant.id == tenant_id))
+    user = get_user(db, user_id)
+
+    user.add_tenant(tenant)
+    db.commit()
+    db.refresh(user)
+
+    return user

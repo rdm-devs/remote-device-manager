@@ -1,7 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
-
+from typing import Optional, List
 
 class UserBase(BaseModel):  # used as common fields
     username: EmailStr
@@ -27,6 +26,7 @@ class UserUpdate(UserBase):
     username: Optional[EmailStr] = None
     password: Optional[str] = None
     role_id: Optional[int] = None
+    tenant_ids: Optional[List[int]] = []
 
     model_config = {"extra": "forbid"}
 
