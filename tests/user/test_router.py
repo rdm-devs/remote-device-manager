@@ -98,8 +98,8 @@ def test_create_user_with_invalid_password(
 
 
 def test_update_user(session: Session, client_authenticated: TestClient) -> None:
-    # user with id=1 already exists in the session. See: tests/database.py
-    user_id = 1
+    # user with id=3 already exists in the session. See: tests/database.py
+    user_id = 3
     response = client_authenticated.get(f"/users/{user_id}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -108,11 +108,12 @@ def test_update_user(session: Session, client_authenticated: TestClient) -> None
     # updating user's username
     response = client_authenticated.patch(
         f"/users/{user_id}",
-        json={"username": "test-user-updated@sia.com"},
+        json={"username": "test-user-updated@sia.com", "tenant_ids": [1, 2]},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["username"] == "test-user-updated@sia.com"
+    assert len(data["tenants"]) == 2
 
 
 def test_update_user_invalid_password(

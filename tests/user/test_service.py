@@ -1,5 +1,7 @@
 import pytest
+from typing import Union
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.user.exceptions import (
@@ -15,13 +17,17 @@ from src.user.service import (
     update_user,
     get_devices,
     get_folders,
+    assign_tenant,
 )
+from src.tenant.models import tenants_and_users_table
 from src.user.schemas import (
     UserCreate,
     UserUpdate,
 )
 from src.tenant.service import get_tenants
+from src.tenant.schemas import Tenant as TenantSchema
 from src.auth.utils import get_user_by_username
+
 
 def test_create_user(session: Session) -> None:
     user = create_user(
@@ -228,18 +234,93 @@ def test_get_folders(session: Session) -> None:
     assert len(folders) == 3
 
 
-def test_get_tenants(session: Session) -> None:
+@pytest.mark.parametrize("user_id, n_tenants", [(1, 2), (2, 1), (3, 1)])
+def test_get_tenants(session: Session, user_id: int, n_tenants) -> None:
     # user 1 is admin
-    user_id = 1
     tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
-    assert len(tenants) == 2
+    assert len(tenants) == n_tenants
 
-    # user 2 has 1 tenant
-    user_id = 2
-    tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
-    assert len(tenants) == 1
 
-    # user 3 has 1 tenant
-    user_id = 3
-    tenants = session.execute(get_tenants(session, user_id=user_id)).fetchall()
-    assert len(tenants) == 1
+def test_assign_tenant(session: Session) -> None:
+    user = create_user(
+        session,
+        UserCreate(
+            username="test-user-5@sia.com",
+            password="_s3cr3tp@5sw0rd_",
+        ),
+    )
+
+    assert len(user.tenants) == 0
+    tenant_id = 1
+    assign_tenant(session, user.id, tenant_id)
+
+    assert len(user.tenants) == 1
+
+
+@pytest.mark.parametrize(
+    argnames=[
+        "user",
+        "n_tenants_before_update",
+        "another_user_id",
+        "n_tenants_after_update",
+    ],
+    argvalues=[
+        (
+            UserCreate(
+                username="test-user-5@sia.com",
+                password="_s3cr3tp@5sw0rd_",
+            ),
+            0,
+            1,
+            2,
+        ),
+        (3, 1, 2, 2),
+    ],
+)
+def test_update_user_multiple_tenants(
+    session,
+    user: Union[int, UserCreate],
+    n_tenants_before_update: int,
+    another_user_id: int,
+    n_tenants_after_update: int,
+) -> None:
+    if isinstance(user, UserCreate):
+        user = create_user(
+            session,
+            user,
+        )
+    else:
+        user = get_user(session, user)
+
+    assert len(user.tenants) == n_tenants_before_update
+
+    # if its an existing user, there should be as many entries 
+    # as tenants it has before the update
+    t_and_u_entries_query = select(tenants_and_users_table).where(
+        tenants_and_users_table.c.user_id == user.id
+    )
+    results = session.scalars(t_and_u_entries_query).all()
+    assert len(results) == n_tenants_before_update
+
+    # lets add the tenants from another user
+    another_user_tenants = session.scalars(
+        get_tenants(session, user_id=another_user_id)
+    ).all()
+    another_user_tenants_ids = [t.id for t in another_user_tenants]
+
+    user = update_user(
+        session,
+        db_user=user,
+        updated_user=UserUpdate(
+            tenant_ids=[*user.get_tenants_ids(), *another_user_tenants_ids]
+        ),
+    )
+
+    # after the update, user.tenants has new tenant/s associated
+    # and new entries have been added to the associative table.
+    assert (
+        len(another_user_tenants_ids) + n_tenants_before_update
+        == n_tenants_after_update
+    )
+    assert len(user.tenants) == n_tenants_after_update
+    assert len(session.scalars(t_and_u_entries_query).all()) == n_tenants_after_update
