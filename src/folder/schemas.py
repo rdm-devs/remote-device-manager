@@ -26,6 +26,7 @@ class FolderBase(BaseModel):
 class Folder(BaseModel):
     id: int
     name: str
+    entity_id: int
     parent_id: Optional[int] = None
     tenant_id: Optional[int] = None
     tags: List[Tag] = []
