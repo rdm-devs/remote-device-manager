@@ -119,7 +119,9 @@ async def valid_refresh_token_user(
 
 
 def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
-    return datetime.datetime.now(datetime.UTC) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
+    return datetime.datetime.now(
+        datetime.UTC
+    ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
 
 
 async def has_access_to_tenant(
@@ -188,6 +190,23 @@ async def has_access_to_device(
 
     if device and (await has_access_to_folder(device.folder_id, db, user)):
         return user
+
+
+async def has_access_to_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    auth_user: User = Depends(get_current_active_user),
+):
+    if auth_user.is_admin or user_id == auth_user.id:
+        return user_id
+
+    if await has_role("owner", db, auth_user):
+        user = user_service.get_user(db, user_id)
+
+        shared_tenants = (t_id in auth_user.get_tenants_ids() for t_id in user.get_tenants_ids())
+        if any(shared_tenants):
+            return user_id
+    raise PermissionDenied()
 
 
 async def can_edit_device(

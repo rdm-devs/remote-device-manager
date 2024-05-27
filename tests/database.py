@@ -265,12 +265,17 @@ def client_authenticated(session: Session):
     return TestClient(app)
 
 
+
+
 async def get_auth_tokens(session: Session, user: User):
     refresh_token = await auth_service.create_refresh_token(session, user.id)
     access_token = auth_utils.create_access_token(user)
 
     return {"access_token": access_token, "refresh_token": refresh_token}
 
+async def get_auth_tokens_with_user_id(session: Session, user_id: int):
+    user = session.query(User).filter(User.id == user_id).first()
+    return await get_auth_tokens(session, user)
 
 @pytest.fixture
 async def admin_auth_tokens(session: Session):

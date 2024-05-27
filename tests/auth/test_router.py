@@ -15,12 +15,14 @@ from tests.database import (
     owner_2_auth_tokens,
     owner_3_auth_tokens,
     user_auth_tokens,
+    get_auth_tokens_with_user_id,
 )
 
 
 def test_login(client: TestClient) -> None:
     response = client.post(
-        "/auth/token", data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"}
+        "/auth/token",
+        data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -457,3 +459,31 @@ async def test_read_tag_authorized_owner_3(
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
     assert len(data["items"]) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth_user_id, user_id, expected_status_code",
+    [
+        (1, 1, status.HTTP_200_OK), # admins can update all users
+        (1, 2, status.HTTP_200_OK),
+        (1, 3, status.HTTP_200_OK),
+        (1, 4, status.HTTP_200_OK),
+        (2, 4, status.HTTP_200_OK),
+        (3, 4, status.HTTP_403_FORBIDDEN), # owners only can update users only if they share a tenant
+        (4, 4, status.HTTP_403_FORBIDDEN), # regular users cannot update user objects
+    ],
+)
+async def test_update_user(client: TestClient, session: Session, auth_user_id: int, user_id: int, expected_status_code: int) -> None:
+    auth_tokens = await get_auth_tokens_with_user_id(session, auth_user_id)
+    access_tokens = auth_tokens["access_token"]
+
+    # we are interested in the response status codes
+    response = client.patch(
+        f"/users/{user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+        json={}
+    )
+
+    data = response.json()
+    assert response.status_code == expected_status_code, response.text

@@ -7,7 +7,8 @@ from src.auth.dependencies import (
     get_current_active_user,
     has_admin_role,
     has_admin_or_owner_role,
-    has_access_to_tenant
+    has_access_to_tenant,
+    has_access_to_user,
 )
 from src.tenant.service import get_tenants
 from src.tenant.schemas import TenantList
@@ -40,10 +41,10 @@ def read_user(
 
 @router.patch("/{user_id}", response_model=utils.UserTenant)
 def update_user(
-    user_id: int,
     user: schemas.UserUpdate,
+    user_id: int = Depends(has_access_to_user),
     db: Session = Depends(get_db),
-    auth_user: schemas.User = Depends(has_admin_role),
+    auth_user: schemas.User = Depends(has_admin_or_owner_role),
 ):
     db_user = read_user(user_id, db)
     updated_user = service.update_user(db, db_user, updated_user=user)
@@ -82,7 +83,7 @@ def assign_tenant(
     user_id: int,
     tenant_id: int,
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(has_access_to_tenant),
+    user: schemas.User = Depends(has_admin_or_owner_role),
 ):
     user = service.assign_tenant(db=db, user_id=user_id, tenant_id=tenant_id)
     return user
