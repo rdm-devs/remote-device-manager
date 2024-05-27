@@ -1,15 +1,17 @@
 from typing import Optional
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from src.folder.models import Folder
 from src.tenant.models import tenants_and_users_table
 from src.device import schemas, models, exceptions
 from src.folder.service import check_folder_exist, get_folders
-from src.entity.service import create_entity_auto
+from src.entity.service import create_entity_auto, update_entity_tags
 from src.user.service import get_user
 
 
-def check_device_name_taken(db: Session, device_name: str, device_id: Optional[int] = None):
+def check_device_name_taken(
+    db: Session, device_name: str, device_id: Optional[int] = None
+):
     device_name_taken = db.query(models.Device).filter(
         models.Device.name == device_name
     )
@@ -72,18 +74,25 @@ def update_device(
     db: Session, db_device: schemas.Device, updated_device: schemas.DeviceUpdate
 ):
     # sanity checks
-    get_device(db, db_device.id)
+    values = updated_device.model_dump(exclude_unset=True)
+    device = get_device(db, db_device.id)
     if updated_device.folder_id:
         check_folder_exist(db, updated_device.folder_id)
-    check_device_name_taken(db, updated_device.name, db_device.id)
+    check_device_name_taken(db, updated_device.name, device.id)
 
-    #dev = db.query(models.Device).filter(models.Device.id == db_device.id).first()
-    db.query(models.Device).filter(models.Device.id == db_device.id).update(
-        values=updated_device.model_dump(exclude_unset=True)
+    if "tag_ids" in values.keys():
+        device.entity = update_entity_tags(
+            db=db,
+            entity=device.entity,
+            tenant_ids=[device.folder.tenant_id],
+            tag_ids=values.pop("tag_ids"),
+        )
+    db.execute(
+        update(models.Device).where(models.Device.id == device.id).values(values)
     )
     db.commit()
-    db.refresh(db_device)
-    return db_device
+    db.refresh(device)
+    return device
 
 
 def delete_device(db: Session, db_device: schemas.Device):

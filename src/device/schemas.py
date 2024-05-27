@@ -53,8 +53,9 @@ class DeviceUpdate(DeviceCreate):
     vendor_model: Optional[str] = None
     vendor_cores: Optional[int] = None
     vendor_ram_gb: Optional[int] = None
+    tag_ids: Optional[List[int]] = None
 
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "ignore"}
 
 
 class DeviceDelete(BaseModel):

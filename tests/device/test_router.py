@@ -158,21 +158,50 @@ def test_update_device(session: Session, client_authenticated: TestClient) -> No
     # Device with id=1 already exists in the session. See: tests/database.py
     device_id = 1
 
+    # attempting to assign tags from a tenant with who the device is not related.
+    tenant_id = 2
+    response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
+    tags_tenant_2 = response.json()["items"]
+    tag_ids_tenant_2 = [t["id"] for t in tags_tenant_2]
+
+    response = client_authenticated.get(f"/tags/?device_id={device_id}")
+    tags_device_1 = response.json()["items"]
+    tag_ids_device_1 = [t["id"] for t in tags_device_1]
+
     response = client_authenticated.patch(
         f"/devices/{device_id}",
         json={
             "name": "dev5-updated",
             "folder_id": 1,
-            # "os_id": 1,
-            # "vendor_id": 1,
-            # "mac_address": TEST_MAC_ADDR,
-            # "ip_address": TEST_IP_ADDR,
+            "tag_ids": [*tag_ids_device_1, *tag_ids_tenant_2],
         },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "dev5-updated"
     assert data["folder_id"] == 1
+    assert len(data["tags"]) != len(tag_ids_device_1) + len(tag_ids_tenant_2)
+    assert len(data["tags"]) == len(
+        tag_ids_device_1
+    )  # the previous operation failed but the original tags remain
+
+    # attempting to assign tags from a tenant with who the device is related.
+    tenant_id = 1
+    response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
+    tags_tenant_1 = response.json()["items"]
+    tag_ids_tenant_1 = [t["id"] for t in tags_tenant_1]
+
+    # in this case the existing tags are included in the list that comes from the tenant 
+    # that is related to the device being updated. 
+    new_tag_ids = list({*tag_ids_device_1, *tag_ids_tenant_1})
+    response = client_authenticated.patch(
+        f"/devices/{device_id}",
+        json={"tag_ids": new_tag_ids},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    # the operation should succeed and the device should have new tags assigned.
+    assert len(data["tags"]) == len(new_tag_ids)
 
 
 def test_update_non_existent_device(
@@ -185,17 +214,6 @@ def test_update_non_existent_device(
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == ErrorCode.DEVICE_NOT_FOUND
-
-
-def test_update_non_existent_device_attrs(
-    session: Session, client_authenticated: TestClient
-) -> None:
-    device_id = 1
-
-    response = client_authenticated.patch(
-        f"/devices/{device_id}", json={"tag": "my-cool-device", "folder_id": 1}
-    )
-    assert response.status_code == 422, status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_delete_device(session: Session, client_authenticated: TestClient) -> None:
