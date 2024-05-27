@@ -101,7 +101,10 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def update_user_tenants(db: Session, user: models.User, tenant_ids: List[int]):
-    tenants = [db.scalars(select(Tenant).where(Tenant.id == t_id)).first() for t_id in tenant_ids]
+    tenants = [
+        db.scalars(select(Tenant).where(Tenant.id == t_id)).first()
+        for t_id in tenant_ids
+    ]
     try:
         user.tenants = []
         db.commit()
@@ -149,14 +152,19 @@ def delete_user(db: Session, db_user: schemas.User):
     return db_user.id
 
 
-def assign_role(db: Session, user_id: int, role_id: int):
+def assign_role(db: Session, user_id: int, role_id: int) -> schemas.User:
     check_user_exists(db, user_id)
     check_role_exists(db, role_id)
 
-    db.query(models.User).filter(models.User.id == user_id).update(
-        values={"role_id": role_id}
+    user = get_user(db, user_id)
+    db.execute(
+        update(models.User)
+        .where(models.User.id == user.id)
+        .values({"role_id": role_id})
     )
     db.commit()
+    db.refresh(user)
+    return user
 
 
 def assign_tenant(db: Session, user_id: int, tenant_id: int) -> utils.UserTenant:

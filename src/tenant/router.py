@@ -76,11 +76,5 @@ async def read_tags(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
-    #TODO: make it work with filters (folder_id, device_id, tag name) 
-    return paginate(
-        await service.get_tenant_tags(
-            db,
-            user,
-            tenant_id=tenant_id
-        )
-    )
+    # TODO: make it work with filters (folder_id, device_id, tag name)
+    return paginate(db, await service.get_tenant_tags(db, user, tenant_id=tenant_id))

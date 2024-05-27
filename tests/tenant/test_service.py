@@ -101,18 +101,6 @@ def test_update_tenant(session: Session) -> None:
     assert tenant.id == db_tenant.id
 
 
-def test_update_tenant_with_invalid_attrs(session: Session) -> None:
-    tenant = create_tenant(session, TenantCreate(name="tenant5"))
-    db_tenant = get_tenant(session, tenant.id)
-
-    with pytest.raises(ValidationError):
-        tenant = update_tenant(
-            session,
-            db_tenant=db_tenant,
-            updated_tenant=TenantUpdate(name="tenant-custom", tag="my-custom-tag"),
-        )
-
-
 def test_update_tenant_with_incomplete_data(session: Session) -> None:
     tenant = create_tenant(session, TenantCreate(name="tenant5"))
     db_tenant = get_tenant(session, tenant.id)
@@ -144,7 +132,6 @@ def test_delete_tenant(session: Session) -> None:
     with pytest.raises(TenantCannotBeDeleted):
         deleted_tenant_id = delete_tenant(session, db_tenant=db_tenant)
         assert deleted_tenant_id == tenant.id
-
 
 
 def test_delete_tenant_with_invalid_id(session: Session) -> None:

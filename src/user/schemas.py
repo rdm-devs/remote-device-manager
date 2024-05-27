@@ -35,6 +35,3 @@ class UserDelete(BaseModel):
     id: int
     msg: str
 
-class UserRole(BaseModel):
-    id: int
-    role_id: int

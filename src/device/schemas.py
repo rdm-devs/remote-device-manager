@@ -27,6 +27,7 @@ class DeviceCreate(DeviceBase):
 
 class Device(DeviceCreate):
     id: int
+    entity_id: int
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()
     tags: List[Tag] = []
@@ -36,6 +37,7 @@ class Device(DeviceCreate):
 
 class DeviceList(BaseModel):
     id: int
+    entity_id: int
     name: str
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()

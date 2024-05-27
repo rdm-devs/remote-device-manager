@@ -67,15 +67,14 @@ def delete_user(
     }
 
 
-@router.patch("/{user_id}/role", response_model=schemas.UserRole)
+@router.patch("/{user_id}/role", response_model=schemas.User)
 def assign_role(
     user_id: int,
     role_id: int,
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_role),
 ):
-    service.assign_role(db=db, user_id=user_id, role_id=role_id)
-    return schemas.UserRole(id=user_id, role_id=role_id)
+    return service.assign_role(db=db, user_id=user_id, role_id=role_id)
 
 
 @router.patch("/{user_id}/tenant", response_model=utils.UserTenant)

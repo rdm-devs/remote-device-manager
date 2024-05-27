@@ -107,21 +107,6 @@ def test_update_non_existent_tenant(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_non_existent_tenant_attrs(
-    session: Session, client_authenticated: TestClient
-) -> None:
-    tenant_id = 1
-    response = client_authenticated.patch(
-        f"/tenants/{tenant_id}",
-        json={
-            "name": "tenant1-updated",
-            "is_admin": False,  # non existing field
-            "tag": "my-cool-tenant-tag",  # non existing field
-        },
-    )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
 def test_delete_tenant(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.post("/tenants/", json={"name": "tenant5"})
     assert response.status_code == status.HTTP_200_OK

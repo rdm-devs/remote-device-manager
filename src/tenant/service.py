@@ -98,10 +98,10 @@ async def get_tenant_tags(
     check_tenant_exists(db, tenant_id)
     if await has_access_to_tenant(tenant_id, db, user):
         return (
-            db.query(tag_models.Tag)
+            select(tag_models.Tag)
             .join(models.Tenant)
-            .filter(models.Tenant.id == tenant_id)
-            .filter(tag_models.Tag.tenant_id == tenant_id)
+            .where(models.Tenant.id == tenant_id)
+            .where(tag_models.Tag.tenant_id == tenant_id)
         )
     else:
         raise PermissionDenied()
