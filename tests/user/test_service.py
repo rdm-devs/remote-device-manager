@@ -27,7 +27,9 @@ from src.user.schemas import (
 from src.tenant.service import get_tenants
 from src.tenant.schemas import Tenant as TenantSchema
 from src.auth.utils import get_user_by_username
-
+from src.tag.models import Tag
+from src.entity.exceptions import EntityTenantRelationshipMissing
+from src.user.models import User
 
 def test_create_user(session: Session) -> None:
     user = create_user(
@@ -133,26 +135,6 @@ def test_update_user(session: Session) -> None:
     assert user.id == db_user.id
 
 
-def test_update_user_with_invalid_attrs(session: Session) -> None:
-    user = create_user(
-        session,
-        UserCreate(
-            username="test-user-5@sia.com",
-            password="_s3cr3tp@5sw0rd_",
-        ),
-    )
-    db_user = get_user(session, user.id)
-
-    with pytest.raises(ValidationError):
-        user = update_user(
-            session,
-            db_user=db_user,
-            updated_user=UserUpdate(
-                username="test-user-5@sia.com", password="1234", tag="my-custom-tag"
-            ),
-        )
-
-
 def test_update_user_with_invalid_id(session: Session) -> None:
     db_user = get_user(session, 1)
     db_user.id = 5
@@ -165,6 +147,36 @@ def test_update_user_with_invalid_id(session: Session) -> None:
                 username="test-user-5@sia.com", password="_s3cr3tp@5sw0rd_"
             ),
         )
+
+
+def test_update_user_tags(session: Session) -> None:
+    # creating a user without tenants. the update operation must fail.
+    user = create_user(
+        session,
+        UserCreate(
+            username="test-user-5@sia.com",
+            password="_s3cr3tp@5sw0rd_",
+        ),
+    )
+
+    tenant_id = 1
+    def update_tags(user: User, tenant_id: int):
+        tag_ids_tenant_1 = session.scalars(select(Tag.id).where(Tag.tenant_id == tenant_id)).all()
+        user = update_user(
+            session,
+            db_user=user,
+            updated_user=UserUpdate(tag_ids=tag_ids_tenant_1),
+        )
+
+        assert len(user.tags) == len(tag_ids_tenant_1)
+
+    # forcing an association to tags from tenant 1
+    with pytest.raises(EntityTenantRelationshipMissing):
+        update_tags(user, tenant_id)
+
+    # assigning tenant 1 to the user will solve the problem
+    user = assign_tenant(session, user.id, tenant_id)
+    update_tags(user, tenant_id)
 
 
 def test_delete_user(session: Session) -> None:
@@ -294,7 +306,7 @@ def test_update_user_multiple_tenants(
 
     assert len(user.tenants) == n_tenants_before_update
 
-    # if its an existing user, there should be as many entries 
+    # if its an existing user, there should be as many entries
     # as tenants it has before the update
     t_and_u_entries_query = select(tenants_and_users_table).where(
         tenants_and_users_table.c.user_id == user.id

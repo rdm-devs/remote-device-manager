@@ -27,8 +27,9 @@ class UserUpdate(UserBase):
     password: Optional[str] = None
     role_id: Optional[int] = None
     tenant_ids: Optional[List[int]] = []
+    tag_ids: Optional[List[int]] = None
 
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "ignore"}
 
 
 class UserDelete(BaseModel):

@@ -84,6 +84,7 @@ def assign_tenant(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_or_owner_role),
 ):
+    print(f"{user_id=}, {tenant_id=}")
     user = service.assign_tenant(db=db, user_id=user_id, tenant_id=tenant_id)
     return user
 

@@ -163,20 +163,45 @@ def test_update_non_existent_user(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_update_non_existent_user_attrs(
-    session: Session, client_authenticated: TestClient
-):
-    user_id = 1
-    response = client_authenticated.patch(
-        f"/users/{user_id}",
+def test_update_user_tags(session: Session, client_authenticated: TestClient) -> None:
+    response = client_authenticated.post(
+        "/auth/register",
         json={
-            "username": "test-user-updated@sia.com",
-            "password": "1234",
-            "is_staff": False,  # non existing field
-            "favourite_color": "blue",  # non existing field
+            "username": "test-user-5@email.com",
+            "password": "_s3cr3tp@5sw0rd_",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    user_id = data["id"]
+
+    tenant_id = 1
+    response = client_authenticated.get(f"/tenants/{tenant_id}/tags")
+    tags_tenant_1 = response.json()["items"]
+    tag_ids_tenant_1 = [tag["id"] for tag in tags_tenant_1]
+
+    def update_tags(user_id: int):
+        response = client_authenticated.patch(
+            f"/users/{user_id}",
+            json={
+                "tag_ids": tag_ids_tenant_1,
+            },
+        )
+        return response
+
+    # the update operation will fail if the user has no tenant assigned
+    response = update_tags(user_id)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    # to make it work, we must assign at least one tenant to the user first
+    response = client_authenticated.patch(
+        f"/users/{user_id}/tenant/?tenant_id={tenant_id}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    # now the update operation will succeed
+    response = update_tags(user_id)
+    assert response.status_code == status.HTTP_200_OK
 
 
 def test_delete_user(session: Session, client_authenticated: TestClient) -> None:

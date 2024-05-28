@@ -12,7 +12,7 @@ from src.folder.models import Folder
 from src.device.models import Device
 from src.tag.models import Tag
 from src.user import schemas, models, exceptions, utils
-from src.entity.service import create_entity_auto
+from src.entity.service import create_entity_auto, update_entity_tags
 
 
 def check_user_exists(db: Session, user_id: int):
@@ -129,6 +129,13 @@ def update_user(
     user = get_user(db, db_user.id)
     if "tenant_ids" in values.keys():
         user = update_user_tenants(db, user, values.pop("tenant_ids"))
+    if "tag_ids" in values.keys():
+        user.entity = update_entity_tags(
+            db=db,
+            entity=user.entity,
+            tenant_ids=user.get_tenants_ids(),
+            tag_ids=values.pop("tag_ids"),
+        )
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
         values["hashed_password"] = get_password_hash(
