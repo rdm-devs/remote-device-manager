@@ -1,7 +1,7 @@
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from src.entity import schemas, models
+from src.entity import schemas, models, exceptions
 from src.tag.models import Tag
 from typing import List
 
@@ -29,8 +29,10 @@ def delete_entity(db: Session, entity_id: int):
 def update_entity_tags(
     db: Session, entity: models.Entity, tenant_ids: List[int], tag_ids: List[int]
 ) -> models.Entity:
-    # in order to update the entity's tags, we must ensure we have access to the tenants 
+    # in order to update the entity's tags, we must ensure we have access to the tenants
     # for which the tags were created. That is why we receive tenant_ids.
+    if not tenant_ids:
+        raise exceptions.EntityTenantRelationshipMissing()
 
     tags = db.scalars(
         select(Tag).where(Tag.id.in_(tag_ids), Tag.tenant_id.in_(tenant_ids))
