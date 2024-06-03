@@ -30,6 +30,7 @@ def test_read_tenant(session: Session, client_authenticated: TestClient) -> None
     assert data["id"] == tenant_id
     assert data["name"] == "tenant3"
     assert len(data["folders"]) == 1
+    assert data["tags"]
 
 
 def test_read_non_existent_tenant(

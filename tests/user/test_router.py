@@ -290,6 +290,7 @@ def test_read_tenants(session: Session, client_authenticated: TestClient) -> Non
     response = client_authenticated.get(f"/users/{user_id}/tenants")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["items"]) == 2
+    assert response.json()["items"][0]["tags"] # checking that the "tags" attribute is present
 
     user_id = 1
     response = client_authenticated.get(f"/users/{user_id}/tenants")

@@ -36,7 +36,7 @@ def read_tenant(
     return db_tenant
 
 
-@router.get("/", response_model=Page[schemas.TenantList])
+@router.get("/", response_model=Page[schemas.Tenant])
 def read_tenants(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),

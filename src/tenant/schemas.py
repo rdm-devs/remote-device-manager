@@ -3,6 +3,7 @@ from typing import List, Optional
 from src.folder.schemas import Folder, FolderTenantList
 from src.tag.schemas import Tag
 
+
 class TenantBase(BaseModel):
     name: str
 
@@ -29,9 +30,3 @@ class TenantUpdate(TenantCreate):
 class TenantDelete(BaseModel):
     id: int
     msg: str
-
-class TenantList(BaseModel):
-    id: int
-    entity_id: int
-    name: str
-    folders: List[FolderTenantList] = []

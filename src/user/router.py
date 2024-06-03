@@ -11,7 +11,7 @@ from src.auth.dependencies import (
     has_access_to_user,
 )
 from src.tenant.service import get_tenants
-from src.tenant.schemas import TenantList
+from src.tenant.schemas import Tenant
 from src.device.schemas import DeviceList
 from src.folder.schemas import Folder
 from . import service, schemas, utils
@@ -89,7 +89,7 @@ def assign_tenant(
     return user
 
 
-@router.get("/{user_id}/tenants", response_model=Page[TenantList])
+@router.get("/{user_id}/tenants", response_model=Page[Tenant])
 async def read_tenants(
     user_id: str = Path(),
     db: Session = Depends(get_db),
