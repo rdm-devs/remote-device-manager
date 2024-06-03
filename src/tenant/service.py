@@ -45,7 +45,7 @@ def get_tenant_by_name(db: Session, tenant_name: str):
 
 
 def create_tenant(db: Session, tenant: schemas.TenantCreate):
-    check_tenant_name_taken(db, tenant.name)
+    check_tenant_name_taken(db, tenant_name=tenant.name)
 
     entity = create_entity_auto(db)
     db_tenant = models.Tenant(**tenant.model_dump(), entity_id=entity.id)
@@ -72,7 +72,7 @@ def update_tenant(
     values = updated_tenant.model_dump(exclude_unset=True)
     #check_tenant_exists(db, db_tenant.id)
     tenant = get_tenant(db, db_tenant.id)
-    check_tenant_name_taken(db, updated_tenant.name)
+    check_tenant_name_taken(db, tenant_name=updated_tenant.name, tenant_id=db_tenant.id)
 
     if updated_tenant.tags:
         tags = values.pop("tags")

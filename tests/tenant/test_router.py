@@ -93,11 +93,11 @@ def test_update_tenant(session: Session, client_authenticated: TestClient) -> No
     ]  # mixing valid and invalid tags (tags from a different tenant)
     response = client_authenticated.patch(
         f"/tenants/{tenant_id}",
-        json={"name": "tenant1-updated", "tags": new_tags},
+        json={"name": "tenant1", "tags": new_tags},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["name"] == "tenant1-updated"
+    assert data["name"] == "tenant1"
     assert len(data["folders"]) == 4
     # invalid tags are not in the tenant's tags list
     assert all(t not in data["tags"] for t in tags_tenant_2)

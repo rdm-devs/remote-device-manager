@@ -86,7 +86,8 @@ def test_get_tenants(session: Session) -> None:
 
 
 def test_update_tenant(session: Session) -> None:
-    tenant = create_tenant(session, TenantCreate(name="tenant5"))
+    tenant_name = "tenant5"
+    tenant = create_tenant(session, TenantCreate(name=tenant_name))
     db_tenant = get_tenant(session, tenant.id)
     original_tags = tenant.tags
 
@@ -96,9 +97,9 @@ def test_update_tenant(session: Session) -> None:
     tenant = update_tenant(
         session,
         db_tenant=db_tenant,
-        updated_tenant=TenantUpdate(name="tenant-custom", tags=tags),
+        updated_tenant=TenantUpdate(name=tenant_name, tags=tags),
     )
-    assert tenant.name == "tenant-custom"
+    assert tenant.name == tenant_name
     assert tenant.id == db_tenant.id
     assert all(t in tenant.tags for t in original_tags)
     assert all(

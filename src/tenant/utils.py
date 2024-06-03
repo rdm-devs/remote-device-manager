@@ -1,11 +1,14 @@
 from sqlalchemy.orm import Session
 from src.tenant import exceptions, models
+from typing import Optional
 
-
-def check_tenant_name_taken(db: Session, tenant_name: str):
+def check_tenant_name_taken(db: Session, tenant_name: str, tenant_id: Optional[int] = None):
     tenant = db.query(models.Tenant).filter(models.Tenant.name == tenant_name).first()
     if tenant:
-        raise exceptions.TenantNameTaken()
+        if tenant_id and tenant_id != tenant.id:
+            raise exceptions.TenantNameTaken()
+        if not tenant_id:
+            raise exceptions.TenantNameTaken()
 
 
 def check_tenant_exists(db: Session, tenant_id: int):
