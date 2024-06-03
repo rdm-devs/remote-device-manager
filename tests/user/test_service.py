@@ -27,7 +27,7 @@ from src.user.schemas import (
 from src.tenant.service import get_tenants
 from src.tenant.schemas import Tenant as TenantSchema
 from src.auth.utils import get_user_by_username
-from src.tag.models import Tag
+from src.tag.models import Tag, entities_and_tags_table
 from src.entity.exceptions import EntityTenantRelationshipMissing
 from src.user.models import User
 
@@ -177,6 +177,14 @@ def test_update_user_tags(session: Session) -> None:
     # assigning tenant 1 to the user will solve the problem
     user = assign_tenant(session, user.id, tenant_id)
     update_tags(user, tenant_id)
+
+    # testing associative relationship (Entity-Tag) is working
+    query = select(entities_and_tags_table.c.tag_id).where(
+        entities_and_tags_table.c.entity_id == user.entity_id,
+    )
+    relationship_tag_ids = session.scalars(query).all()
+    assert relationship_tag_ids is not None
+    assert all(t.id in relationship_tag_ids for t in user.tags)
 
 
 def test_delete_user(session: Session) -> None:

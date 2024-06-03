@@ -1,5 +1,6 @@
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tests.database import session, mock_os_data, mock_vendor_data
@@ -20,6 +21,7 @@ from src.tenant.schemas import (
 from src.user import models as user_models
 from src.tag.schemas import TagCreate
 from src.tag.service import create_tag
+from src.tag.models import entities_and_tags_table
 
 
 def test_create_tenant(session: Session) -> None:
@@ -117,6 +119,14 @@ def test_update_tenant(session: Session) -> None:
         updated_tenant=TenantUpdate(tags=new_tags),
     )
     assert all(t in tenant.tags for t in new_tags)
+
+    # testing associative relationship (Entity-Tag) is working
+    query = select(entities_and_tags_table.c.tag_id).where(
+        entities_and_tags_table.c.entity_id == tenant.entity_id,
+    )
+    relationship_tag_ids = session.scalars(query).all()
+    assert relationship_tag_ids is not None
+    assert all(t.id in relationship_tag_ids for t in tenant.tags)
 
 
 def test_update_tenant_with_invalid_id(session: Session) -> None:

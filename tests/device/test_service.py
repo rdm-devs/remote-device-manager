@@ -1,5 +1,6 @@
 from pydantic import ValidationError
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.device.exceptions import DeviceNameTaken, DeviceNotFound
 from src.folder.exceptions import FolderNotFound
@@ -14,6 +15,7 @@ from src.device.service import (
 )
 from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate
 from src.tenant.service import get_tenant
+from src.tag.models import entities_and_tags_table
 
 TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
 TEST_IP_ADDR = "96.119.132.46"
@@ -136,15 +138,23 @@ def test_update_device(
 
     tenant_id = 2
     tenant_2 = get_tenant(session, tenant_id)
-    
+
     device = update_device(
         session,
         db_device=db_device,
         updated_device=DeviceUpdate(tags=[*device.tags, *tenant_2.tags]),
     )
-    
+
     assert all(t not in device.tags for t in tenant_2.tags)
     assert all(t in device.tags for t in tenant_1.tags)
+
+    # testing associative relationship (Entity-Tag) is working
+    query = select(entities_and_tags_table.c.tag_id).where(
+        entities_and_tags_table.c.entity_id == device.entity_id,
+    )
+    relationship_tag_ids = session.scalars(query).all()
+    assert relationship_tag_ids is not None
+    assert all(t.id in relationship_tag_ids for t in device.tags)
 
 
 def test_update_device_with_invalid_data(

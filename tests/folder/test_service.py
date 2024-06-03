@@ -24,7 +24,7 @@ from src.folder.schemas import (
 from src.user.service import create_user
 from src.user.schemas import UserCreate
 from src.user.exceptions import UserTenantNotAssigned
-from src.tag.models import Tag
+from src.tag.models import Tag, entities_and_tags_table
 from src.tenant.service import get_tenant
 
 
@@ -123,7 +123,7 @@ def test_update_folder(session: Session) -> None:
     # tags from tenant 2 must not be present in the updated folder
     tenant_id = 2
     tenant_2 = get_tenant(session, tenant_id)
-    
+
     new_tags = list(set([*folder.tags, *tenant_2.tags]))
     folder = update(tags=new_tags)
     assert folder.name == "folder-custom"
@@ -140,6 +140,14 @@ def test_update_folder(session: Session) -> None:
     new_tags = list(set([*folder.tags, *tenant_1.tags]))
     folder = update(tags=new_tags)
     assert all(t in folder.tags for t in tenant_1.tags)
+
+    # testing associative relationship (Entity-Tag) is working
+    query = select(entities_and_tags_table.c.tag_id).where(
+        entities_and_tags_table.c.entity_id == folder.entity_id,
+    )
+    relationship_tag_ids = session.scalars(query).all()
+    assert relationship_tag_ids is not None
+    assert all(t.id in relationship_tag_ids for t in folder.tags)
 
 
 def test_update_folder_with_invalid_tenant(session: Session) -> None:
