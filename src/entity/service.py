@@ -34,6 +34,7 @@ def update_entity_tags(
     if not tenant_ids:
         raise exceptions.EntityTenantRelationshipMissing()
 
+    tag_ids = list(set(tag_ids)) # filtering duplicated tag_ids
     tags = db.scalars(
         select(Tag).where(Tag.id.in_(tag_ids), Tag.tenant_id.in_(tenant_ids))
     ).all()

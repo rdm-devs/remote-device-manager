@@ -161,14 +161,14 @@ def test_update_user_tags(session: Session) -> None:
 
     tenant_id = 1
     def update_tags(user: User, tenant_id: int):
-        tag_ids_tenant_1 = session.scalars(select(Tag.id).where(Tag.tenant_id == tenant_id)).all()
+        tags_tenant_1 = session.scalars(select(Tag).where(Tag.tenant_id == tenant_id)).all()
         user = update_user(
             session,
             db_user=user,
-            updated_user=UserUpdate(tag_ids=tag_ids_tenant_1),
+            updated_user=UserUpdate(tags=tags_tenant_1),
         )
 
-        assert len(user.tags) == len(tag_ids_tenant_1)
+        assert len(user.tags) == len(tags_tenant_1)
 
     # forcing an association to tags from tenant 1
     with pytest.raises(EntityTenantRelationshipMissing):

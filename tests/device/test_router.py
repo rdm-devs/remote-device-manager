@@ -162,46 +162,47 @@ def test_update_device(session: Session, client_authenticated: TestClient) -> No
     tenant_id = 2
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
     tags_tenant_2 = response.json()["items"]
-    tag_ids_tenant_2 = [t["id"] for t in tags_tenant_2]
 
     response = client_authenticated.get(f"/tags/?device_id={device_id}")
     tags_device_1 = response.json()["items"]
-    tag_ids_device_1 = [t["id"] for t in tags_device_1]
 
+    new_tags = [*tags_device_1, *tags_tenant_2]
     response = client_authenticated.patch(
         f"/devices/{device_id}",
         json={
             "name": "dev5-updated",
             "folder_id": 1,
-            "tag_ids": [*tag_ids_device_1, *tag_ids_tenant_2],
+            "tags": new_tags,
         },
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "dev5-updated"
     assert data["folder_id"] == 1
-    assert len(data["tags"]) != len(tag_ids_device_1) + len(tag_ids_tenant_2)
-    assert len(data["tags"]) == len(
-        tag_ids_device_1
-    )  # the previous operation failed but the original tags remain
+    assert all(t not in data["tags"] for t in tags_tenant_2)
+    assert all(t in data["tags"] for t in tags_device_1)
 
     # attempting to assign tags from a tenant with who the device is related.
     tenant_id = 1
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
     tags_tenant_1 = response.json()["items"]
-    tag_ids_tenant_1 = [t["id"] for t in tags_tenant_1]
 
-    # in this case the existing tags are included in the list that comes from the tenant 
-    # that is related to the device being updated. 
-    new_tag_ids = list({*tag_ids_device_1, *tag_ids_tenant_1})
+    # in this case the existing tags are included in the list that comes from the tenant
+    # that is related to the device being updated.
+    new_tags = tags_device_1
+    for t in tags_tenant_1: 
+        if t not in new_tags:  # filtering repeated items (backend ignores them anyway)
+            new_tags.append(t)
+
     response = client_authenticated.patch(
         f"/devices/{device_id}",
-        json={"tag_ids": new_tag_ids},
+        json={"tags": new_tags},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     # the operation should succeed and the device should have new tags assigned.
-    assert len(data["tags"]) == len(new_tag_ids)
+    assert all(t in data["tags"] for t in tags_tenant_1)
+    assert all(t in data["tags"] for t in tags_device_1)
 
 
 def test_update_non_existent_device(

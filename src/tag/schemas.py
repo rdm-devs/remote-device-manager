@@ -9,7 +9,7 @@ class TagBase(BaseModel):
 
 
 class TagCreate(TagBase):
-    pass
+    model_config = {"extra": "ignore"}
 
 class Tag(TagCreate):
     id: int
@@ -21,7 +21,7 @@ class TagUpdate(BaseModel):
     name: Optional[str] = None
     tenant_id: Optional[int] = None
 
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "ignore"}
 
 class TagDelete(BaseModel):
     id: int

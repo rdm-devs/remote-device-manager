@@ -184,7 +184,7 @@ def test_update_user_tags(session: Session, client_authenticated: TestClient) ->
         response = client_authenticated.patch(
             f"/users/{user_id}",
             json={
-                "tag_ids": tag_ids_tenant_1,
+                "tags": tags_tenant_1,
             },
         )
         return response

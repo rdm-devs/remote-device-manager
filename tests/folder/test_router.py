@@ -79,18 +79,49 @@ def test_create_incomplete_folder(
 
 
 def test_update_folder(session: Session, client_authenticated: TestClient) -> None:
-    folder_id = (
-        1  # Folder with id=1 already exists in the session. See: tests/database.py
-    )
+    folder_id = 1  # Folder id=1 already exists in the session. See: tests/database.py
 
+    # attempting to assign tags from a tenant with who the device is not related.
+    tenant_id = 2
+    response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
+    tags_tenant_2 = response.json()["items"]
+
+    response = client_authenticated.get(f"/tags/?folder_id={folder_id}")
+    tags_folder_1 = response.json()["items"]
+
+    new_tags = [*tags_folder_1, *tags_tenant_2]
     response = client_authenticated.patch(
         f"/folders/{folder_id}",
-        json={"name": "folder5-updated"},
+        json={"name": "folder5-updated", "tags": new_tags},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "folder5-updated"
     assert data["tenant_id"] == 1
+    assert all(t not in data["tags"] for t in tags_tenant_2)
+    assert all(t in data["tags"] for t in tags_folder_1)
+    
+    # attempting to assign tags from a tenant with who the device is related.
+    tenant_id = 1
+    response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
+    tags_tenant_1 = response.json()["items"]
+
+    # in this case the existing tags are included in the list that comes from the tenant
+    # that is related to the device being updated.
+    new_tags = tags_folder_1
+    for t in tags_tenant_1:
+        if t not in new_tags:  # filtering repeated items (backend ignores them anyway)
+            new_tags.append(t)
+
+    response = client_authenticated.patch(
+        f"/folders/{folder_id}",
+        json={"tags": new_tags},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    # the operation should succeed and the device should have new tags assigned.
+    assert all(t in data["tags"] for t in tags_tenant_1)
+    assert all(t in data["tags"] for t in tags_folder_1)
 
 
 def test_update_folder_to_add_a_tenant(

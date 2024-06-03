@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
-from src import device, tag 
+from src import device, tag
 from src.tag.constants import ErrorCode
 from tests.database import (
     app,
@@ -16,7 +16,9 @@ from tests.database import (
 def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/tags/")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 14 # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
+    assert (
+        len(response.json()["items"]) == 14
+    )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
 
 def test_read_tag(session: Session, client_authenticated: TestClient) -> None:
@@ -27,7 +29,7 @@ def test_read_tag(session: Session, client_authenticated: TestClient) -> None:
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     tag_id = data["id"]
-    
+
     response = client_authenticated.get(f"/tags/{tag_id}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -74,6 +76,7 @@ def test_create_tag_with_invalid_tenant_id(
         "/tags/", json={"name": "tag20", "tenant_id": tenant_id}
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
 
 def test_create_incomplete_tag(
     session: Session, client_authenticated: TestClient
@@ -135,25 +138,6 @@ def test_update_non_existent_tag(
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == ErrorCode.TAG_NOT_FOUND
-
-
-def test_update_non_existent_tag_attrs(
-    session: Session, client_authenticated: TestClient
-) -> None:
-    tag_id = (
-        1  # tag with id=1 already exists in the session. See: tests/database.py
-    )
-
-    response = client_authenticated.patch(
-        f"/tags/{tag_id}",
-        json={
-            "name": "tag1",
-            "tenant_id": None,
-            "devices": [],  # non existing field
-            "tag": "my-cool-device-group-tag",  # non existing field
-        },
-    )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_delete_tag(session: Session, client_authenticated: TestClient) -> None:

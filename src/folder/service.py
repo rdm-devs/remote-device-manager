@@ -1,18 +1,19 @@
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from src.exceptions import PermissionDenied
-from src.tenant.service import check_tenant_exists
+from src.entity.service import create_entity_auto, update_entity_tags
 from src.folder import exceptions, schemas, models
-from src.entity.service import create_entity_auto
 from src.auth.dependencies import has_role
+from src.tag.service import create_tag
+from src.tag.schemas import TagCreate
+from src.tenant.service import check_tenant_exists
+from src.tenant.models import tenants_and_users_table
+from src.tenant.utils import filter_tag_ids
 from src.user.models import User
 from src.user.exceptions import UserTenantNotAssigned
 from src.user.service import get_user
-from src.tenant.models import tenants_and_users_table
-from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
 
 
 def check_folder_exist(db: Session, folder_id: int):
@@ -130,7 +131,9 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
             raise UserTenantNotAssigned()
 
 
-def get_folders_from_tenant(db: Session, user_id: int, tenant_id: int) -> List[models.Folder]:
+def get_folders_from_tenant(
+    db: Session, user_id: int, tenant_id: int
+) -> List[models.Folder]:
     return get_folders(db, user_id).filter(models.Folder.tenant_id == tenant_id)
 
 
@@ -147,20 +150,28 @@ def update_folder(
     updated_folder: schemas.FolderUpdate,
 ):
     # sanity checks
-    get_folder(db, db_folder.id)
+    values = updated_folder.model_dump(exclude_unset=True)
+    folder = get_folder(db, db_folder.id)
     if updated_folder.tenant_id:
         check_tenant_exists(db, updated_folder.tenant_id)
     check_folder_name_taken(
-        db, updated_folder.name, updated_folder.tenant_id, db_folder.id
+        db, updated_folder.name, updated_folder.tenant_id, folder.id
     )
 
-    db.query(models.Folder).filter(models.Folder.id == db_folder.id).update(
-        values=updated_folder.model_dump(exclude_unset=True)
-    )
+    if updated_folder.tags:
+        tags = values.pop("tags")
+        tag_ids = filter_tag_ids(tags, folder.tenant_id)
+        folder.entity = update_entity_tags(
+            db=db,
+            entity=folder.entity,
+            tenant_ids=[folder.tenant_id],
+            tag_ids=tag_ids,
+        )
 
+    db.execute(update(models.Folder).where(models.Folder.id == folder.id).values(values))
     db.commit()
-    db.refresh(db_folder)
-    return db_folder
+    db.refresh(folder)
+    return folder
 
 
 def delete_folder(db: Session, db_folder: schemas.Folder):

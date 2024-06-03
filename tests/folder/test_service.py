@@ -1,5 +1,6 @@
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.tenant.exceptions import TenantNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
@@ -23,6 +24,8 @@ from src.folder.schemas import (
 from src.user.service import create_user
 from src.user.schemas import UserCreate
 from src.user.exceptions import UserTenantNotAssigned
+from src.tag.models import Tag
+from src.tenant.service import get_tenant
 
 
 def test_create_folder(session: Session) -> None:
@@ -94,22 +97,49 @@ def test_get_folders(session: Session) -> None:
         ),
     )
     with pytest.raises(UserTenantNotAssigned):
-        folders = session.execute(get_folders(
-            session, user_id=5
-        )).fetchall()  # this user has no tenant asigned so it will raise an exception
+        folders = session.execute(
+            get_folders(session, user_id=5)
+        ).fetchall()  # this user has no tenant asigned so it will raise an exception
 
 
 def test_update_folder(session: Session) -> None:
     folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
     db_folder = get_folder(session, folder.id)
 
-    folder = update_folder(
-        session,
-        db_folder=db_folder,
-        updated_folder=FolderUpdate(name="folder-custom"),
-    )
+    original_tags = folder.tags
+    folder_tag_ids = [t.id for t in original_tags]
+
+    def get_tag_ids(tenant_id: int):
+        return session.scalars(select(Tag.id).where(Tag.tenant_id == tenant_id)).all()
+
+    def update(tags):
+        folder = update_folder(
+            session,
+            db_folder=db_folder,
+            updated_folder=FolderUpdate(name="folder-custom", tags=tags),
+        )
+        return folder
+
+    # tags from tenant 2 must not be present in the updated folder
+    tenant_id = 2
+    tenant_2 = get_tenant(session, tenant_id)
+    
+    new_tags = list(set([*folder.tags, *tenant_2.tags]))
+    folder = update(tags=new_tags)
     assert folder.name == "folder-custom"
     assert folder.tenant_id == 1
+    assert all(t not in folder.tags for t in tenant_2.tags)
+    assert all(
+        t in folder.tags for t in original_tags
+    )  # tags have not changed after update
+
+    # tags from tenant 1 must be present in the updated folder as the folder
+    # was created with tenant_id=1
+    tenant_id = 1
+    tenant_1 = get_tenant(session, tenant_id)
+    new_tags = list(set([*folder.tags, *tenant_1.tags]))
+    folder = update(tags=new_tags)
+    assert all(t in folder.tags for t in tenant_1.tags)
 
 
 def test_update_folder_with_invalid_tenant(session: Session) -> None:

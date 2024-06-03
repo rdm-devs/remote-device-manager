@@ -18,6 +18,8 @@ from src.tenant.schemas import (
     TenantUpdate,
 )
 from src.user import models as user_models
+from src.tag.schemas import TagCreate
+from src.tag.service import create_tag
 
 
 def test_create_tenant(session: Session) -> None:
@@ -34,11 +36,6 @@ def test_create_duplicated_tenant(session: Session) -> None:
 def test_create_incomplete_tenant(session: Session) -> None:
     with pytest.raises(ValidationError):
         create_tenant(session, TenantCreate())
-
-
-def test_create_tenant_with_folder(session: Session) -> None:
-    with pytest.raises(ValidationError):
-        create_tenant(session, TenantCreate(name="tenant5", folders=[]))
 
 
 def test_get_tenant(session: Session) -> None:
@@ -91,26 +88,34 @@ def test_get_tenants(session: Session) -> None:
 def test_update_tenant(session: Session) -> None:
     tenant = create_tenant(session, TenantCreate(name="tenant5"))
     db_tenant = get_tenant(session, tenant.id)
+    original_tags = tenant.tags
 
+    # attempting to update tenant tags with tags from another tenant
+    tenant_2 = get_tenant(session, 2)
+    tags = [*tenant.tags, *tenant_2.tags]
     tenant = update_tenant(
         session,
         db_tenant=db_tenant,
-        updated_tenant=TenantUpdate(name="tenant-custom"),
+        updated_tenant=TenantUpdate(name="tenant-custom", tags=tags),
     )
     assert tenant.name == "tenant-custom"
     assert tenant.id == db_tenant.id
+    assert all(t in tenant.tags for t in original_tags)
+    assert all(
+        t not in tenant.tags for t in tenant_2.tags
+    )  # invalid tags were filtered
 
+    # adding new tags to the tenant
+    tag_1 = create_tag(session, TagCreate(name="custom-new-tag-1", tenant_id=tenant.id))
+    tag_2 = create_tag(session, TagCreate(name="custom-new-tag-2", tenant_id=tenant.id))
 
-def test_update_tenant_with_incomplete_data(session: Session) -> None:
-    tenant = create_tenant(session, TenantCreate(name="tenant5"))
-    db_tenant = get_tenant(session, tenant.id)
-
-    with pytest.raises(ValidationError):
-        tenant = update_tenant(
-            session,
-            db_tenant=db_tenant,
-            updated_tenant=TenantUpdate(),
-        )
+    new_tags = [*tenant.tags, tag_1, tag_2]  # combining new tags with existing ones
+    tenant = update_tenant(
+        session,
+        db_tenant=tenant,
+        updated_tenant=TenantUpdate(tags=new_tags),
+    )
+    assert all(t in tenant.tags for t in new_tags)
 
 
 def test_update_tenant_with_invalid_id(session: Session) -> None:

@@ -1,11 +1,12 @@
 from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
-from src.folder.models import Folder
-from src.tenant.models import tenants_and_users_table
 from src.device import schemas, models, exceptions
-from src.folder.service import check_folder_exist, get_folders
 from src.entity.service import create_entity_auto, update_entity_tags
+from src.folder.models import Folder
+from src.folder.service import check_folder_exist, get_folders
+from src.tenant.models import tenants_and_users_table
+from src.tenant.utils import filter_tag_ids
 from src.user.service import get_user
 
 
@@ -80,12 +81,14 @@ def update_device(
         check_folder_exist(db, updated_device.folder_id)
     check_device_name_taken(db, updated_device.name, device.id)
 
-    if "tag_ids" in values.keys():
+    if updated_device.tags:
+        tags = values.pop("tags")
+        tag_ids = filter_tag_ids(tags, device.folder.tenant_id)
         device.entity = update_entity_tags(
             db=db,
             entity=device.entity,
             tenant_ids=[device.folder.tenant_id],
-            tag_ids=values.pop("tag_ids"),
+            tag_ids=tag_ids,
         )
     db.execute(
         update(models.Device).where(models.Device.id == device.id).values(values)

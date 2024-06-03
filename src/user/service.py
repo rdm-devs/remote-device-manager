@@ -129,12 +129,12 @@ def update_user(
     user = get_user(db, db_user.id)
     if "tenant_ids" in values.keys():
         user = update_user_tenants(db, user, values.pop("tenant_ids"))
-    if "tag_ids" in values.keys():
+    if updated_user.tags:
         user.entity = update_entity_tags(
             db=db,
             entity=user.entity,
             tenant_ids=user.get_tenants_ids(),
-            tag_ids=values.pop("tag_ids"),
+            tag_ids=[t["id"] for t in values.pop("tags")],
         )
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)

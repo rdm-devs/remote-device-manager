@@ -1,21 +1,23 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import has_access_to_tenant
+from src.entity.service import create_entity_auto, update_entity_tags
 from src.exceptions import PermissionDenied
-from src.tag import service as tags_service
-from src.tag import models as tag_models
+from src.tag.models import Tag
+from src.tag.service import create_tag
+from src.tag.schemas import TagCreate
+from src.tenant import schemas, models, exceptions
+from src.tenant.utils import (
+    check_tenant_exists,
+    check_tenant_name_taken,
+    filter_tag_ids,
+)
+from src.folder.service import create_root_folder
+from src.folder.schemas import FolderCreate
 from src.user.schemas import User
 from src.user.models import tenants_and_users_table
 from src.user.service import get_user
-from src.tenant import schemas, models
-from src.tenant import exceptions
-from src.tenant.utils import check_tenant_exists, check_tenant_name_taken
-from src.entity.service import create_entity_auto
-from src.folder.service import create_root_folder
-from src.folder.schemas import FolderCreate
-from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
 
 
 def get_tenant(db: Session, tenant_id: int):
@@ -67,16 +69,27 @@ def update_tenant(
     updated_tenant: schemas.TenantUpdate,
 ):
     # sanity checks
-    check_tenant_exists(db, db_tenant.id)
+    values = updated_tenant.model_dump(exclude_unset=True)
+    #check_tenant_exists(db, db_tenant.id)
+    tenant = get_tenant(db, db_tenant.id)
     check_tenant_name_taken(db, updated_tenant.name)
 
-    db.query(models.Tenant).filter(models.Tenant.id == db_tenant.id).update(
-        values=updated_tenant.model_dump()
-    )
+    if updated_tenant.tags:
+        tags = values.pop("tags")
+        tag_ids = filter_tag_ids(tags, tenant.id)
+        tenant.entity = update_entity_tags(
+            db=db,
+            entity=tenant.entity,
+            tenant_ids=[tenant.id],
+            tag_ids=tag_ids,
+        )
 
+    db.execute(
+        update(models.Tenant).where(models.Tenant.id == tenant.id).values(values)
+    )
     db.commit()
-    db.refresh(db_tenant)
-    return db_tenant
+    db.refresh(tenant)
+    return tenant
 
 
 def delete_tenant(db: Session, db_tenant: schemas.Tenant):
@@ -98,10 +111,10 @@ async def get_tenant_tags(
     check_tenant_exists(db, tenant_id)
     if await has_access_to_tenant(tenant_id, db, user):
         return (
-            select(tag_models.Tag)
+            select(Tag)
             .join(models.Tenant)
             .where(models.Tenant.id == tenant_id)
-            .where(tag_models.Tag.tenant_id == tenant_id)
+            .where(Tag.tenant_id == tenant_id)
         )
     else:
         raise PermissionDenied()

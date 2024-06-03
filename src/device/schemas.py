@@ -32,7 +32,7 @@ class Device(DeviceCreate):
     heartbeat_timestamp: datetime = datetime.now()
     tags: List[Tag] = []
 
-    model_config = {"from_attributes": True, "extra": "forbid"}
+    model_config = {"from_attributes": True, "extra": "ignore"}
 
 
 class DeviceList(BaseModel):
@@ -55,8 +55,7 @@ class DeviceUpdate(DeviceCreate):
     vendor_model: Optional[str] = None
     vendor_cores: Optional[int] = None
     vendor_ram_gb: Optional[int] = None
-    tag_ids: Optional[List[int]] = None
-
+    tags: Optional[List[Tag]] = []
     model_config = {"extra": "ignore"}
 
 

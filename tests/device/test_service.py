@@ -13,6 +13,7 @@ from src.device.service import (
     update_device,
 )
 from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate
+from src.tenant.service import get_tenant
 
 TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
 TEST_IP_ADDR = "96.119.132.46"
@@ -121,13 +122,29 @@ def test_update_device(
     )
     db_device = get_device(session, device.id)
 
+    tenant_id = 1
+    tenant_1 = get_tenant(session, tenant_id)
+
     device = update_device(
         session,
         db_device=db_device,
-        updated_device=DeviceUpdate(name="dev-custom"),
+        updated_device=DeviceUpdate(name="dev-custom", tags=tenant_1.tags),
     )
     assert device.name == "dev-custom"
     assert device.folder_id == 3
+    assert all(t in device.tags for t in tenant_1.tags)
+
+    tenant_id = 2
+    tenant_2 = get_tenant(session, tenant_id)
+    
+    device = update_device(
+        session,
+        db_device=db_device,
+        updated_device=DeviceUpdate(tags=[*device.tags, *tenant_2.tags]),
+    )
+    
+    assert all(t not in device.tags for t in tenant_2.tags)
+    assert all(t in device.tags for t in tenant_1.tags)
 
 
 def test_update_device_with_invalid_data(
