@@ -13,13 +13,12 @@ from src.user.service import get_user
 def check_device_name_taken(
     db: Session, device_name: str, device_id: Optional[int] = None
 ):
-    device_name_taken = db.query(models.Device).filter(
-        models.Device.name == device_name
-    )
-    if device_id:
-        device_name_taken.filter(models.Device.id != device_id)
-    if device_name_taken.first():
-        raise exceptions.DeviceNameTaken()
+    device = db.query(models.Device).filter(models.Device.name == device_name).first()
+    if device:
+        if device_id and device_id != device.id:
+            raise exceptions.DeviceNameTaken()
+        if not device_id:
+            raise exceptions.DeviceNameTaken()
 
 
 def get_device(db: Session, device_id: int) -> models.Device:
