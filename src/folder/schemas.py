@@ -45,7 +45,6 @@ class FolderUpdate(FolderBase):
     parent_id: Optional[int] = None
     devices: Optional[List[Device]] = None
     subfolders: Optional[List["Folder"]] = None
-    #tag_ids: Optional[List[int]] = None
     tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 

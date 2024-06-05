@@ -158,6 +158,13 @@ def update_folder(
         db, updated_folder.name, updated_folder.tenant_id, folder.id
     )
 
+    # patch: momentarily ignoring these attributes
+    # in the future, these should be treated similarly to the tags attribute.
+    if updated_folder.subfolders:
+        values.pop("subfolders")
+    if updated_folder.devices:
+        values.pop("devices")
+
     if updated_folder.tags:
         tags = values.pop("tags")
         tag_ids = filter_tag_ids(tags, folder.tenant_id)
