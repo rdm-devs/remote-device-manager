@@ -14,7 +14,7 @@ from src.tenant.service import get_tenants
 from src.tenant.schemas import Tenant
 from src.device.schemas import DeviceList
 from src.folder.schemas import Folder
-from . import service, schemas, utils
+from . import service, schemas, utils, exceptions
 from ..database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -57,6 +57,8 @@ def delete_user(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_role),
 ):
+    if user_id == user.id:
+        raise exceptions.UserCannotDeleteItself()
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)
     if not deleted_user_user_id:

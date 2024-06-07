@@ -1,5 +1,5 @@
 from src.user.constants import ErrorCode
-from src.exceptions import NotFound, BadRequest
+from src.exceptions import NotFound, BadRequest, PermissionDenied
 
 
 class UserNotFound(NotFound):
@@ -16,3 +16,6 @@ class UserInvalidPassword(BadRequest):
 
 class UserTenantNotAssigned(NotFound):
     DETAIL = ErrorCode.USER_TENANT_NOT_ASSIGNED
+
+class UserCannotDeleteItself(PermissionDenied):
+    DETAIL = ErrorCode.USER_CANNOT_DELETE_ITSELF
