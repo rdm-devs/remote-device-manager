@@ -14,6 +14,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+# original author: https://stackoverflow.com/a/54034230
 def keyvalgen(obj):
     """Generate attr name/val pairs, filtering out SQLA attrs."""
     excl = ("_sa_adapter", "_sa_instance_state")
