@@ -1,19 +1,22 @@
 from pydantic import ValidationError
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from src.exceptions import PermissionDenied
 from src.entity.service import create_entity_auto, update_entity_tags
 from src.folder import exceptions, schemas, models
 from src.auth.dependencies import has_role
+from src.tag.models import Type
 from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
+from src.tag.schemas import TagAdminCreate
 from src.tenant.service import check_tenant_exists
 from src.tenant.models import tenants_and_users_table
 from src.tenant.utils import filter_tag_ids
 from src.user.models import User
 from src.user.exceptions import UserTenantNotAssigned
 from src.user.service import get_user
+from src.device.models import Device
 
 
 def check_folder_exist(db: Session, folder_id: int):
@@ -48,12 +51,16 @@ def create_root_folder(db: Session, tenant_id: int):
     db_folder.add_tag(
         create_tag(
             db,
-            TagCreate(
-                name=f"folder-{formatted_name}-tag", tenant_id=db_folder.tenant_id
+            TagAdminCreate(
+                name=f"folder-{formatted_name}-tag",
+                tenant_id=db_folder.tenant_id,
+                type=Type.FOLDER,
             ),
         )
     )
 
+    db.commit()
+    db.refresh(db_folder)
     return db_folder
 
 
@@ -87,19 +94,25 @@ def create_folder(db: Session, folder: schemas.FolderCreate):
     else:
         folder.parent_id = root_folder.id
 
-    db_folder = models.Folder(**folder.model_dump(), entity_id=entity.id)
-    db.add(db_folder)
+    folder = models.Folder(**folder.model_dump(), entity_id=entity.id)
+    db.add(folder)
     db.commit()
-    db.refresh(db_folder)
 
-    formatted_name = db_folder.tenant.name.lower().replace(" ", "-")
-    formatted_name += f"-{db_folder.name.lower().replace(' ', '-')}"
+    formatted_name = folder.tenant.name.lower().replace(" ", "-")
+    formatted_name += f"-{folder.name.lower().replace(' ', '-')}"
     folder_tag = create_tag(
         db,
-        TagCreate(name=f"folder-{formatted_name}-tag", tenant_id=db_folder.tenant_id),
+        TagAdminCreate(
+            name=f"folder-{formatted_name}-tag",
+            tenant_id=folder.tenant_id,
+            type=Type.FOLDER,
+        ),
     )
-    db_folder.add_tag(folder_tag)
-    return db_folder
+    folder.add_tag(folder_tag)
+
+    db.commit()
+    db.refresh(folder)
+    return folder
 
 
 def get_folder(db: Session, folder_id: int) -> models.Folder:
@@ -123,10 +136,6 @@ def get_folders(db: Session, user_id: int) -> List[models.Folder]:
                     .where(models.Folder.tenant_id.in_(tenant_ids))
                     .where(models.Folder.parent_id == None)
                 )
-            # print(f"folder tree ids: {user.get_folder_tree_ids()}")
-            # return db.query(models.Folder).filter(
-            #     models.Folder.id.in_(user.get_folder_tree_ids())
-            # )
         else:
             raise UserTenantNotAssigned()
 
@@ -144,6 +153,47 @@ def get_folder_by_name(db: Session, folder_name: str):
     return folder
 
 
+def update_subfolders(
+    db: Session, folder: models.Folder, subfolders: List[models.Folder]
+):
+    try:
+        folder.subfolders = []
+        db.commit()
+        if len(subfolders) != 0:
+            subfolder_ids = [
+                sf.id for sf in subfolders if sf.tenant_id == folder.tenant_id
+            ]
+            subfolders = db.scalars(
+                select(models.Folder).where(models.Folder.id.in_(subfolder_ids))
+            ).all()
+            folder.subfolders = subfolders
+            db.commit()
+        db.refresh(folder)
+    except IntegrityError:
+        db.rollback()
+    return folder
+
+
+def update_devices(db: Session, folder: models.Folder, devices: List[Device]):
+    try:
+        folder.devices = []
+        db.commit()
+        if len(devices) != 0:
+            device_ids = [
+                d.id
+                for d in devices
+                if d.folder and d.folder.tenant_id == folder.tenant_id
+            ]
+            devices = db.scalars(select(Device).where(Device.id.in_(device_ids))).all()
+            folder.devices = devices
+            db.commit()
+        db.refresh(folder)
+        
+    except IntegrityError:
+        db.rollback()
+    return folder
+
+
 def update_folder(
     db: Session,
     db_folder: schemas.Folder,
@@ -151,6 +201,10 @@ def update_folder(
 ):
     # sanity checks
     values = updated_folder.model_dump(exclude_unset=True)
+    subfolders = values.pop("subfolders", None)
+    devices = values.pop("devices", None)
+    tags = values.pop("tags", None)
+
     folder = get_folder(db, db_folder.id)
     if updated_folder.tenant_id:
         check_tenant_exists(db, updated_folder.tenant_id)
@@ -158,15 +212,11 @@ def update_folder(
         db, updated_folder.name, updated_folder.tenant_id, folder.id
     )
 
-    # patch: momentarily ignoring these attributes
-    # in the future, these should be treated similarly to the tags attribute.
-    if updated_folder.subfolders:
-        values.pop("subfolders")
-    if updated_folder.devices:
-        values.pop("devices")
-
-    if updated_folder.tags:
-        tags = values.pop("tags")
+    if subfolders is not None and len(subfolders) >= 0:
+        folder = update_subfolders(db, folder, subfolders)
+    if devices is not None and len(devices) >= 0:
+        folder = update_devices(db, folder, devices)
+    if tags is not None and len(tags) >= 0:
         tag_ids = filter_tag_ids(tags, folder.tenant_id)
         folder.entity = update_entity_tags(
             db=db,
@@ -175,7 +225,9 @@ def update_folder(
             tag_ids=tag_ids,
         )
 
-    db.execute(update(models.Folder).where(models.Folder.id == folder.id).values(values))
+    db.execute(
+        update(models.Folder).where(models.Folder.id == folder.id).values(values)
+    )
     db.commit()
     db.refresh(folder)
     return folder

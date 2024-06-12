@@ -4,9 +4,9 @@ from typing import Union
 from src.auth.dependencies import has_access_to_tenant
 from src.entity.service import create_entity_auto, update_entity_tags
 from src.exceptions import PermissionDenied
-from src.tag.models import Tag
+from src.tag.models import Tag, Type
 from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
+from src.tag.schemas import TagAdminCreate
 from src.tenant import schemas, models, exceptions
 from src.tenant.utils import (
     check_tenant_exists,
@@ -46,20 +46,38 @@ def get_tenant_by_name(db: Session, tenant_name: str):
 
 def create_tenant(db: Session, tenant: schemas.TenantCreate):
     check_tenant_name_taken(db, tenant_name=tenant.name)
+    values = tenant.model_dump(exclude_unset=True)
+    tags = values.pop("tags", None)
 
+    # creating an Entity for a Tenant
     entity = create_entity_auto(db)
-    db_tenant = models.Tenant(**tenant.model_dump(), entity_id=entity.id)
+    # creating a Tenant
+    db_tenant = models.Tenant(**values, entity_id=entity.id)
     db.add(db_tenant)
     db.commit()
     db.refresh(db_tenant)
 
+    # creating automatic tag
     # TODO: definir una convención de nombres??
     formatted_name = tenant.name.lower().replace(" ", "-")
     tenant_tag = create_tag(
-        db, TagCreate(name=f"tenant-{formatted_name}-tag", tenant_id=db_tenant.id)
+        db, TagAdminCreate(name=f"tenant-{formatted_name}-tag", tenant_id=db_tenant.id, type=Type.TENANT)
     )
+    # creating a root folder
     folder = create_root_folder(db, db_tenant.id)
 
+    # assigning tags
+    if tags is not None and len(tags) >= 0:
+        tag_ids = filter_tag_ids(tags, db_tenant.id)
+        db_tenant.entity = update_entity_tags(
+            db=db,
+            entity=db_tenant.entity,
+            tenant_ids=[db_tenant.id],
+            tag_ids=tag_ids,
+        )
+        db.commit()
+
+    db.refresh(db_tenant)
     return db_tenant
 
 
@@ -70,12 +88,12 @@ def update_tenant(
 ):
     # sanity checks
     values = updated_tenant.model_dump(exclude_unset=True)
-    #check_tenant_exists(db, db_tenant.id)
+    tags = values.pop("tags", None)
+
     tenant = get_tenant(db, db_tenant.id)
     check_tenant_name_taken(db, tenant_name=updated_tenant.name, tenant_id=db_tenant.id)
 
-    if updated_tenant.tags:
-        tags = values.pop("tags")
+    if tags is not None and len(tags) >= 0:
         tag_ids = filter_tag_ids(tags, tenant.id)
         tenant.entity = update_entity_tags(
             db=db,
@@ -83,6 +101,7 @@ def update_tenant(
             tenant_ids=[tenant.id],
             tag_ids=tag_ids,
         )
+        db.commit()
 
     db.execute(
         update(models.Tenant).where(models.Tenant.id == tenant.id).values(values)

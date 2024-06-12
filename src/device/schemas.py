@@ -13,7 +13,7 @@ class DeviceBase(BaseModel):
 
 
 class DeviceCreate(DeviceBase):
-    folder_id: int
+    folder_id: Optional[int] = None
     mac_address: Optional[str] = None
     ip_address: Optional[str] = None
     os_name: str

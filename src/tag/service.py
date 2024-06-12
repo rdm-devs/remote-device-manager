@@ -84,18 +84,21 @@ async def get_tags(
     return tags.distinct()
 
 
-def create_tag(db: Session, tag: schemas.TagCreate):
-    check_tenant_exists(db, tenant_id=tag.tenant_id)
-    check_tag_name_exists(db, tag.name, tag.tenant_id)
+def create_tag(db: Session, tag_schema: schemas.TagAdminCreate):
+    if tag_schema.tenant_id:
+        check_tenant_exists(db, tenant_id=tag_schema.tenant_id)
+    check_tag_name_exists(db, tag_schema.name, tag_schema.tenant_id)
 
-    res = db.execute(insert(models.Tag).values(**tag.model_dump()))
+    if tag_schema.type == models.Type.USER_CREATED and tag_schema.tenant_id is None:
+        raise exceptions.TagNotFound()
+    if tag_schema.type == models.Type.GLOBAL:
+        tag_schema.tenant_id = None
+
+    tag = models.Tag(**tag_schema.model_dump())
+    db.add(tag)
     db.commit()
-    db_tag = db.scalar(
-        # retrieving the inserted object
-        select(models.Tag).where(models.Tag.id == res.inserted_primary_key[0])
-    )
-    db.refresh(db_tag)
-    return db_tag
+    db.refresh(tag)
+    return tag
 
 
 def update_tag(db: Session, db_tag: schemas.Tag, updated_tag: schemas.TagUpdate):

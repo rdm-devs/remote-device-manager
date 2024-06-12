@@ -59,7 +59,8 @@ def get_device_by_name(db: Session, device_name: str):
 
 def create_device(db: Session, device: schemas.DeviceCreate):
     # sanity checks
-    check_folder_exist(db, device.folder_id)
+    if device.folder_id:
+        check_folder_exist(db, device.folder_id)
     check_device_name_taken(db, device.name)
 
     entity = create_entity_auto(db)
@@ -89,6 +90,7 @@ def update_device(
             tenant_ids=[device.folder.tenant_id],
             tag_ids=tag_ids,
         )
+        db.commit()
     db.execute(
         update(models.Device).where(models.Device.id == device.id).values(values)
     )

@@ -1,9 +1,18 @@
 from sqlalchemy import ForeignKey, Table, Column, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, mapped_column, Mapped
-from typing import List
-from ..database import Base
-from ..audit_mixin import AuditMixin
+from typing import List, Optional
+from enum import StrEnum, auto
+from src.database import Base
+from src.audit_mixin import AuditMixin
+
+class Type(StrEnum):
+    DEVICE = auto()
+    FOLDER = auto()
+    TENANT = auto()
+    USER = auto()
+    GLOBAL = auto()
+    USER_CREATED = auto()
 
 entities_and_tags_table = Table(
     "entities_and_tags",
@@ -33,7 +42,8 @@ class Tag(Base, AuditMixin):
     entities: Mapped[List["src.entity.models.Entity"]] = relationship(
         secondary=entities_and_tags_table, back_populates="tags"
     )
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))
-    tenant: Mapped["src.tenant.models.Tenant"] = relationship(
-        "src.tenant.models.Tenant", back_populates="tags"
+    tenant_id: Mapped[Optional[int]] = mapped_column(ForeignKey("tenant.id"), nullable=True)
+    tenant: Mapped[Optional["src.tenant.models.Tenant"]] = relationship(
+        "src.tenant.models.Tenant", back_populates="tags_for_tenant"
     )
+    type: Mapped[Type]

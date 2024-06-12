@@ -119,7 +119,7 @@ def test_create_incomplete_device(
     response = client_authenticated.post(
         "/devices/",
         json={
-            "name": "dev5",
+            #"name": "dev5",
             "os_id": 1,
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,

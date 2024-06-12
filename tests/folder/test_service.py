@@ -16,6 +16,7 @@ from src.folder.service import (
     get_folders,
     delete_folder,
     update_folder,
+    create_root_folder
 )
 from src.folder.schemas import (
     FolderCreate,
@@ -54,7 +55,7 @@ def test_get_folder(session: Session) -> None:
     folder = get_folder(session, folder_id=3)
     assert folder.name == "folder1"
     assert folder.tenant_id == 1
-    assert len(folder.tags) == 2
+    assert len(folder.tags) == 3
     assert folder.tags[0].name == "folder-tenant1-folder1-tag"
 
 
@@ -148,6 +149,20 @@ def test_update_folder(session: Session) -> None:
     relationship_tag_ids = session.scalars(query).all()
     assert relationship_tag_ids is not None
     assert all(t.id in relationship_tag_ids for t in folder.tags)
+
+
+def test_update_folder_with_empty_lists(session: Session) -> None:
+    folder = get_folder(session, 3)
+
+    folder = update_folder(
+        session,
+        db_folder=folder,
+        updated_folder=FolderUpdate(tags=[], devices=[], subfolders=[]),
+    )
+    print(folder.tags)
+    assert len(folder.tags) == 1 # we keep the automatic tags intact.
+    assert len(folder.subfolders) == 0
+    assert len(folder.devices) == 0
 
 
 def test_update_folder_with_invalid_tenant(session: Session) -> None:

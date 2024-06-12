@@ -2,9 +2,9 @@ from sqlalchemy import ForeignKey, Table, Column, DateTime
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import List
-from ..database import Base
-from ..audit_mixin import AuditMixin
-from ..entity.models import Entity
+from src.database import Base
+from src.audit_mixin import AuditMixin
+from src.entity.models import Entity
 
 
 tenants_and_users_table = Table(
@@ -30,9 +30,13 @@ class Tenant(Base, AuditMixin):
         secondary=tenants_and_users_table, back_populates="tenants"
     )
     entity: Mapped[Entity] = relationship(Entity)
-    tags: Mapped[List["src.tag.models.Tag"]] = relationship(
+    tags_for_tenant: Mapped[List["src.tag.models.Tag"]] = relationship(
         "src.tag.models.Tag", back_populates="tenant"
     )
+
+    @property
+    def tags(self):
+        return self.entity.tags
 
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)

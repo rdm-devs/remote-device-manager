@@ -123,19 +123,23 @@ def update_user(
 ):
     # sanity checks
     values = updated_user.model_dump(exclude_unset=True)
+    tenant_ids = values.pop("tenant_ids", None)
+    tags = values.pop("tags", None)
+
     check_user_exists(db, user_id=db_user.id)
     check_username_exists(db, username=updated_user.username, user_id=db_user.id)
 
     user = get_user(db, db_user.id)
-    if "tenant_ids" in values.keys():
-        user = update_user_tenants(db, user, values.pop("tenant_ids"))
-    if updated_user.tags:
+    if tenant_ids is not None and len(tenant_ids) >= 0:
+        user = update_user_tenants(db, user, tenant_ids)
+    if tags is not None and len(tags) >= 0:
         user.entity = update_entity_tags(
             db=db,
             entity=user.entity,
             tenant_ids=user.get_tenants_ids(),
-            tag_ids=[t["id"] for t in values.pop("tags")],
+            tag_ids=[t["id"] for t in tags],
         )
+        db.commit()
     if updated_user.password:
         check_invalid_password(db, password=updated_user.password)
         values["hashed_password"] = get_password_hash(

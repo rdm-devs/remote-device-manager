@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -100,7 +101,7 @@ def test_update_folder(session: Session, client_authenticated: TestClient) -> No
     assert data["tenant_id"] == 1
     assert all(t not in data["tags"] for t in tags_tenant_2)
     assert all(t in data["tags"] for t in tags_folder_1)
-    
+
     # attempting to assign tags from a tenant with who the device is related.
     tenant_id = 1
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
@@ -122,6 +123,33 @@ def test_update_folder(session: Session, client_authenticated: TestClient) -> No
     # the operation should succeed and the device should have new tags assigned.
     assert all(t in data["tags"] for t in tags_tenant_1)
     assert all(t in data["tags"] for t in tags_folder_1)
+
+
+@pytest.mark.parametrize(
+    "folder_id, body, expected_status_code",
+    [
+        (2, {}, status.HTTP_200_OK),
+        (2, {"tags": []}, status.HTTP_200_OK),
+        (2, {"devices": []}, status.HTTP_200_OK),
+        (2, {"subfolders": []}, status.HTTP_200_OK),
+        (2, {"tags": [], "devices": [], "subfolders": []}, status.HTTP_200_OK),
+    ],
+)
+def test_update_folder_with_empty_lists(
+    session: Session,
+    client_authenticated: TestClient,
+    folder_id: int,
+    body: dict,
+    expected_status_code: int,
+) -> None:
+    response = client_authenticated.get(f"/folders/{folder_id}")
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.patch(
+        f"/folders/{folder_id}",
+        json=body,
+    )
+    assert response.status_code == expected_status_code
 
 
 def test_update_folder_to_add_a_tenant(

@@ -9,6 +9,7 @@ class TenantBase(BaseModel):
 
 
 class TenantCreate(TenantBase):
+    tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 
 
@@ -23,7 +24,7 @@ class Tenant(TenantBase):
 
 class TenantUpdate(TenantCreate):
     name: Optional[str] = None
-    tags: Optional[List[Tag]] = []
+    tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 
 

@@ -27,8 +27,8 @@ class UserUpdate(UserBase):
     username: Optional[EmailStr] = None
     password: Optional[str] = None
     role_id: Optional[int] = None
-    tenant_ids: Optional[List[int]] = []
-    tags: Optional[List[Tag]] = []
+    tenant_ids: Optional[List[int]] = None
+    tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 
 

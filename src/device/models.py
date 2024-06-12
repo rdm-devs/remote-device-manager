@@ -17,8 +17,8 @@ class Device(Base, AuditMixin):
     heartbeat_timestamp: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()
     )
-    folder_id: Mapped[Folder] = mapped_column(ForeignKey("folder.id"))
-    folder: Mapped[Folder] = relationship(Folder, back_populates="devices")
+    folder_id: Mapped[Optional[int]] = mapped_column(ForeignKey("folder.id"), nullable=True)
+    folder: Mapped[Optional[Folder]] = relationship(Folder, back_populates="devices")
     id_rust: Mapped[Optional[str]]
     pass_rust: Mapped[Optional[str]]
     last_screenshot_path: Mapped[Optional[str]]

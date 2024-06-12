@@ -1,8 +1,8 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.entity import schemas, models, exceptions
-from src.tag.models import Tag
+from src.tag.models import Tag, Type, entities_and_tags_table
 from typing import List
 
 
@@ -29,20 +29,34 @@ def delete_entity(db: Session, entity_id: int):
 def update_entity_tags(
     db: Session, entity: models.Entity, tenant_ids: List[int], tag_ids: List[int]
 ) -> models.Entity:
-    # in order to update the entity's tags, we must ensure we have access to the tenants
-    # for which the tags were created. That is why we receive tenant_ids.
-    if not tenant_ids:
-        raise exceptions.EntityTenantRelationshipMissing()
 
-    tag_ids = list(set(tag_ids)) # filtering duplicated tag_ids
-    tags = db.scalars(
-        select(Tag).where(Tag.id.in_(tag_ids), Tag.tenant_id.in_(tenant_ids))
+    # gathering new tags if they are global type or belong to a valid tenant_id
+    new_tags_query = select(Tag).where(
+        Tag.id.in_(tag_ids),
+        or_(
+            Tag.type == Type.GLOBAL,
+            Tag.tenant_id.in_(tenant_ids),
+        ),
+    )
+    new_tags = db.scalars(new_tags_query).all()
+
+    # keeping "automatic" tags
+    automatic_tags = db.scalars(
+        select(Tag)
+        .join(entities_and_tags_table)
+        .where(
+            or_(
+                Tag.type == Type.GLOBAL,
+                and_(Tag.tenant_id.in_(tenant_ids), Tag.type != Type.USER_CREATED),
+            ),
+            entities_and_tags_table.c.entity_id == entity.id,
+        )
     ).all()
 
     try:
         entity.tags = []
         db.commit()
-        entity.tags = tags
+        entity.tags = list(set([*new_tags, *automatic_tags]))
         db.commit()
         db.refresh(entity)
         return entity

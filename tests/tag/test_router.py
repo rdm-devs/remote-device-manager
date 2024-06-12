@@ -17,7 +17,7 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/tags/")
     assert response.status_code == status.HTTP_200_OK
     assert (
-        len(response.json()["items"]) == 14
+        len(response.json()["items"]) == 15
     )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
 

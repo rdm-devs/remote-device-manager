@@ -1,3 +1,5 @@
+import pytest
+from typing import Union
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -116,6 +118,44 @@ def test_update_user(session: Session, client_authenticated: TestClient) -> None
     assert len(data["tenants"]) == 2
 
 
+# def test_update_user_with_empty_lists(
+#     session: Session,
+#     client_authenticated: TestClient,
+# ) -> None:
+#     # updating user's username
+#     response = client_authenticated.patch(
+#         f"/users/2",
+#         json={
+#             "tenant_ids": [],
+#             "tags": [],
+#         },
+#     )
+#     assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize(
+    "user_id, body, expected_status_code",
+    [
+        (2, {"tags": []}, status.HTTP_200_OK),
+        (2, {"tags": [], "tenant_ids": []}, status.HTTP_200_OK),
+    ],
+)
+def test_update_user_with_empty_lists(
+    session: Session,
+    client_authenticated: TestClient,
+    user_id: int,
+    body: dict,
+    expected_status_code: int,
+) -> None:
+    # updating user's username
+    response = client_authenticated.patch(
+        f"/users/{user_id}",
+        json=body,
+    )
+    print(f"status: {response.status_code}")
+    assert response.status_code == expected_status_code
+
+
 def test_update_user_invalid_password(
     session: Session, client_authenticated: TestClient
 ) -> None:
@@ -189,9 +229,9 @@ def test_update_user_tags(session: Session, client_authenticated: TestClient) ->
         )
         return response
 
-    # the update operation will fail if the user has no tenant assigned
+    # the update operation will not fail even if the user has no tenant assigned
     response = update_tags(user_id)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_200_OK
 
     # to make it work, we must assign at least one tenant to the user first
     response = client_authenticated.patch(
@@ -258,83 +298,70 @@ def test_read_devices(session: Session, client_authenticated: TestClient) -> Non
     assert len(response.json()["items"]) == 2
 
 
-def test_read_folders(session: Session, client_authenticated: TestClient) -> None:
-    user_id = "me"
+@pytest.mark.parametrize(
+    "user_id, expected_status_code, n_items",
+    [
+        ("me", status.HTTP_200_OK, 7),
+        (1, status.HTTP_200_OK, 7),
+        (2, status.HTTP_200_OK, 4),
+        (3, status.HTTP_200_OK, 3),
+        (4, status.HTTP_200_OK, 4),
+    ],
+)
+def test_read_folders(
+    session: Session,
+    client_authenticated: TestClient,
+    user_id: Union[str, int],
+    expected_status_code: int,
+    n_items: int,
+) -> None:
     response = client_authenticated.get(f"/users/{user_id}/folders")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 7
-
-    user_id = 1
-    response = client_authenticated.get(f"/users/{user_id}/folders")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 7
-
-    user_id = 2
-    response = client_authenticated.get(f"/users/{user_id}/folders")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 4
-
-    user_id = 3
-    response = client_authenticated.get(f"/users/{user_id}/folders")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 3
-
-    user_id = 4
-    response = client_authenticated.get(f"/users/{user_id}/folders")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 4
+    assert response.status_code == expected_status_code
+    assert len(response.json()["items"]) == n_items
 
 
-def test_read_tenants(session: Session, client_authenticated: TestClient) -> None:
-    user_id = "me"
+@pytest.mark.parametrize(
+    "user_id, expected_status_code, n_items",
+    [
+        ("me", status.HTTP_200_OK, 2),
+        (1, status.HTTP_200_OK, 2),
+        (2, status.HTTP_200_OK, 1),
+        (3, status.HTTP_200_OK, 1),
+        (4, status.HTTP_200_OK, 1),
+    ],
+)
+def test_read_tenants(
+    session: Session,
+    client_authenticated: TestClient,
+    user_id: Union[str, int],
+    expected_status_code: int,
+    n_items: int,
+) -> None:
     response = client_authenticated.get(f"/users/{user_id}/tenants")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 2
-    assert response.json()["items"][0]["tags"] # checking that the "tags" attribute is present
-
-    user_id = 1
-    response = client_authenticated.get(f"/users/{user_id}/tenants")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 2
-
-    user_id = 2
-    response = client_authenticated.get(f"/users/{user_id}/tenants")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 1
-
-    user_id = 3
-    response = client_authenticated.get(f"/users/{user_id}/tenants")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 1
-
-    user_id = 4
-    response = client_authenticated.get(f"/users/{user_id}/tenants")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 1
+    assert len(response.json()["items"]) == n_items
+    assert response.json()["items"][0][
+        "tags"
+    ]  # checking that the "tags" attribute is present
 
 
-def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
-    user_id = "me"
+@pytest.mark.parametrize(
+    "user_id, expected_status_code, n_items",
+    [
+        ("me", status.HTTP_200_OK, 15),
+        (1, status.HTTP_200_OK, 15),
+        (2, status.HTTP_200_OK, 7),
+        (3, status.HTTP_200_OK, 5),
+        (4, status.HTTP_200_OK, 7),
+    ],
+)
+def test_read_tags(
+    session: Session,
+    client_authenticated: TestClient,
+    user_id: Union[str, int],
+    expected_status_code: int,
+    n_items: int,
+) -> None:
     response = client_authenticated.get(f"/users/{user_id}/tags")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 14
-
-    user_id = 1
-    response = client_authenticated.get(f"/users/{user_id}/tags")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 14
-
-    user_id = 2
-    response = client_authenticated.get(f"/users/{user_id}/tags")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 7
-
-    user_id = 3
-    response = client_authenticated.get(f"/users/{user_id}/tags")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 5
-
-    user_id = 4
-    response = client_authenticated.get(f"/users/{user_id}/tags")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 7
+    assert response.status_code == expected_status_code
+    assert len(response.json()["items"]) == n_items

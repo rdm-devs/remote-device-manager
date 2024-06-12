@@ -260,7 +260,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 14
+    assert len(data["items"]) == 15
 
     # filtering by name
     tag_name = "tenant1"
@@ -316,7 +316,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 3
 
 
 @pytest.mark.asyncio

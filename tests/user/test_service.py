@@ -24,7 +24,7 @@ from src.user.schemas import (
     UserCreate,
     UserUpdate,
 )
-from src.tenant.service import get_tenants
+from src.tenant.service import get_tenants, get_tenant
 from src.tenant.schemas import Tenant as TenantSchema
 from src.auth.utils import get_user_by_username
 from src.tag.models import Tag, entities_and_tags_table
@@ -161,18 +161,16 @@ def test_update_user_tags(session: Session) -> None:
 
     tenant_id = 1
     def update_tags(user: User, tenant_id: int):
+        tenant = get_tenant(session, tenant_id)
+
         tags_tenant_1 = session.scalars(select(Tag).where(Tag.tenant_id == tenant_id)).all()
+        #import ipdb; ipdb.set_trace()
         user = update_user(
             session,
             db_user=user,
             updated_user=UserUpdate(tags=tags_tenant_1),
         )
-
-        assert len(user.tags) == len(tags_tenant_1)
-
-    # forcing an association to tags from tenant 1
-    with pytest.raises(EntityTenantRelationshipMissing):
-        update_tags(user, tenant_id)
+        assert all(t in user.tags for t in tags_tenant_1)
 
     # assigning tenant 1 to the user will solve the problem
     user = assign_tenant(session, user.id, tenant_id)
@@ -185,6 +183,20 @@ def test_update_user_tags(session: Session) -> None:
     relationship_tag_ids = session.scalars(query).all()
     assert relationship_tag_ids is not None
     assert all(t.id in relationship_tag_ids for t in user.tags)
+
+def test_update_user_with_empty_lists(session: Session) -> None:
+    user = get_user(session, 2)
+
+    assert len(user.tags) == 3
+    assert len(user.tenants) == 1
+
+    user = update_user(
+        session,
+        db_user=user,
+        updated_user=UserUpdate(tags=[], tenant_ids=[]),
+    )
+    assert len(user.tags) == 1 # keeping a "global" tag intact
+    assert len(user.tenants) == 0
 
 
 def test_delete_user(session: Session) -> None:

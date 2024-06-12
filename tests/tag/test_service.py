@@ -3,7 +3,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from src.tenant.exceptions import TenantNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
-from src.tag import exceptions
+from src.tag import exceptions, models
 from src.tag.service import (
     create_tag,
     get_tag,
@@ -19,10 +19,32 @@ from src.tag.schemas import (
 from src.user import models as user_models
 
 
-def test_create_tag(session: Session) -> None:
-    tag = create_tag(session, TagCreate(name="tag-test", tenant_id=1))
-    assert tag.name == "tag-test"
-    assert tag.tenant_id == 1
+@pytest.mark.parametrize(
+    "tag_name, tenant_id, expected_tenant_id, type",
+    [
+        ("tag-test", None, None, models.Type.GLOBAL),
+        ("tag-test", 1, None, models.Type.GLOBAL),
+        ("tag-test", 1, 1, models.Type.USER_CREATED),
+    ],
+)
+def test_create_tag(
+    session: Session,
+    tag_name: str,
+    tenant_id: int,
+    expected_tenant_id: int,
+    type: models.Type,
+) -> None:
+    tag = create_tag(session, TagCreate(name=tag_name, tenant_id=tenant_id, type=type))
+    assert tag.name == tag_name
+    assert tag.tenant_id == expected_tenant_id
+    assert tag.type == type
+
+
+def test_create_tag_invalid_tenant_id_user_created(session: Session) -> None:
+    with pytest.raises(exceptions.TagNotFound):
+        tag = create_tag(
+            session, TagCreate(name="tag-test", tenant_id=None, type=models.Type.USER_CREATED)
+        )
 
 
 def test_create_duplicated_tag(session: Session) -> None:
@@ -67,7 +89,7 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 async def test_get_tags(session: Session) -> None:
     # eight tags were created in tests/database.py
     tags = session.execute(await get_tags(session, user_id=1)).fetchall()
-    assert len(tags) == 14
+    assert len(tags) == 15
 
 
 def test_update_tag(session: Session) -> None:

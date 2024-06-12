@@ -31,7 +31,9 @@ from src.entity.service import create_entity_auto
 from src.role.service import create_role
 from src.role.schemas import RoleCreate
 from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
+from src.tag.schemas import TagCreate, TagAdminCreate
+from src.tag.models import Type
+
 
 
 load_dotenv()
@@ -190,9 +192,9 @@ def session(
 
     tag_2 = create_tag(db, TagCreate(name="tag-user-3", tenant_id=tenant_2.id))
     user_3.add_tag(tag_2)
+    folder_1.add_tag(tag_2)
 
     # tag_3 = create_tag(db, TagCreate(name="tag-folder-1", tenant_id=tenant_1.id))
-    # folder_1.add_tag(tag_3)
 
     tag_4 = create_tag(db, TagCreate(name="tag-dev-1", tenant_id=tenant_1.id))
     device_1.add_tag(tag_4)
@@ -211,6 +213,9 @@ def session(
 
     tag_8 = create_tag(db, TagCreate(name="tag-user-2", tenant_id=tenant_1.id))
     user_2.add_tag(tag_8)
+
+    tag_9 = create_tag(db, TagAdminCreate(name="tag-global-1", tenant_id=None, type=Type.GLOBAL))
+    user_2.add_tag(tag_9)
 
     db.add_all(
         [
@@ -263,8 +268,6 @@ def client_authenticated(session: Session):
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_active_user] = skip_auth
     return TestClient(app)
-
-
 
 
 async def get_auth_tokens(session: Session, user: User):
