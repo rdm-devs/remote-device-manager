@@ -1,10 +1,14 @@
+import os
 import time
 import pytest
+from dotenv import load_dotenv
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.auth.constants import ErrorCode
+from src.user.schemas import User
 from tests.database import (
     app,
     session,
@@ -18,6 +22,8 @@ from tests.database import (
     get_auth_tokens_with_user_id,
 )
 
+load_dotenv()
+
 
 def test_login(client: TestClient) -> None:
     response = client.post(
@@ -28,6 +34,13 @@ def test_login(client: TestClient) -> None:
     data = response.json()
     assert data["access_token"]
     assert data["refresh_token"]
+    decoded_token = jwt.decode(
+        data["access_token"],
+        key=os.getenv("SECRET_KEY"),
+        algorithms=[os.getenv("ALGORITHM")],
+    )
+    user = User.model_validate_json(decoded_token["sub"])
+    assert user.role_name is not None
 
 
 @pytest.mark.asyncio

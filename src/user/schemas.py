@@ -20,6 +20,7 @@ class UserCreate(BaseModel):  # used when creating user
 class User(UserBase):  # used when reading user info
     id: int
     entity_id: int
+    role_name: str
     model_config = {"from_attributes": True}
 
 

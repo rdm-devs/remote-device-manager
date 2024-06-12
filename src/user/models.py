@@ -25,6 +25,7 @@ class User(Base, AuditMixin):
         "src.entity.models.Entity", foreign_keys=entity_id
     )
     role_id: Mapped[Optional[int]] = mapped_column(ForeignKey(Role.id))
+    role: Mapped[Optional[Role]] = relationship(Role, foreign_keys="User.role_id")
     tenants: Mapped[List["src.tenant.models.Tenant"]] = relationship(
         secondary=tenants_and_users_table, back_populates="users"
     )
@@ -64,3 +65,7 @@ class User(Base, AuditMixin):
         for f in folders:
             device_ids.extend([d.id for d in f.devices])
         return device_ids
+
+    @property
+    def role_name(self):
+        return self.role.name

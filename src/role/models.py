@@ -1,6 +1,6 @@
 from sqlalchemy.orm import mapped_column, Mapped
-from ..database import Base
-from ..audit_mixin import AuditMixin
+from src.database import Base
+from src.audit_mixin import AuditMixin
 
 
 class Role(Base, AuditMixin):
