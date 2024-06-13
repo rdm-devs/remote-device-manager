@@ -15,6 +15,8 @@ from src.tenant import models as tenant_models
 from src.folder import models as folder_models
 from src.device import models as device_models
 from src.tag import models as tag_models
+from src.folder.exceptions import FolderNotFound
+from src.device.exceptions import DeviceNotFound
 from src.auth import service, exceptions
 from src.auth.schemas import TokenData
 from src.auth.utils import get_user_by_username
@@ -156,8 +158,10 @@ async def has_access_to_folder(
         .filter(folder_models.Folder.id == folder_id)
         .first()
     )
+    if not folder:
+        raise FolderNotFound()
 
-    if folder and (await has_access_to_tenant(folder.tenant_id, db, user)):
+    if await has_access_to_tenant(folder.tenant_id, db, user):
         return user
 
 
@@ -187,8 +191,10 @@ async def has_access_to_device(
         .filter(device_models.Device.id == device_id)
         .first()
     )
+    if not device:
+        raise DeviceNotFound()
 
-    if device and (await has_access_to_folder(device.folder_id, db, user)):
+    if await has_access_to_folder(device.folder_id, db, user):
         return user
 
 

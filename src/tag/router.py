@@ -46,7 +46,7 @@ async def read_tags(
     device_id: Union[int, None] = None,
     name: Union[str, None] = None,
     db: Session = Depends(get_db),
-    user: User = Depends(has_admin_or_owner_role),
+    user: User = Depends(get_current_active_user),
 ):
     if not user_id or user_id == "me":
         user_id = user.id

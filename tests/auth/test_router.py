@@ -474,6 +474,39 @@ async def test_read_tag_authorized_owner_3(
     assert len(data["items"]) == 1
 
 
+@pytest.mark.parametrize(
+    "params, n_items, expected_status_code",
+    [
+        ("name=", 7, status.HTTP_200_OK),
+        ("name=tenant1", 3, status.HTTP_200_OK),
+        ("name=tenant2", 0, status.HTTP_200_OK),
+        ("tenant_id=2", 0, status.HTTP_403_FORBIDDEN),
+        ("name=tenant&tenant_id=1", 5, status.HTTP_200_OK),
+        ("device_id=1", 2, status.HTTP_200_OK),
+        ("device_id=3", 0, status.HTTP_403_FORBIDDEN),
+        ("device_id=10", 0, status.HTTP_404_NOT_FOUND),
+    ],
+)
+@pytest.mark.asyncio
+async def test_read_tag_authorized_user(
+    client: TestClient,
+    user_auth_tokens: dict,
+    params: str,
+    n_items: int,
+    expected_status_code: int,
+) -> None:
+    access_tokens = (await user_auth_tokens)["access_token"]
+
+    response = client.get(
+        f"/tags/?{params}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == expected_status_code
+    if "items" in data.keys():
+        assert len(data["items"]) == n_items
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "auth_user_id, user_id, expected_status_code",
