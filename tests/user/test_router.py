@@ -10,33 +10,82 @@ from tests.database import (
     session,
     mock_os_data,
     mock_vendor_data,
+    client_fixture,
     client_authenticated,
+    get_auth_tokens_with_user_id,
 )
 
 
-def test_read_users(session: Session, client_authenticated: TestClient) -> None:
-    response = client_authenticated.get("/users/")
-    assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()["items"]) == 4
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, expected_status_code, n_items",
+    [
+        (1, status.HTTP_200_OK, 4),
+        (2, status.HTTP_200_OK, 2),
+        (3, status.HTTP_200_OK, 1),
+        (4, status.HTTP_403_FORBIDDEN, 0),
+    ],
+)
+async def test_read_users(
+    session: Session,
+    client: TestClient,
+    user_id: int,
+    expected_status_code: int,
+    n_items: int,
+) -> None:
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = (await auth_tokens)["access_token"]
 
-
-def test_read_user(session: Session, client_authenticated: TestClient) -> None:
-    response = client_authenticated.post(
-        "/auth/register",
-        json={
-            "username": "test-user@email.com",
-            "password": "_s3cr3tp@5sw0rd_",
-        },
+    response = client.get(
+        f"/users",
+        headers={"Authorization": f"Bearer {access_tokens}"},
     )
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     data = response.json()
-    user_id = data["id"]
+    if "items" in data.keys():
+        assert len(data["items"]) == n_items
 
-    response = client_authenticated.get(f"/users/{user_id}")
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data["id"] == user_id
-    assert data["username"] == "test-user@email.com"
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, read_myself_status_code, read_owner_status_code, read_admin_status_code",
+    [
+        (1, status.HTTP_200_OK, status.HTTP_200_OK, status.HTTP_200_OK),
+        (2, status.HTTP_200_OK, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
+        (3, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_403_FORBIDDEN),
+        (4, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_403_FORBIDDEN),
+    ],
+)
+async def test_read_user(
+    session: Session,
+    client: TestClient,
+    user_id: int,
+    read_myself_status_code: int,
+    read_owner_status_code: int,
+    read_admin_status_code: int,
+) -> None:
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = (await auth_tokens)["access_token"]
+
+    response = client.get(
+        f"/users/{user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == read_myself_status_code
+
+    owner_user_id = 2
+    response = client.get(
+        f"/users/{owner_user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == read_owner_status_code
+
+    admin_user_id = 1
+    response = client.get(
+        f"/users/{admin_user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == read_admin_status_code
 
 
 def test_read_non_existent_user(

@@ -23,17 +23,17 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/", response_model=Page[utils.UserTenant])
 def read_users(
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(has_admin_role),
+    user: schemas.User = Depends(has_admin_or_owner_role),
 ):
-    users = service.get_users(db)
+    users = service.get_users(db, user)
     return paginate(db, users)
 
 
 @router.get("/{user_id}", response_model=utils.UserTenant)
 def read_user(
-    user_id: int,
+    user_id: int = Depends(has_access_to_user),
     db: Session = Depends(get_db),
-    user: schemas.User = Depends(has_admin_role),
+    user: schemas.User = Depends(get_current_active_user),
 ):
     db_user = service.get_user(db, user_id=user_id)
     return db_user

@@ -44,8 +44,16 @@ def get_user(db: Session, user_id: int) -> models.User:
     return user
 
 
-def get_users(db: Session):
-    return select(models.User)
+def get_users(db: Session, auth_user: models.User):
+    if auth_user.is_admin:
+        return select(models.User)
+    return (
+        select(models.User)
+        .join(tenants_and_users_table)
+        .where(tenants_and_users_table.c.user_id == models.User.id)
+        .where(tenants_and_users_table.c.tenant_id.in_(auth_user.get_tenants_ids()))
+        .where(auth_user.role_id <= models.User.role_id)
+    )
 
 
 def get_folders(db: Session, user_id: int):
