@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, or_
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import (
@@ -61,7 +61,12 @@ async def get_tags(
         tags = (
             tags.join(entities_and_tags_table)
             .where(entities_and_tags_table.c.tag_id == models.Tag.id)
-            .where(models.Tag.tenant_id.in_(user.get_tenants_ids()))
+            .where(
+                or_(
+                    models.Tag.tenant_id.in_(user.get_tenants_ids()),
+                    models.Tag.type == models.Type.GLOBAL,
+                )
+            )
         )
 
     # testing needed:
@@ -69,7 +74,11 @@ async def get_tags(
         tags = tags.where(models.Tag.name.like(f"%{name}%"))
     if tenant_id:
         await has_access_to_tenant(tenant_id, db, user)
-        tags = tags.where(models.Tag.tenant_id == tenant_id)
+        tags = tags.where(
+            or_(
+                models.Tag.tenant_id == tenant_id, models.Tag.type == models.Type.GLOBAL
+            )
+        )
     if folder_id:
         await has_access_to_folder(folder_id, db, user)
         folder = db.scalars(select(Folder).where(Folder.id == folder_id)).first()

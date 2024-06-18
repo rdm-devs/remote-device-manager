@@ -87,9 +87,11 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 
 @pytest.mark.asyncio
 async def test_get_tags(session: Session) -> None:
-    # eight tags were created in tests/database.py
     tags = session.execute(await get_tags(session, user_id=1)).fetchall()
     assert len(tags) == 15
+
+    tags = session.execute(await get_tags(session, user_id=1, tenant_id=1)).fetchall()
+    assert len(tags) == 9
 
 
 def test_update_tag(session: Session) -> None:

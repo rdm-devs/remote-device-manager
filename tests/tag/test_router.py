@@ -20,6 +20,15 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
         len(response.json()["items"]) == 15
     )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
+    response = client_authenticated.get("/tags/?tenant_id=1")
+    assert response.status_code == status.HTTP_200_OK
+    assert (
+        len(response.json()["items"]) == 9 
+    )
+    assert any(
+        t["type"] == "global" for t in response.json()["items"]
+    )  # the response also includes tags with type == "GLOBAL"
+
 
 def test_read_tag(session: Session, client_authenticated: TestClient) -> None:
     tenant_id = 1
