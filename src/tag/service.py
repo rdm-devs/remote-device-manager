@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert, update, or_
+from sqlalchemy import select, insert, update, or_, and_
 from sqlalchemy.orm import Session
 from typing import Union
 from src.auth.dependencies import (
@@ -60,10 +60,12 @@ async def get_tags(
     if not user.is_admin:
         tags = (
             tags.join(entities_and_tags_table)
-            .where(entities_and_tags_table.c.tag_id == models.Tag.id)
             .where(
                 or_(
-                    models.Tag.tenant_id.in_(user.get_tenants_ids()),
+                    and_(
+                        entities_and_tags_table.c.tag_id == models.Tag.id,
+                        models.Tag.tenant_id.in_(user.get_tenants_ids()),
+                    ),
                     models.Tag.type == models.Type.GLOBAL,
                 )
             )

@@ -1,7 +1,9 @@
 import pytest
+from typing import Union
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from src.tenant.exceptions import TenantNotFound
+from src.exceptions import PermissionDenied
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.tag import exceptions, models
 from src.tag.service import (
@@ -43,7 +45,8 @@ def test_create_tag(
 def test_create_tag_invalid_tenant_id_user_created(session: Session) -> None:
     with pytest.raises(exceptions.TagNotFound):
         tag = create_tag(
-            session, TagCreate(name="tag-test", tenant_id=None, type=models.Type.USER_CREATED)
+            session,
+            TagCreate(name="tag-test", tenant_id=None, type=models.Type.USER_CREATED),
         )
 
 
@@ -85,13 +88,34 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
     with pytest.raises(exceptions.TagNotFound):
         get_tag_by_name(session, tag_name="tag-test")
 
-@pytest.mark.asyncio
-async def test_get_tags(session: Session) -> None:
-    tags = session.execute(await get_tags(session, user_id=1)).fetchall()
-    assert len(tags) == 15
 
-    tags = session.execute(await get_tags(session, user_id=1, tenant_id=1)).fetchall()
-    assert len(tags) == 9
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, tenant_id, n_items",
+    [(1, None, 15), (1, 1, 9), (2, 1, 8)],
+)
+async def test_get_tags(
+    session: Session, user_id: int, tenant_id: Union[int, None], n_items: int
+) -> None:
+    tags = session.execute(
+        await get_tags(session, user_id=user_id, tenant_id=tenant_id)
+    ).fetchall()
+    assert len(tags) == n_items
+    assert any(t[0].type == models.Type.GLOBAL for t in tags)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, tenant_id",
+    [(3, 1), (2, 2)],
+)
+async def test_get_tags_forbidden_tenant(
+    session: Session, user_id: int, tenant_id: int
+) -> None:
+    with pytest.raises(PermissionDenied):
+        tags = session.execute(
+            await get_tags(session, user_id=user_id, tenant_id=tenant_id)
+        ).fetchall()
 
 
 def test_update_tag(session: Session) -> None:
