@@ -161,7 +161,7 @@ def update_subfolders(
         db.commit()
         if len(subfolders) != 0:
             subfolder_ids = [
-                sf.id for sf in subfolders if sf.tenant_id == folder.tenant_id
+                sf["id"] for sf in subfolders if sf["tenant_id"] == folder.tenant_id
             ]
             subfolders = db.scalars(
                 select(models.Folder).where(models.Folder.id.in_(subfolder_ids))
@@ -180,15 +180,19 @@ def update_devices(db: Session, folder: models.Folder, devices: List[Device]):
         db.commit()
         if len(devices) != 0:
             device_ids = [
-                d.id
+                d["id"]
                 for d in devices
-                if d.folder and d.folder.tenant_id == folder.tenant_id
+                if d["folder_id"] and d["folder_id"] == folder.id
             ]
-            devices = db.scalars(select(Device).where(Device.id.in_(device_ids))).all()
+            devices = db.scalars(
+                select(Device).where(
+                    Device.id.in_(device_ids),
+                )
+            ).all()
             folder.devices = devices
             db.commit()
         db.refresh(folder)
-        
+
     except IntegrityError:
         db.rollback()
     return folder

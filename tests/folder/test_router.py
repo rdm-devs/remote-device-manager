@@ -152,6 +152,39 @@ def test_update_folder_with_empty_lists(
     assert response.status_code == expected_status_code
 
 
+def test_update_folder_tags_doesnt_lose_subfolders_and_devices(
+    session: Session, client_authenticated: TestClient
+) -> None:
+    folder_id = 3
+    response = client_authenticated.get(f"/folders/{folder_id}")
+    folder = response.json()
+
+    subfolders = folder["subfolders"]
+    devices = folder["devices"]
+    assert len(subfolders) == 1
+    assert len(devices) == 1
+
+    # removing a tag but keeping everything else the same
+    folder["tags"].pop()
+
+    response = client_authenticated.patch(
+        f"/folders/{folder_id}",
+        json={
+            "tags": folder["tags"],
+            "subfolders": folder["subfolders"],
+            "devices": folder["devices"],
+        },
+    )
+    updated_folder = response.json()
+    updated_subfolders = updated_folder["subfolders"]
+    assert all(f in updated_subfolders for f in subfolders)
+
+    # working with id because heartbeat_timestamp changes when updating a device and prevents a "simpler" any() assert below.
+    updated_devices = updated_folder["devices"]
+    updated_devices_ids = [d["id"] for d in updated_devices]
+    assert all(d["id"] in updated_devices_ids for d in devices)
+
+
 def test_update_folder_to_add_a_tenant(
     session: Session, client_authenticated: TestClient
 ) -> None:
