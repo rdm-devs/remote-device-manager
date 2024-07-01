@@ -159,8 +159,7 @@ def test_update_folder_with_empty_lists(session: Session) -> None:
         db_folder=folder,
         updated_folder=FolderUpdate(tags=[], devices=[], subfolders=[]),
     )
-    print(folder.tags)
-    assert len(folder.tags) == 1 # we keep the automatic tags intact.
+    assert len(folder.tags) == 0
     assert len(folder.subfolders) == 0
     assert len(folder.devices) == 0
 

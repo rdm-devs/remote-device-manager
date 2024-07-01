@@ -40,23 +40,10 @@ def update_entity_tags(
     )
     new_tags = db.scalars(new_tags_query).all()
 
-    # keeping "automatic" tags
-    automatic_tags = db.scalars(
-        select(Tag)
-        .join(entities_and_tags_table)
-        .where(
-            or_(
-                Tag.type == Type.GLOBAL,
-                and_(Tag.tenant_id.in_(tenant_ids), Tag.type != Type.USER_CREATED),
-            ),
-            entities_and_tags_table.c.entity_id == entity.id,
-        )
-    ).all()
-
     try:
         entity.tags = []
         db.commit()
-        entity.tags = list(set([*new_tags, *automatic_tags]))
+        entity.tags = list(set(new_tags))
         db.commit()
         db.refresh(entity)
         return entity

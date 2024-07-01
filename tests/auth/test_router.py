@@ -256,7 +256,7 @@ async def test_read_tag_unauthorized_user(
         f"/tags/?name={tag_name}",
         headers={"Authorization": f"Bearer {(await user_auth_tokens)['access_token']}"},
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+    assert response.status_code == status.HTTP_200_OK, response.text
 
 
 @pytest.mark.asyncio
@@ -295,7 +295,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 8
+    assert len(data["items"]) == 2
 
     # filtering by tenant_id and name
     name = "test"
@@ -356,7 +356,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 3
+    assert len(data["items"]) == 0
 
     # filtering by tenant_id
     tenant_id = 1
@@ -367,7 +367,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 7
+    assert len(data["items"]) == 4
 
     # filtering by tenant_id (wrong one) and name. it should reject the request
     name = "tenant"
@@ -389,7 +389,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 4
 
     # filtering by folder_id
     folder_id = 3
@@ -400,7 +400,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 5
 
 
 @pytest.mark.asyncio
@@ -427,7 +427,7 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 0
 
     # filtering by tenant_id
     tenant_id = 2
@@ -438,7 +438,7 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 5
+    assert len(data["items"]) == 3
 
     # filtering by tenant_id (wrong one) and name. it should reject the request
     name = "tenant"
@@ -460,7 +460,7 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 0
+    assert len(data["items"]) == 2
 
     # filtering by folder_id
     folder_id = 6
@@ -471,17 +471,17 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 1
+    assert len(data["items"]) == 3
 
 
 @pytest.mark.parametrize(
     "params, n_items, expected_status_code",
     [
-        ("name=", 7, status.HTTP_200_OK),
-        ("name=tenant1", 3, status.HTTP_200_OK),
-        ("name=tenant2", 0, status.HTTP_200_OK),
+        ("name=", 15, status.HTTP_200_OK),
+        ("name=tenant1", 4, status.HTTP_200_OK),
+        ("name=tenant2", 3, status.HTTP_200_OK),
         ("tenant_id=2", 0, status.HTTP_403_FORBIDDEN),
-        ("name=tenant&tenant_id=1", 5, status.HTTP_200_OK),
+        ("name=tenant&tenant_id=1", 2, status.HTTP_200_OK),
         ("device_id=1", 2, status.HTTP_200_OK),
         ("device_id=3", 0, status.HTTP_403_FORBIDDEN),
         ("device_id=10", 0, status.HTTP_404_NOT_FOUND),

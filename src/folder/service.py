@@ -100,15 +100,14 @@ def create_folder(db: Session, folder: schemas.FolderCreate):
 
     formatted_name = folder.tenant.name.lower().replace(" ", "-")
     formatted_name += f"-{folder.name.lower().replace(' ', '-')}"
-    folder_tag = create_tag(
+    folder.add_tag(create_tag(
         db,
         TagAdminCreate(
             name=f"folder-{formatted_name}-tag",
             tenant_id=folder.tenant_id,
             type=Type.FOLDER,
         ),
-    )
-    folder.add_tag(folder_tag)
+    ))
 
     db.commit()
     db.refresh(folder)

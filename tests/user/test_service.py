@@ -107,7 +107,7 @@ def test_get_user_with_invalid_username(session: Session) -> None:
 
 def test_get_users(session: Session) -> None:
     # Four users were created in tests/database.py
-    users = session.execute(get_users(session)).fetchall()
+    users = session.execute(get_users(session, get_user(session, 1))).fetchall()
     assert len(users) == 4
 
 
@@ -195,7 +195,7 @@ def test_update_user_with_empty_lists(session: Session) -> None:
         db_user=user,
         updated_user=UserUpdate(tags=[], tenant_ids=[]),
     )
-    assert len(user.tags) == 1 # keeping a "global" tag intact
+    assert len(user.tags) == 0
     assert len(user.tenants) == 0
 
 

@@ -53,6 +53,18 @@ def test_create_tag_invalid_tenant_id_user_created(session: Session) -> None:
 def test_create_duplicated_tag(session: Session) -> None:
     with pytest.raises(exceptions.TagNameTaken):
         create_tag(session, TagCreate(name="tag-tenant-1", tenant_id=1))
+    
+    with pytest.raises(exceptions.TagNameTaken):
+        create_tag(session, TagCreate(name="tag-global-1", tenant_id=None, type=models.Type.GLOBAL))
+
+def test_create_duplicated_tag_name(session: Session) -> None:
+    # testing that we can create two tags with the same name but they have to have a different tenant_id.
+    tenant_id = 2
+    tag_name = "tag-user-2" # already exists BUT for tenant_id=1.
+    tag = create_tag(session, TagCreate(name=tag_name, tenant_id=tenant_id, type=models.Type.USER_CREATED))
+    assert tag.name == tag_name
+    assert tag.tenant_id == tenant_id
+    assert tag.type == models.Type.USER_CREATED
 
 
 def test_create_incomplete_Tag(session: Session) -> None:
@@ -92,7 +104,7 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "user_id, tenant_id, n_items",
-    [(1, None, 15), (1, 1, 9), (2, 1, 8)],
+    [(1, None, 15), (1, 1, 3), (3, 2, 3)],
 )
 async def test_get_tags(
     session: Session, user_id: int, tenant_id: Union[int, None], n_items: int
@@ -101,7 +113,55 @@ async def test_get_tags(
         await get_tags(session, user_id=user_id, tenant_id=tenant_id)
     ).fetchall()
     assert len(tags) == n_items
-    assert any(t[0].type == models.Type.GLOBAL for t in tags)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, folder_id, n_items",
+    [(1, 1, 1), (2, 1, 4), (3, 2, 3)],
+)
+async def test_get_folder_tags(
+    session: Session, user_id: int, folder_id: int, n_items: int
+) -> None:
+    tags = session.execute(
+        await get_tags(session, user_id=user_id, folder_id=folder_id)
+    ).fetchall()
+    assert len(tags) == n_items
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, device_id, n_items",
+    [(1, 1, 2), (1, 2, 1), (1, 3, 1), (2, 1, 4), (2, 2, 4), (3, 3, 2)],
+)
+async def test_get_device_tags(
+    session: Session, user_id: int, device_id: int, n_items: int
+) -> None:
+    tags = session.execute(
+        await get_tags(session, user_id=user_id, device_id=device_id)
+    ).fetchall()
+    assert len(tags) == n_items
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, name, n_items",
+    [
+        (1, "tag", 15),
+        (1, "tenant", 11),
+        (1, "dev", 1),
+        (2, "tenant-1", 1),
+        (2, "user-2", 1),
+        (3, "global", 0),
+    ],
+)
+async def test_get_tags_by_name(
+    session: Session, user_id: int, name: str, n_items: int
+) -> None:
+    tags = session.execute(
+        await get_tags(session, user_id=user_id, name=name)
+    ).fetchall()
+    assert len(tags) == n_items
 
 
 @pytest.mark.asyncio

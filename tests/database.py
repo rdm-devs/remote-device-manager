@@ -193,6 +193,7 @@ def session(
     tag_2 = create_tag(db, TagCreate(name="tag-user-3", tenant_id=tenant_2.id))
     user_3.add_tag(tag_2)
     folder_1.add_tag(tag_2)
+    device_3.add_tag(tag_2)
 
     # tag_3 = create_tag(db, TagCreate(name="tag-folder-1", tenant_id=tenant_1.id))
 
@@ -216,6 +217,7 @@ def session(
 
     tag_9 = create_tag(db, TagAdminCreate(name="tag-global-1", tenant_id=None, type=Type.GLOBAL))
     user_2.add_tag(tag_9)
+    tenant_1.add_tag(tag_9)
 
     db.add_all(
         [
@@ -227,6 +229,7 @@ def session(
             subfolder_2,
             device_1,
             device_2,
+            device_3,
             user_1,
             user_2,
             user_3,

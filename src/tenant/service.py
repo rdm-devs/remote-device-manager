@@ -60,15 +60,18 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
     # creating automatic tag
     # TODO: definir una convención de nombres??
     formatted_name = tenant.name.lower().replace(" ", "-")
-    tenant_tag = create_tag(
+    db_tenant.add_tag(create_tag(
         db, TagAdminCreate(name=f"tenant-{formatted_name}-tag", tenant_id=db_tenant.id, type=Type.TENANT)
-    )
+    ))
+    db.commit()
+    db.refresh(db_tenant)
     # creating a root folder
     folder = create_root_folder(db, db_tenant.id)
 
     # assigning tags
     if tags is not None and len(tags) >= 0:
         tag_ids = filter_tag_ids(tags, db_tenant.id)
+        tag_ids.extend([t.id for t in db_tenant.tags]) # when creating we want to maintain the automatic tag
         db_tenant.entity = update_entity_tags(
             db=db,
             entity=db_tenant.entity,

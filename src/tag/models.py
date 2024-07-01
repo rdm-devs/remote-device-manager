@@ -37,7 +37,7 @@ class Tag(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(
-        index=True, unique=True
+        index=True
     )  # e.g.: os-android-9 | brand-xiaomi
     entities: Mapped[List["src.entity.models.Entity"]] = relationship(
         secondary=entities_and_tags_table, back_populates="tags"

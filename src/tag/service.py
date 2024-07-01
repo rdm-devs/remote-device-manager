@@ -56,42 +56,55 @@ async def get_tags(
     # if user is not admin, we query only tags created for tenants owned by the current user
     user = get_user(db, user_id)
     tags = select(models.Tag)
-
-    if not user.is_admin:
-        tags = (
-            tags.join(entities_and_tags_table)
-            .where(
-                or_(
-                    and_(
-                        entities_and_tags_table.c.tag_id == models.Tag.id,
-                        models.Tag.tenant_id.in_(user.get_tenants_ids()),
-                    ),
-                    models.Tag.type == models.Type.GLOBAL,
-                )
-            )
-        )
+    tag_ids = []
 
     # testing needed:
-    if name:
-        tags = tags.where(models.Tag.name.like(f"%{name}%"))
     if tenant_id:
         await has_access_to_tenant(tenant_id, db, user)
-        tags = tags.where(
-            or_(
-                models.Tag.tenant_id == tenant_id, models.Tag.type == models.Type.GLOBAL
-            )
+        tag_ids.extend(
+            db.scalars(
+                select(entities_and_tags_table.c.tag_id).where(
+                    Tenant.id == tenant_id,
+                    entities_and_tags_table.c.entity_id == Tenant.entity_id,
+                )
+            ).all()
         )
+
     if folder_id:
         await has_access_to_folder(folder_id, db, user)
-        folder = db.scalars(select(Folder).where(Folder.id == folder_id)).first()
-        folder_tag_ids = [t.id for t in folder.tags]
-        tags = tags.where(models.Tag.id.in_(folder_tag_ids))
+        tag_ids.extend(
+            db.scalars(
+                select(entities_and_tags_table.c.tag_id).where(
+                    Folder.id == folder_id,
+                    entities_and_tags_table.c.entity_id == Folder.entity_id,
+                )
+            ).all()
+        )
     if device_id:
         await has_access_to_device(device_id, db, user)
-        device = db.scalars(select(Device).where(Device.id == device_id)).first()
-        device_tag_ids = [t.id for t in device.tags]
-        tags = tags.where(models.Tag.id.in_(device_tag_ids))
+        tag_ids.extend(
+            db.scalars(
+                select(entities_and_tags_table.c.tag_id).where(
+                    Device.id == device_id,
+                    entities_and_tags_table.c.entity_id == Device.entity_id,
+                )
+            ).all()
+        )
 
+    if not user.is_admin:
+        tag_ids.extend(
+            db.scalars(
+                select(entities_and_tags_table.c.tag_id).where(
+                    entities_and_tags_table.c.entity_id == user.entity_id,
+                )
+            ).all()
+        )
+
+    if tag_ids:
+        tags = tags.where(models.Tag.id.in_(tag_ids))
+
+    if name:
+        tags = tags.where(models.Tag.name.like(f"%{name}%"))
     return tags.distinct()
 
 

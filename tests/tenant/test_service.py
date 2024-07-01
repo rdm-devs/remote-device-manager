@@ -29,7 +29,7 @@ def test_create_tenant(session: Session) -> None:
     assert tenant5.name == "tenant5"
     assert len(tenant5.folders) == 1
     # when creating a tenant we create a root folder for it, each having their automatic tag.
-    assert len(tenant5.tags) == 0
+    assert len(tenant5.tags) == 1
     assert len(tenant5.tags_for_tenant) == 2
 
     tag = create_tag(session, TagCreate(name="custom-new-tag", tenant_id=None, type=Type.GLOBAL))
@@ -37,7 +37,7 @@ def test_create_tenant(session: Session) -> None:
     assert tenant6.name == "tenant6"
     assert len(tenant6.folders) == 1
     # similar to tenant5, tenant6 will have 2 tags + the one that we passed on creation.
-    assert len(tenant6.tags) == 1
+    assert len(tenant6.tags) == 2
     assert len(tenant6.tags_for_tenant) == 2
 
 
@@ -131,26 +131,13 @@ def test_update_tenant(session: Session) -> None:
     )
     assert all(t in tenant.tags for t in new_tags)
 
-    # # testing associative relationship (Entity-Tag) is working
-    # query = select(entities_and_tags_table.c.tag_id).where(
-    #     entities_and_tags_table.c.entity_id == tenant.entity_id,
-    # )
-    # relationship_tag_ids = session.scalars(query).all()
-    # assert relationship_tag_ids is not None
-    # assert all(t.id in relationship_tag_ids for t in tenant.tags)
-
-    # import ipdb; ipdb.set_trace()
-
 def test_update_tenant_with_empty_tag_list(session: Session) -> None:
     tenant_id = 1
     tenant = get_tenant(session, tenant_id)
     original_tags = tenant.tags
-    automatic_tags = list(filter(lambda t: t.type != Type.USER_CREATED, original_tags))
     user_created_tags = list(
         filter(lambda t: t.type == Type.USER_CREATED, original_tags)
     )
-    print(f"{automatic_tags=}")
-    print(f"{user_created_tags=}")
 
     tenant = update_tenant(
         session,
@@ -158,8 +145,6 @@ def test_update_tenant_with_empty_tag_list(session: Session) -> None:
         updated_tenant=TenantUpdate(tags=[])
     )
     #print(tenant.tags)
-
-    assert all(t in tenant.tags for t in automatic_tags)
     assert all(t not in tenant.tags for t in user_created_tags)
 
 

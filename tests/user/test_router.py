@@ -399,9 +399,9 @@ def test_read_tenants(
     [
         ("me", status.HTTP_200_OK, 15),
         (1, status.HTTP_200_OK, 15),
-        (2, status.HTTP_200_OK, 7),
-        (3, status.HTTP_200_OK, 5),
-        (4, status.HTTP_200_OK, 7),
+        (2, status.HTTP_200_OK, 3),
+        (3, status.HTTP_200_OK, 2),
+        (4, status.HTTP_200_OK, 15),
     ],
 )
 def test_read_tags(
