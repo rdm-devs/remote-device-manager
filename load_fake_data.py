@@ -13,7 +13,8 @@ from src.entity.service import create_entity_auto
 from src.role.service import create_role
 from src.role.schemas import RoleCreate
 from src.tag.service import create_tag
-from src.tag.schemas import TagCreate
+from src.tag.models import Type
+from src.tag.schemas import TagCreate, TagAdminCreate
 
 db = SessionLocal()
 
@@ -162,6 +163,9 @@ tag_4 = create_tag(db, TagCreate(name="tag-4", tenant_id=tenant_2.id))
 user_3.add_tag(tag_4)
 tenant_1.add_tag(tag_4)
 folder_2.add_tag(tag_4)
+
+tag_5 = create_tag(db, TagAdminCreate(name="tag-global-1", tenant_id=None, type=Type.GLOBAL))
+user_1.add_tag(tag_5)
 
 # guardamos modificaciones (tags) a objetos previamente creados
 db.add_all(
