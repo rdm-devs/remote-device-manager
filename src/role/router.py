@@ -36,7 +36,7 @@ def read_roles(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user)
 ):
-    return paginate(service.get_roles(db, user.id))
+    return paginate(db, service.get_roles(db, user.id))
 
 
 @router.patch("/{role_id}", response_model=schemas.Role)
