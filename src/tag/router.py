@@ -1,6 +1,5 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import Union, List
 from src.auth.dependencies import (
@@ -11,8 +10,9 @@ from src.auth.dependencies import (
 )
 from src.user.schemas import User
 from src.user.router import router as user_router
-from ..database import get_db
-from . import service, schemas
+from src.database import get_db
+from src.tag import service, schemas
+from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -37,8 +37,8 @@ def read_tag(
     return db_tag
 
 
-@user_router.get("/{user_id}/tags", response_model=Page[schemas.Tag])
-@router.get("/", response_model=Page[schemas.Tag])
+@user_router.get("/{user_id}/tags", response_model=CustomBigPage[schemas.Tag])
+@router.get("/", response_model=CustomBigPage[schemas.Tag])
 async def read_tags(
     user_id: Union[int, str, None] = None,
     tenant_id: Union[int, None] = None,

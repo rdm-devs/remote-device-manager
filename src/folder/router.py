@@ -1,7 +1,6 @@
 from fastapi import Depends, APIRouter, HTTPException, Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import (
     get_current_active_user,
@@ -13,8 +12,9 @@ from src.auth.dependencies import (
 )
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
-from ..database import get_db
-from . import service, schemas
+from src.database import get_db
+from src.folder import service, schemas
+from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/folders", tags=["folders"])
 
@@ -39,7 +39,7 @@ def read_folder(
     return db_folder
 
 
-@router.get("/", response_model=Page[schemas.Folder])
+@router.get("/", response_model=CustomBigPage[schemas.Folder])
 def read_folders(
     tenant_id: Optional[int] = None,
     db: Session = Depends(get_db),
@@ -48,7 +48,7 @@ def read_folders(
     return paginate(db, service.get_folders_from_tenant(db, user.id, tenant_id))
 
 
-@tenant_router.get("/{tenant_id}/folders", response_model=Page[schemas.Folder])
+@tenant_router.get("/{tenant_id}/folders", response_model=CustomBigPage[schemas.Folder])
 def read_folders_from_tenant(
     tenant_id: int = Path(),
     db: Session = Depends(get_db),
@@ -81,7 +81,7 @@ def delete_folder(
     }
 
 
-@router.get("/{folder_id}/subfolders", response_model=Page[schemas.Folder])
+@router.get("/{folder_id}/subfolders", response_model=CustomBigPage[schemas.Folder])
 def read_subfolders(
     folder_id: int,
     db: Session = Depends(get_db),

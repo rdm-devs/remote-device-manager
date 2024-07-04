@@ -1,6 +1,5 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
 from src.auth.dependencies import (
@@ -13,8 +12,9 @@ from src.auth.dependencies import (
 )
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
-from ..database import get_db
-from . import service, schemas
+from src.database import get_db
+from src.device import service, schemas
+from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 
@@ -39,7 +39,7 @@ def read_device(
     return db_device
 
 
-@tenant_router.get("/{tenant_id}/devices", response_model=Page[schemas.DeviceList])
+@tenant_router.get("/{tenant_id}/devices", response_model=CustomBigPage[schemas.DeviceList])
 def read_devices(
     tenant_id: int,
     db: Session = Depends(get_db),
@@ -48,7 +48,7 @@ def read_devices(
     return paginate(service.get_devices(db, tenant_id=tenant_id))
 
 
-@router.get("/", response_model=Page[schemas.DeviceList])
+@router.get("/", response_model=CustomBigPage[schemas.DeviceList])
 def read_devices(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),

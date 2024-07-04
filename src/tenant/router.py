@@ -1,7 +1,6 @@
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Union
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import (
     get_current_active_user,
@@ -10,8 +9,9 @@ from src.auth.dependencies import (
 )
 from src.user.schemas import User
 from src.tag import schemas as tags_schemas
-from ..database import get_db
-from . import service, schemas
+from src.database import get_db
+from src.tenant import service, schemas
+from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -36,7 +36,7 @@ def read_tenant(
     return db_tenant
 
 
-@router.get("/", response_model=Page[schemas.Tenant])
+@router.get("/", response_model=CustomBigPage[schemas.Tenant])
 def read_tenants(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
@@ -70,7 +70,7 @@ def delete_tenant(
     }
 
 
-@router.get("/{tenant_id}/tags", response_model=Page[tags_schemas.Tag])
+@router.get("/{tenant_id}/tags", response_model=CustomBigPage[tags_schemas.Tag])
 async def read_tags(
     tenant_id: int,
     db: Session = Depends(get_db),

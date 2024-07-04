@@ -1,12 +1,12 @@
 from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from src.auth.dependencies import get_current_active_user
 from src.user.schemas import User
-from ..database import get_db
-from . import service, schemas
+from src.database import get_db
+from src.role import service, schemas
+from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/roles", tags=["roles"])
 
@@ -31,7 +31,7 @@ def read_role(
     return db_role
 
 
-@router.get("/", response_model=Page[schemas.Role])
+@router.get("/", response_model=CustomBigPage[schemas.Role])
 def read_roles(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user)

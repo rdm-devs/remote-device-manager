@@ -1,6 +1,5 @@
 from fastapi import Depends, APIRouter, HTTPException, Path
 from sqlalchemy.orm import Session
-from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
 from src.auth.dependencies import (
@@ -10,17 +9,18 @@ from src.auth.dependencies import (
     has_access_to_tenant,
     has_access_to_user,
 )
-from src.tenant.service import get_tenants
-from src.tenant.schemas import Tenant
+from src.database import get_db
 from src.device.schemas import DeviceList
 from src.folder.schemas import Folder
-from . import service, schemas, utils, exceptions
-from ..database import get_db
+from src.tenant.service import get_tenants
+from src.tenant.schemas import Tenant
+from src.utils import CustomBigPage
+from src.user import service, schemas, utils, exceptions
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/", response_model=Page[utils.UserTenant])
+@router.get("/", response_model=CustomBigPage[utils.UserTenant])
 def read_users(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(has_admin_or_owner_role),
@@ -91,7 +91,7 @@ def assign_tenant(
     return user
 
 
-@router.get("/{user_id}/tenants", response_model=Page[Tenant])
+@router.get("/{user_id}/tenants", response_model=CustomBigPage[Tenant])
 async def read_tenants(
     user_id: str = Path(),
     db: Session = Depends(get_db),
@@ -103,7 +103,7 @@ async def read_tenants(
     return paginate(db, tenants)
 
 
-@router.get("/{user_id}/devices", response_model=Page[DeviceList])
+@router.get("/{user_id}/devices", response_model=CustomBigPage[DeviceList])
 async def read_devices(
     user_id: str = Path(),
     db: Session = Depends(get_db),
@@ -115,7 +115,7 @@ async def read_devices(
     return paginate(db, devices)
 
 
-@router.get("/{user_id}/folders", response_model=Page[Folder])
+@router.get("/{user_id}/folders", response_model=CustomBigPage[Folder])
 async def read_folders(
     user_id: str = Path(),
     db: Session = Depends(get_db),
