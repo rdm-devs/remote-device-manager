@@ -273,7 +273,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 15
+    assert len(data["assigned"]) == 15
 
     # filtering by name
     tag_name = "tenant1"
@@ -284,7 +284,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 4
+    assert len(data["assigned"]) == 4
 
     # filtering by tenant_id
     tenant_id = 1
@@ -295,7 +295,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["assigned"]) == 3
 
     # filtering by tenant_id and name
     name = "test"
@@ -307,7 +307,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 0
+    assert len(data["assigned"]) == 0
 
     # filtering by device_id
     device_id = 1
@@ -318,7 +318,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["assigned"]) == 2
 
     # filtering by folder_id
     folder_id = 3
@@ -329,7 +329,7 @@ async def test_read_tag_authorized_admin(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 3
+    assert len(data["assigned"]) == 3
 
 
 @pytest.mark.asyncio
@@ -356,7 +356,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 0
+    assert len(data["assigned"]) == 0
 
     # filtering by tenant_id
     tenant_id = 1
@@ -367,7 +367,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 4
+    assert len(data["assigned"]) == 3
 
     # filtering by tenant_id (wrong one) and name. it should reject the request
     name = "tenant"
@@ -389,7 +389,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 4
+    assert len(data["assigned"]) == 2
 
     # filtering by folder_id
     folder_id = 3
@@ -400,7 +400,7 @@ async def test_read_tag_authorized_owner_2(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 5
+    assert len(data["assigned"]) == 3
 
 
 @pytest.mark.asyncio
@@ -417,6 +417,8 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["available"]) == 7
+    assert len(data["assigned"]) == 2
 
     # filtering by name
     tag_name = "tenant2"
@@ -427,7 +429,8 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 0
+    assert len(data["available"]) == 3
+    assert len(data["assigned"]) == 0
 
     # filtering by tenant_id
     tenant_id = 2
@@ -438,7 +441,8 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 3
+    assert len(data["available"]) == 7
+    assert len(data["assigned"]) == 2
 
     # filtering by tenant_id (wrong one) and name. it should reject the request
     name = "tenant"
@@ -451,6 +455,16 @@ async def test_read_tag_authorized_owner_3(
     data = response.json()
     assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
 
+    response = client.get(
+        f"/tags/",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["available"]) == 7
+    assert len(data["assigned"]) == 2
+
     # filtering by device_id
     device_id = 3
     response = client.get(
@@ -460,7 +474,8 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 2
+    assert len(data["available"]) == 5
+    assert len(data["assigned"]) == 1
 
     # filtering by folder_id
     folder_id = 6
@@ -471,7 +486,60 @@ async def test_read_tag_authorized_owner_3(
 
     data = response.json()
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["items"]) == 3
+    assert len(data["available"]) == 4
+    assert len(data["assigned"]) == 1
+
+    user_id = 1 # attempting to read tags from a user I don't have access to.
+    response = client.get(
+        f"/tags/?user_id={user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+    user_id = 2
+    response = client.get(
+        f"/tags/?user_id={user_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+
+    response = client.get(
+        f"/tags",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["available"]) == 7
+    assert len(data["assigned"]) == 2
+
+    tenant_id = 2
+    folder_id = 7
+    response = client.get(
+        f"/tags/?tenant_id={tenant_id}&folder_id={folder_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["available"]) == 4
+    assert len(data["assigned"]) == 1
+
+    tenant_id = 2
+    folder_id = 7
+    response = client.get(
+        f"/tags/?folder_id={folder_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert len(data["available"]) == 4
+    assert len(data["assigned"]) == 1
 
 
 @pytest.mark.parametrize(
@@ -504,8 +572,8 @@ async def test_read_tag_authorized_user(
 
     data = response.json()
     assert response.status_code == expected_status_code
-    if "items" in data.keys():
-        assert len(data["items"]) == n_items
+    if "assigned" in data.keys():
+        assert len(data["assigned"]) == n_items
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(

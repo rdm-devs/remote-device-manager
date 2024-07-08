@@ -201,7 +201,6 @@ def test_update_user_with_empty_lists(
         f"/users/{user_id}",
         json=body,
     )
-    print(f"status: {response.status_code}")
     assert response.status_code == expected_status_code
 
 
@@ -413,4 +412,4 @@ def test_read_tags(
 ) -> None:
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == expected_status_code
-    assert len(response.json()["items"]) == n_items
+    assert len(response.json()["assigned"]) == n_items

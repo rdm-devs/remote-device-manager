@@ -85,10 +85,10 @@ def test_update_folder(session: Session, client_authenticated: TestClient) -> No
     # attempting to assign tags from a tenant with who the device is not related.
     tenant_id = 2
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
-    tags_tenant_2 = response.json()["items"]
+    tags_tenant_2 = response.json()["assigned"]
 
     response = client_authenticated.get(f"/tags/?folder_id={folder_id}")
-    tags_folder_1 = response.json()["items"]
+    tags_folder_1 = response.json()["assigned"]
 
     new_tags = [*tags_folder_1, *tags_tenant_2]
     response = client_authenticated.patch(
@@ -105,7 +105,7 @@ def test_update_folder(session: Session, client_authenticated: TestClient) -> No
     # attempting to assign tags from a tenant with who the device is related.
     tenant_id = 1
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
-    tags_tenant_1 = response.json()["items"]
+    tags_tenant_1 = response.json()["assigned"]
 
     # in this case the existing tags are included in the list that comes from the tenant
     # that is related to the device being updated.

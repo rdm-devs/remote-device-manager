@@ -144,7 +144,6 @@ def test_update_tenant_with_empty_tag_list(session: Session) -> None:
         db_tenant=tenant,
         updated_tenant=TenantUpdate(tags=[])
     )
-    #print(tenant.tags)
     assert all(t not in tenant.tags for t in user_created_tags)
 
 

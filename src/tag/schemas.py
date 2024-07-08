@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from src.tag.models import Type
 
 
@@ -35,3 +35,7 @@ class TagUpdate(BaseModel):
 class TagDelete(BaseModel):
     id: int
     msg: str
+
+class AvailableAssignedTags(BaseModel):
+    available: List[Tag]
+    assigned: List[Tag]

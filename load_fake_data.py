@@ -148,7 +148,7 @@ folder_1.add_tag(tag_1)
 
 tag_2 = create_tag(db, TagCreate(name="tag-2", tenant_id=tenant_1.id))
 user_1.add_tag(tag_2)
-user_2.add_tag(tag_2)
+user_3.add_tag(tag_2)
 device_2.add_tag(tag_2)
 folder_1.add_tag(tag_2)
 
@@ -160,7 +160,7 @@ tenant_2.add_tag(tag_3)
 folder_2.add_tag(tag_3)
 
 tag_4 = create_tag(db, TagCreate(name="tag-4", tenant_id=tenant_2.id))
-user_3.add_tag(tag_4)
+user_2.add_tag(tag_4)
 tenant_1.add_tag(tag_4)
 folder_2.add_tag(tag_4)
 

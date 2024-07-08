@@ -1,6 +1,7 @@
 import pytest
 from typing import Union
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.tenant.exceptions import TenantNotFound
 from src.exceptions import PermissionDenied
@@ -11,6 +12,9 @@ from src.tag.service import (
     get_tag,
     get_tag_by_name,
     get_tags,
+    get_available_tags,
+    get_folder_available_tags,
+    get_device_available_tags,
     delete_tag,
     update_tag,
 )
@@ -53,15 +57,22 @@ def test_create_tag_invalid_tenant_id_user_created(session: Session) -> None:
 def test_create_duplicated_tag(session: Session) -> None:
     with pytest.raises(exceptions.TagNameTaken):
         create_tag(session, TagCreate(name="tag-tenant-1", tenant_id=1))
-    
+
     with pytest.raises(exceptions.TagNameTaken):
-        create_tag(session, TagCreate(name="tag-global-1", tenant_id=None, type=models.Type.GLOBAL))
+        create_tag(
+            session,
+            TagCreate(name="tag-global-1", tenant_id=None, type=models.Type.GLOBAL),
+        )
+
 
 def test_create_duplicated_tag_name(session: Session) -> None:
     # testing that we can create two tags with the same name but they have to have a different tenant_id.
     tenant_id = 2
-    tag_name = "tag-user-2" # already exists BUT for tenant_id=1.
-    tag = create_tag(session, TagCreate(name=tag_name, tenant_id=tenant_id, type=models.Type.USER_CREATED))
+    tag_name = "tag-user-2"  # already exists BUT for tenant_id=1.
+    tag = create_tag(
+        session,
+        TagCreate(name=tag_name, tenant_id=tenant_id, type=models.Type.USER_CREATED),
+    )
     assert tag.name == tag_name
     assert tag.tenant_id == tenant_id
     assert tag.type == models.Type.USER_CREATED
@@ -104,42 +115,45 @@ def test_get_tag_with_invalid_name(session: Session) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "user_id, tenant_id, n_items",
-    [(1, None, 15), (1, 1, 3), (3, 2, 3)],
+    [(1, None, 15), (1, 1, 3), (3, 2, 2)],
 )
 async def test_get_tags(
     session: Session, user_id: int, tenant_id: Union[int, None], n_items: int
 ) -> None:
-    tags = session.execute(
-        await get_tags(session, user_id=user_id, tenant_id=tenant_id)
-    ).fetchall()
+    user = session.scalars(
+        select(user_models.User).where(user_models.User.id == user_id)
+    ).first()
+    tags = await get_tags(session, auth_user=user, user_id=user_id, tenant_id=tenant_id)
     assert len(tags) == n_items
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "user_id, folder_id, n_items",
-    [(1, 1, 1), (2, 1, 4), (3, 2, 3)],
+    [(1, 1, 1), (2, 1, 1), (3, 2, 1)],
 )
 async def test_get_folder_tags(
     session: Session, user_id: int, folder_id: int, n_items: int
 ) -> None:
-    tags = session.execute(
-        await get_tags(session, user_id=user_id, folder_id=folder_id)
-    ).fetchall()
+    user = session.scalars(
+        select(user_models.User).where(user_models.User.id == user_id)
+    ).first()
+    tags = await get_tags(session, auth_user=user, user_id=user_id, folder_id=folder_id)
     assert len(tags) == n_items
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "user_id, device_id, n_items",
-    [(1, 1, 2), (1, 2, 1), (1, 3, 1), (2, 1, 4), (2, 2, 4), (3, 3, 2)],
+    [(1, 1, 2), (1, 2, 1), (1, 3, 1), (2, 1, 2), (2, 2, 1), (3, 3, 1)],
 )
 async def test_get_device_tags(
     session: Session, user_id: int, device_id: int, n_items: int
 ) -> None:
-    tags = session.execute(
-        await get_tags(session, user_id=user_id, device_id=device_id)
-    ).fetchall()
+    user = session.scalars(
+        select(user_models.User).where(user_models.User.id == user_id)
+    ).first()
+    tags = await get_tags(session, auth_user=user, user_id=user_id, device_id=device_id)
     assert len(tags) == n_items
 
 
@@ -158,9 +172,10 @@ async def test_get_device_tags(
 async def test_get_tags_by_name(
     session: Session, user_id: int, name: str, n_items: int
 ) -> None:
-    tags = session.execute(
-        await get_tags(session, user_id=user_id, name=name)
-    ).fetchall()
+    user = session.scalars(
+        select(user_models.User).where(user_models.User.id == user_id)
+    ).first()
+    tags = await get_tags(session, auth_user=user, user_id=user_id, name=name)
     assert len(tags) == n_items
 
 
@@ -173,9 +188,12 @@ async def test_get_tags_forbidden_tenant(
     session: Session, user_id: int, tenant_id: int
 ) -> None:
     with pytest.raises(PermissionDenied):
-        tags = session.execute(
-            await get_tags(session, user_id=user_id, tenant_id=tenant_id)
-        ).fetchall()
+        user = session.scalars(
+            select(user_models.User).where(user_models.User.id == user_id)
+        ).first()
+        tags = await get_tags(
+            session, auth_user=user, user_id=user_id, tenant_id=tenant_id
+        )
 
 
 def test_update_tag(session: Session) -> None:
@@ -233,3 +251,102 @@ def test_delete_tag_with_invalid_id(session: Session) -> None:
     db_tag.id = 20  # this id must not exist
     with pytest.raises(exceptions.TagNotFound):
         delete_tag(session, db_tag=db_tag)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "name, user_id, tenant_id, folder_id, device_id, n_expected_items",
+    [
+        # tags available for user.id = 1
+        (None, 1, None, None, None, 15),
+        # tags available for user.id = 2
+        (None, 2, None, None, None, 9),
+        # tags available for user.id = 3
+        (None, 3, None, None, None, 7),
+        # tags available for tenant.id=1, owned by user.id = 1
+        (None, 1, 1, None, None, 9),
+        # tags available for folder.id=3, owned by user.id = 1
+        (None, 1, None, 3, None, 5),
+        # tags available for folder.id=6, owned by user.id = 1
+        (None, 1, None, 6, None, 4),
+        # tags available for device.id=2, owned by user.id = 1
+        (None, 1, None, None, 2, 4),
+        # tags available for device.id=1, owned by user.id = 1
+        (None, 1, None, None, 1, 5),
+        # tags available with name containing "folder1", owned by user.id = 1
+        ("folder1", 1, None, None, None, 2),
+        # tags available for folder.id=3 with name containing "folder1", owned by user.id = 1
+        ("folder1", 1, None, 3, None, 1),
+        # tags available with name containing "folder3", owned by user.id = 1
+        ("folder3", 1, None, None, None, 1),
+        # tags available for folder.id=3, owned by user.id = 3 -> should fail w/PermissionDenied
+        (None, 3, None, 3, None, None),
+        # tags available for device.id=2, owned by user.id = 3 -> should fail w/PermissionDenied
+        (None, 3, None, None, 2, None),
+        # tags available for device.id=1 with name containing "dev-1", owned by user.id = 1
+        ("dev-1", 1, None, None, 1, 1),
+    ],
+)
+async def test_get_available_tags(
+    session: Session,
+    name: Union[None, str],
+    user_id: Union[None, int],
+    tenant_id: Union[None, int],
+    folder_id: Union[None, int],
+    device_id: Union[None, int],
+    n_expected_items: Union[None, int],
+) -> None:
+    async def get_tags():
+        user = session.scalars(
+            select(user_models.User).where(user_models.User.id == user_id)
+        ).first()
+        tags = await get_available_tags(
+            session, user, user_id, name, tenant_id, folder_id, device_id
+        )
+        assert len(tags) == n_expected_items
+
+    if not n_expected_items:
+        with pytest.raises(PermissionDenied):
+            await get_tags()
+    else:
+        await get_tags()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "folder_id, n_expected_items",
+    [
+        (1, 4),
+        (2, 4),
+        (3, 5),
+        (4, 4),
+        (5, 5),
+        (6, 4),
+        (7, 4),
+    ],
+)
+async def test_get_folder_available_tags(
+    session: Session, folder_id: int, n_expected_items: int
+):
+    tags = select(models.Tag)
+    available_tags_query = get_folder_available_tags(session, folder_id, tags)
+    available_tags = session.scalars(available_tags_query).all()
+    assert len(available_tags) == n_expected_items
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "device_id, n_expected_items",
+    [
+        (1, 5),
+        (2, 4),
+        (3, 5),
+    ],
+)
+async def test_get_device_available_tags(
+    session: Session, device_id: int, n_expected_items: int
+):
+    tags = select(models.Tag)
+    available_tags_query = get_device_available_tags(session, device_id, tags)
+    available_tags = session.scalars(available_tags_query).all()
+    assert len(available_tags) == n_expected_items

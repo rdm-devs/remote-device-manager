@@ -49,3 +49,12 @@ def update_entity_tags(
         return entity
     except IntegrityError:
         db.rollback()
+
+
+def get_entity_tag_ids(db: Session, entity_id: int):
+    entity_tag_ids = db.scalars(
+        select(entities_and_tags_table.c.tag_id).where(
+            entities_and_tags_table.c.entity_id == entity_id,
+        )
+    ).all()
+    return entity_tag_ids

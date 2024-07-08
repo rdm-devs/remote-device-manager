@@ -17,13 +17,13 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
     response = client_authenticated.get("/tags/")
     assert response.status_code == status.HTTP_200_OK
     assert (
-        len(response.json()["items"]) == 15
+        len(response.json()["assigned"]) == 15
     )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
     response = client_authenticated.get("/tags/?tenant_id=1")
     assert response.status_code == status.HTTP_200_OK
     assert (
-        len(response.json()["items"]) == 3 
+        len(response.json()["assigned"]) == 3 
     )
 
 

@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from src.exceptions import PermissionDenied
 from src.database import get_db
 from src.user.schemas import User
@@ -203,16 +203,26 @@ async def has_access_to_user(
     db: Session = Depends(get_db),
     auth_user: User = Depends(get_current_active_user),
 ):
-    if auth_user.is_admin or user_id == auth_user.id:
+    if auth_user.is_admin or int(user_id) == auth_user.id:
         return user_id
 
     if await has_role("owner", db, auth_user):
         user = user_service.get_user(db, user_id)
-
-        shared_tenants = (t_id in auth_user.get_tenants_ids() for t_id in user.get_tenants_ids())
-        if any(shared_tenants):
+        shared_tenants = (
+            t_id in auth_user.get_tenants_ids() for t_id in user.get_tenants_ids()
+        )
+        if any(shared_tenants) and not await has_role("admin", db, user):
             return user_id
     raise PermissionDenied()
+
+
+async def has_access_to_user_id(
+    user_id: Union[int, None],
+    db: Session = Depends(get_db),
+    auth_user: User = Depends(get_current_active_user),
+):
+    if await has_access_to_user(user_id, db, auth_user):
+        return user_id
 
 
 async def can_edit_device(

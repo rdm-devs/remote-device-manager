@@ -89,20 +89,16 @@ def test_get_device_with_invalid_name(session: Session) -> None:
 
 def test_get_devices(session: Session) -> None:
     devices = session.execute(get_devices(session, user_id=1)).fetchall()  # admin
-    print(devices)
     assert len(devices) == 3
 
     devices_owner_2 = session.execute(get_devices(session, user_id=2)).fetchall()  # owner
-    print(devices_owner_2)
     assert len(devices_owner_2) == 2
 
     devices_user = session.execute(get_devices(session, user_id=4)).fetchall()  # user
-    print(devices_user)
     assert len(devices_user) == 2
     assert devices_owner_2 == devices_user
 
     devices = session.execute(get_devices(session, user_id=3)).fetchall()  # owner
-    print(devices)
     assert len(devices) == 1
 
 

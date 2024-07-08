@@ -71,12 +71,12 @@ def test_update_tenant(session: Session, client_authenticated: TestClient) -> No
     # Tenant with id=1 already exists in the session. See: tests/database.py
     tenant_id = 1
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_id}")
-    tags_tenant_1 = response.json()["items"]
+    tags_tenant_1 = response.json()["assigned"]
 
     # attempting to assign tags from another tenant.
     tenant_2_id = 2
     response = client_authenticated.get(f"/tags/?tenant_id={tenant_2_id}")
-    tags_tenant_2 = response.json()["items"]
+    tags_tenant_2 = response.json()["assigned"]
 
     # creating a new tag
     response = client_authenticated.post(
