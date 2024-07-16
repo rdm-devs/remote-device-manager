@@ -86,7 +86,7 @@ def delete_device(
     }
 
 
-@router.get("/connect/{device_id}", response_model=ConnectionUrl)
+@router.get("/{device_id}/connect/", response_model=ConnectionUrl)
 async def connect(
     device_id: int,
     db: Session = Depends(get_db),

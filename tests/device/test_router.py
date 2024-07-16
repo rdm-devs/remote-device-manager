@@ -243,7 +243,7 @@ def test_connect_to_device(
     client_authenticated: TestClient,
 ):
     device_id = 1
-    response = client_authenticated.get(f"/devices/connect/{device_id}")
+    response = client_authenticated.get(f"/devices/{device_id}/connect/")
     url = response.json()["url"]
     assert response.status_code == status.HTTP_200_OK
     assert url is not None

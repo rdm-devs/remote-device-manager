@@ -683,7 +683,7 @@ async def test_send_token_to_rustdesk(
 
     device_id = data["id"]  # rustdesk credentials were not configured.
     response = client.get(
-        f"/devices/connect/{device_id}",
+        f"/devices/{device_id}/connect",
         headers={"Authorization": f"Bearer {access_tokens}"},
     )
     assert response.status_code == status.HTTP_200_OK
@@ -698,9 +698,9 @@ async def test_send_token_to_rustdesk(
     response = client.get(f"/auth/device/{device_id}/connect/{fake_otp}")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    invalid_device_id = 1  # rustdesk credentials were not configured.
+    invalid_device_id = 2  # rustdesk credentials were not configured.
     response = client.get(
-        f"/devices/connect/{invalid_device_id}",
+        f"/devices/{invalid_device_id}/connect",
         headers={"Authorization": f"Bearer {access_tokens}"},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST

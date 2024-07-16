@@ -35,7 +35,6 @@ from src.tag.schemas import TagCreate, TagAdminCreate
 from src.tag.models import Type
 
 
-
 load_dotenv()
 
 DATABASE_URL = os.getenv("DB_CONNECTION_TEST")
@@ -114,6 +113,8 @@ def session(
             folder_id=folder_1.id,
             mac_address="61:68:0C:1E:93:8F",
             ip_address="96.119.132.44",
+            id_rust="myRustDeskId",
+            pass_rust="myRustDeskPass",
             **mock_os_data,
             **mock_vendor_data
         ),
