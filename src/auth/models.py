@@ -10,6 +10,6 @@ class AuthRefreshToken(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
-    refresh_token: Mapped[str] = mapped_column() 
+    refresh_token: Mapped[str] = mapped_column()
     expires_at: Mapped[datetime] = mapped_column()
     valid: Mapped[bool] = mapped_column(default=True)

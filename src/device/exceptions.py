@@ -8,3 +8,6 @@ class DeviceNotFound(NotFound):
 
 class DeviceNameTaken(BadRequest):
     DETAIL = ErrorCode.DEVICE_NAME_TAKEN
+
+class DeviceCredentialsNotConfigured(BadRequest):
+    DETAIL = ErrorCode.DEVICE_CREDENTIALS_NOT_CONFIGURED

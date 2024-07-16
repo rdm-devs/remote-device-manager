@@ -16,3 +16,6 @@ class InvalidCredentials(NotAuthenticated):
 
 class RefreshTokenNotValid(NotAuthenticated):
     DETAIL = ErrorCode.REFRESH_TOKEN_NOT_VALID
+
+class InvalidOTP(BadRequest):
+    DETAIL = ErrorCode.INVALID_OTP

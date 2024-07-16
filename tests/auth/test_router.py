@@ -489,7 +489,7 @@ async def test_read_tag_authorized_owner_3(
     assert len(data["available"]) == 4
     assert len(data["assigned"]) == 1
 
-    user_id = 1 # attempting to read tags from a user I don't have access to.
+    user_id = 1  # attempting to read tags from a user I don't have access to.
     response = client.get(
         f"/tags/?user_id={user_id}",
         headers={"Authorization": f"Bearer {access_tokens}"},
@@ -575,6 +575,7 @@ async def test_read_tag_authorized_user(
     if "assigned" in data.keys():
         assert len(data["assigned"]) == n_items
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "auth_user_id, user_id, expected_status_code",
@@ -645,3 +646,65 @@ async def test_delete_user(
 
     data = response.json()
     assert response.status_code == expected_status_code
+
+
+@pytest.mark.asyncio
+async def test_send_token_to_rustdesk(
+    session: Session,
+    mock_os_data: dict,
+    mock_vendor_data: dict,
+    client: TestClient,
+):
+    TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
+    TEST_IP_ADDR = "96.119.132.46"
+
+    user_id = 1
+    auth_tokens = await get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = auth_tokens["access_token"]
+
+    response = client.post(
+        "/devices/",
+        json={
+            "name": "dev5",
+            "folder_id": 1,
+            "os_id": 1,
+            "vendor_id": 1,
+            "mac_address": TEST_MAC_ADDR,
+            "ip_address": TEST_IP_ADDR,
+            "id_rust": "myRustDeskId",
+            "pass_rust": "myRustDeskPass",
+            **mock_os_data,
+            **mock_vendor_data,
+        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    device_id = data["id"]  # rustdesk credentials were not configured.
+    response = client.get(
+        f"/devices/connect/{device_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    url = response.json()["url"]
+
+    otp = url.split("otp=")[1]
+    response = client.get(f"/auth/device/{device_id}/connect/{otp}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["token"]
+
+    fake_otp = "123456"
+    response = client.get(f"/auth/device/{device_id}/connect/{fake_otp}")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    invalid_device_id = 1  # rustdesk credentials were not configured.
+    response = client.get(
+        f"/devices/connect/{invalid_device_id}",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    # attempting to get token using invalid device id and valid otp
+    response = client.get(f"/auth/device/{invalid_device_id}/connect/{otp}")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST

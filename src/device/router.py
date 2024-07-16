@@ -1,3 +1,4 @@
+import os
 from fastapi import Depends, APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -8,8 +9,10 @@ from src.auth.dependencies import (
     has_access_to_tenant,
     has_access_to_device,
     has_admin_or_owner_role,
-    can_edit_device
+    can_edit_device,
 )
+from src.auth.utils import create_connection_url, create_otp
+from src.auth.schemas import ConnectionUrl
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
 from src.database import get_db
@@ -17,7 +20,6 @@ from src.device import service, schemas
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
-
 
 @router.post("/", response_model=schemas.Device)
 def register_device(
@@ -82,3 +84,14 @@ def delete_device(
         "id": deleted_device_id,
         "msg": f"Device {deleted_device_id} removed succesfully!",
     }
+
+
+@router.get("/connect/{device_id}", response_model=ConnectionUrl)
+async def connect(
+    device_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_device),
+):
+    otp = create_otp()
+    url = create_connection_url(db, device_id, otp)
+    return {"url": url}

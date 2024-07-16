@@ -1,3 +1,4 @@
+import os
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -119,7 +120,7 @@ def test_create_incomplete_device(
     response = client_authenticated.post(
         "/devices/",
         json={
-            #"name": "dev5",
+            # "name": "dev5",
             "os_id": 1,
             "vendor_id": 1,
             "mac_address": TEST_MAC_ADDR,
@@ -190,7 +191,7 @@ def test_update_device(session: Session, client_authenticated: TestClient) -> No
     # in this case the existing tags are included in the list that comes from the tenant
     # that is related to the device being updated.
     new_tags = tags_device_1
-    for t in tags_tenant_1: 
+    for t in tags_tenant_1:
         if t not in new_tags:  # filtering repeated items (backend ignores them anyway)
             new_tags.append(t)
 
@@ -235,3 +236,16 @@ def test_delete_non_existent_device(
     response = client_authenticated.delete(f"/devices/{device_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == ErrorCode.DEVICE_NOT_FOUND
+
+
+def test_connect_to_device(
+    session: Session,
+    client_authenticated: TestClient,
+):
+    device_id = 1
+    response = client_authenticated.get(f"/devices/connect/{device_id}")
+    url = response.json()["url"]
+    assert response.status_code == status.HTTP_200_OK
+    assert url is not None
+    assert "id=" in url
+    assert "otp=" in url

@@ -11,13 +11,16 @@ from src.auth.utils import (
     authenticate_user,
     create_access_token,
     get_refresh_token_settings,
+    create_connection_token,
+    is_valid_otp,
 )
 from src.auth.dependencies import (
     get_current_active_user,
     valid_refresh_token,
     valid_refresh_token_user,
+    has_access_to_device,
 )
-from src.auth.schemas import Token
+from src.auth.schemas import Token, ConnectionToken
 from src.auth import service
 
 load_dotenv()
@@ -79,3 +82,14 @@ async def logout_user(
     return {
         "msg": "Logged out succesfully!",
     }
+
+
+@router.get("/device/{device_id}/connect/{otp}", response_model=dict)
+async def get_device_connection_token(
+    device_id: int,
+    db: Session = Depends(get_db),
+    otp: str = Depends(is_valid_otp),
+    #user: User = Depends(get_current_active_user),
+) -> dict:
+    conn_token = create_connection_token(db, device_id)
+    return {"token": conn_token}
