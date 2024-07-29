@@ -21,6 +21,7 @@ from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 
+
 @router.post("/", response_model=schemas.Device)
 def register_device(
     device: schemas.DeviceCreate,
@@ -41,7 +42,9 @@ def read_device(
     return db_device
 
 
-@tenant_router.get("/{tenant_id}/devices", response_model=CustomBigPage[schemas.DeviceList])
+@tenant_router.get(
+    "/{tenant_id}/devices", response_model=CustomBigPage[schemas.DeviceList]
+)
 def read_devices(
     tenant_id: int,
     db: Session = Depends(get_db),
@@ -71,6 +74,7 @@ def update_device(
     return updated_device
 
 
+
 @router.delete("/{device_id}", response_model=schemas.DeviceDelete)
 def delete_device(
     device_id: int,
@@ -95,3 +99,13 @@ async def connect(
     otp = create_otp()
     url = create_connection_url(db, device_id, otp)
     return {"url": url}
+
+@router.post("/{device_id}/heartbeat", response_model=schemas.HeartBeatResponse)
+def update_heartbeat(
+    device_id: int,
+    heartbeat: schemas.HeartBeat,
+    db: Session = Depends(get_db),
+):
+    device_status = service.update_device_heartbeat(db, device_id, heartbeat)
+    return device_status
+

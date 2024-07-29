@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -97,6 +98,20 @@ def update_device(
     db.commit()
     db.refresh(device)
     return device
+
+
+def update_device_heartbeat(
+    db: Session, device_id: int, heartbeat: schemas.HeartBeat
+):
+    # sanity checks
+    values = heartbeat.model_dump(exclude_unset=True)
+    timestamp = datetime.now()
+    values.update({"heartbeat_timestamp": timestamp})
+    db.execute(
+        update(models.Device).where(models.Device.id == device_id).values(values)
+    )
+    db.commit()
+    return {"device_id": device_id, "timestamp": timestamp}
 
 
 def delete_device(db: Session, db_device: schemas.Device):

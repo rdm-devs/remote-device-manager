@@ -62,3 +62,14 @@ class DeviceUpdate(DeviceCreate):
 class DeviceDelete(BaseModel):
     id: int
     msg: str
+
+class HeartBeat(BaseModel):
+    id_rust: Optional[str] = None
+    pass_rust: Optional[str] = None
+
+    model_config = {"extra": "ignore"}
+
+
+class HeartBeatResponse(BaseModel):
+    device_id: int
+    timestamp: datetime

@@ -1,4 +1,6 @@
 import os
+import pytest
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -243,9 +245,38 @@ def test_connect_to_device(
     client_authenticated: TestClient,
 ):
     device_id = 1
-    response = client_authenticated.get(f"/devices/{device_id}/connect/")
+    response = client_authenticated.get(f"/devices/{device_id}/connect")
     url = response.json()["url"]
     assert response.status_code == status.HTTP_200_OK
     assert url is not None
     assert "id=" in url
     assert "otp=" in url
+
+
+@pytest.mark.parametrize(
+    "device_id, body, expected_status_code",
+    [
+        (1, {}, status.HTTP_200_OK),
+        (1, {"id_rust": "asd", "pass_rust": "1234"}, status.HTTP_200_OK),
+        (1, {"color": "red"}, status.HTTP_200_OK),
+    ],
+)
+def test_update_device_heartbeat(
+    device_id: int,
+    body: dict,
+    expected_status_code: int,
+    session: Session,
+    client_authenticated: TestClient,
+):
+    response = client_authenticated.post(f"/devices/{device_id}/heartbeat", json=body)
+    device_status = response.json()
+    assert response.status_code == expected_status_code
+    assert device_status["device_id"] == device_id
+    assert device_status["timestamp"] is not None
+    if "id_rust" in body or "pass_rust" in body:
+        response = client_authenticated.get(
+            f"/devices/{device_id}"
+        )
+        result = response.json()
+        assert result["id_rust"] == body["id_rust"]
+        assert result["pass_rust"] == body["pass_rust"]
