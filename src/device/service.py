@@ -104,7 +104,7 @@ def update_device_heartbeat(
     db: Session, device_id: int, heartbeat: schemas.HeartBeat
 ):
     # sanity checks
-    values = heartbeat.model_dump(exclude_unset=True)
+    values = heartbeat.model_dump(exclude_none=True)
     timestamp = datetime.now()
     values.update({"heartbeat_timestamp": timestamp})
     db.execute(
