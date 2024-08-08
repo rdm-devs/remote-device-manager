@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import Optional, List
@@ -14,9 +14,9 @@ class User(Base, AuditMixin):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     disabled: Mapped[bool] = mapped_column(default=False)
-    hashed_password: Mapped[str] = mapped_column()
+    hashed_password: Mapped[str] = mapped_column(String(255))
     last_login: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()
     )

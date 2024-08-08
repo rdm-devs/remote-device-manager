@@ -19,9 +19,9 @@ class Device(Base, AuditMixin):
     )
     folder_id: Mapped[Optional[int]] = mapped_column(ForeignKey("folder.id"), nullable=True)
     folder: Mapped[Optional[Folder]] = relationship(Folder, back_populates="devices")
-    id_rust: Mapped[Optional[str]]
-    pass_rust: Mapped[Optional[str]]
-    last_screenshot_path: Mapped[Optional[str]]
+    id_rust: Mapped[Optional[str]] = mapped_column(String(255))
+    pass_rust: Mapped[Optional[str]] = mapped_column(String(255))
+    last_screenshot_path: Mapped[Optional[str]] = mapped_column(String(255))
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
     entity: Mapped[Entity] = relationship(Entity)
 
@@ -30,11 +30,11 @@ class Device(Base, AuditMixin):
     ip_address: Mapped[Optional[str]] = mapped_column(
         String(15)
     )  # alternatively: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
-    os_name: Mapped[str] = mapped_column(index=True)
-    os_version: Mapped[str] = mapped_column()
-    os_kernel_version: Mapped[str] = mapped_column()
-    vendor_name: Mapped[str] = mapped_column(index=True)
-    vendor_model: Mapped[str] = mapped_column()
+    os_name: Mapped[str] = mapped_column(String(255), index=True)
+    os_version: Mapped[str] = mapped_column(String(255))
+    os_kernel_version: Mapped[str] = mapped_column(String(255))
+    vendor_name: Mapped[str] = mapped_column(String(255), index=True)
+    vendor_model: Mapped[str] = mapped_column(String(255))
     vendor_cores: Mapped[int] = mapped_column()
     vendor_ram_gb: Mapped[int] = mapped_column()
 

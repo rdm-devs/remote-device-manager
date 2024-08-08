@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import Optional, List
@@ -10,7 +10,7 @@ class Folder(Base, AuditMixin):
     __tablename__ = "folder"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id"))
     entity: Mapped["src.entity.models.Entity"] = relationship(
         "src.entity.models.Entity"

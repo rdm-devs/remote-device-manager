@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Table, Column, DateTime
+from sqlalchemy import ForeignKey, Table, Column, DateTime, String
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import List
@@ -21,7 +21,7 @@ class Tenant(Base, AuditMixin):
     __tablename__ = "tenant"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
     folders: Mapped[List["src.folders.models.Folder"]] = relationship(
         "Folder", back_populates="tenant"
