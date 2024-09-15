@@ -12,7 +12,7 @@ class Device(Base, AuditMixin):
     __tablename__ = "device"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     is_online: Mapped[bool] = mapped_column(default=True, index=True)
     heartbeat_timestamp: Mapped[datetime] = mapped_column(
         default=func.now(), onupdate=func.now()
