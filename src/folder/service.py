@@ -4,7 +4,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from src.exceptions import PermissionDenied
-from src.entity.service import create_entity_auto, update_entity_tags
+from src.entity.service import (
+    create_entity_auto,
+    update_entity_tags,
+    delete_entity_tags,
+)
 from src.folder import exceptions, schemas, models
 from src.auth.dependencies import has_role
 from src.tag.models import Type
@@ -239,8 +243,10 @@ def update_folder(
 def delete_folder(db: Session, db_folder: schemas.Folder):
     # sanity check
     check_folder_exist(db, db_folder.id)
+    tag_ids = [t.id for t in db_folder.tags if t.type == Type.FOLDER]
+    delete_entity_tags(db, db_folder.entity, tag_ids)
 
-    db.delete(db_folder)
+    db.delete(db_folder.entity) # db_folder debiera eliminarse por cascada al eliminar su entity
     db.commit()
     return db_folder.id
 

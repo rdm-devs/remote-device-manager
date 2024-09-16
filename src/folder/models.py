@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy.orm import relationship, mapped_column, Mapped, backref
 from sqlalchemy.sql import func
 from typing import Optional, List
 from ..database import Base
@@ -11,10 +11,9 @@ class Folder(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
-    entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id"))
+    entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id", ondelete="CASCADE"))
     entity: Mapped["src.entity.models.Entity"] = relationship(
-        "src.entity.models.Entity"
-    )
+        "src.entity.models.Entity", backref=backref('object', cascade="all, delete"))
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id"))
     tenant: Mapped["Tenant"] = relationship(
         "Tenant", back_populates="folders"

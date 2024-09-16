@@ -26,7 +26,11 @@ from src.user.service import create_user
 from src.user.schemas import UserCreate
 from src.user.exceptions import UserTenantNotAssigned
 from src.tag.models import Tag, entities_and_tags_table
+from src.tag.service import get_tag_by_name
+from src.tag.exceptions import TagNotFound
 from src.tenant.service import get_tenant
+from src.entity.service import get_entity
+from src.entity.exceptions import EntityNotFound
 
 
 def test_create_folder(session: Session) -> None:
@@ -39,6 +43,30 @@ def test_create_folder(session: Session) -> None:
 def test_create_duplicated_folder(session: Session) -> None:
     with pytest.raises(FolderNameTaken):
         create_folder(session, FolderCreate(name="folder1", tenant_id=1))
+
+
+def test_create_folder_after_deleting_it(session: Session) -> None:
+    folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
+    assert folder.name == "folder5"
+    assert len(folder.tags) == 1
+    tag_name = folder.tags[0].name
+    entity_id = folder.entity_id
+
+    deleted_folder_id = delete_folder(session, folder)
+
+    with pytest.raises(EntityNotFound):
+        get_entity(session, entity_id)
+
+    with pytest.raises(TagNotFound):
+        get_tag_by_name(session, tag_name)
+
+    with pytest.raises(FolderNotFound):
+        folder = get_folder(session, deleted_folder_id)
+
+    new_folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
+    assert new_folder.name == "folder5"
+    assert len(new_folder.tags) == 1
+    assert new_folder.tags[0].name == tag_name
 
 
 def test_create_incomplete_folder(session: Session) -> None:

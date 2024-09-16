@@ -1,10 +1,16 @@
-from sqlalchemy import select, update, or_, and_
+from sqlalchemy import select, update, delete, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.entity import schemas, models, exceptions
 from src.tag.models import Tag, Type, entities_and_tags_table
 from typing import List
 
+
+def get_entity(db: Session, entity_id: int) -> models.Entity:
+    entity = db.scalars(select(models.Entity).where(models.Entity.id == entity_id)).first()
+    if not entity:
+        raise exceptions.EntityNotFound()
+    return entity
 
 def create_entity_auto(db: Session):
     return create_entity(db, schemas.EntityCreate())
@@ -58,3 +64,23 @@ def get_entity_tag_ids(db: Session, entity_id: int):
         )
     ).all()
     return entity_tag_ids
+
+
+def delete_entity_tags(
+    db: Session, entity: models.Entity, tag_ids: List[int]
+) -> models.Entity:
+
+    # gathering tags
+    deleted_tags_query = delete(Tag).where(
+        Tag.id.in_(tag_ids)
+    )
+
+    try:
+        entity.tags = []
+        db.commit()
+        db.execute(deleted_tags_query)
+        db.commit()
+        db.refresh(entity)
+        return entity
+    except IntegrityError:
+        db.rollback()
