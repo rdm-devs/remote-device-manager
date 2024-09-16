@@ -192,6 +192,33 @@ def test_update_device_with_invalid_id(session: Session) -> None:
         )
 
 
+def test_update_device_to_remove_all_tags(session: Session) -> None:
+    db_device = get_device(session, 1)
+
+    tenant_id = 1
+    tenant_1 = get_tenant(session, tenant_id)
+
+    # updating device to assign tenant_1's tags
+    device = update_device(
+        session,
+        db_device=db_device,
+        updated_device=DeviceUpdate(name="dev-custom", tags=tenant_1.tags),
+    )
+    assert device.name == "dev-custom"
+    assert device.folder_id == 3
+    assert all(t in device.tags for t in tenant_1.tags)
+
+    # updating device to delete all its tags
+    device = update_device(
+        session,
+        db_device=db_device,
+        updated_device=DeviceUpdate(name="dev-custom", tags=[]),
+    )
+    assert device.name == "dev-custom"
+    assert device.folder_id == 3
+    assert len(device.tags) == 0
+
+
 def test_delete_device(
     session: Session, mock_os_data: dict, mock_vendor_data: dict
 ) -> None:

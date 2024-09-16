@@ -82,7 +82,7 @@ def update_device(
         check_folder_exist(db, updated_device.folder_id)
     check_device_name_taken(db, updated_device.name, device.id)
 
-    if updated_device.tags:
+    if updated_device.tags or len(updated_device.tags) == 0:
         tags = values.pop("tags")
         tag_ids = filter_tag_ids(tags, device.folder.tenant_id)
         device.entity = update_entity_tags(
