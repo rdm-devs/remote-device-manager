@@ -91,7 +91,9 @@ def test_get_devices(session: Session) -> None:
     devices = session.execute(get_devices(session, user_id=1)).fetchall()  # admin
     assert len(devices) == 3
 
-    devices_owner_2 = session.execute(get_devices(session, user_id=2)).fetchall()  # owner
+    devices_owner_2 = session.execute(
+        get_devices(session, user_id=2)
+    ).fetchall()  # owner
     assert len(devices_owner_2) == 2
 
     devices_user = session.execute(get_devices(session, user_id=4)).fetchall()  # user
@@ -194,15 +196,16 @@ def test_update_device_with_invalid_id(session: Session) -> None:
 
 def test_update_device_to_remove_all_tags(session: Session) -> None:
     db_device = get_device(session, 1)
-
     tenant_id = 1
     tenant_1 = get_tenant(session, tenant_id)
 
-    # updating device to assign tenant_1's tags
+    # updating device to add tenant_1's tags
     device = update_device(
         session,
         db_device=db_device,
-        updated_device=DeviceUpdate(name="dev-custom", tags=tenant_1.tags),
+        updated_device=DeviceUpdate(
+            name="dev-custom", tags=[*db_device.tags, *tenant_1.tags]
+        ),
     )
     assert device.name == "dev-custom"
     assert device.folder_id == 3
