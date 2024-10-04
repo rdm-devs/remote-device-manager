@@ -10,6 +10,8 @@ from tests.database import (
     mock_os_data,
     mock_vendor_data,
     client_authenticated,
+    client_fixture,
+    admin_auth_tokens,
 )
 
 
@@ -22,9 +24,7 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
 
     response = client_authenticated.get("/tags/?tenant_id=1")
     assert response.status_code == status.HTTP_200_OK
-    assert (
-        len(response.json()["assigned"]) == 3 
-    )
+    assert len(response.json()["assigned"]) == 3
 
 
 def test_read_tag(session: Session, client_authenticated: TestClient) -> None:
@@ -53,9 +53,16 @@ def test_read_non_existent_tag(
     assert response.json()["detail"] == ErrorCode.TAG_NOT_FOUND
 
 
-def test_create_tag(session: Session, client_authenticated: TestClient) -> None:
-    response = client_authenticated.post(
-        "/tags/", json={"name": "tag5", "tenant_id": 1}
+@pytest.mark.asyncio
+async def test_create_tag(
+    session: Session, client: TestClient, admin_auth_tokens: dict
+) -> None:
+    # either auth token should work fine
+    token = (await admin_auth_tokens)["access_token"]
+    response = client.post(
+        "/tags/",
+        json={"name": "tag5", "tenant_id": 1},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -167,3 +174,26 @@ def test_delete_non_existent_tag(
     tag_id = 20
     response = client_authenticated.delete(f"/tags/{tag_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_delete_tag_multi(
+    session: Session, client_authenticated: TestClient
+) -> None:
+
+    # creating 2 new tags to delete them after
+    response = client_authenticated.post(
+        "/tags/", json={"name": "tag-test", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    new_tag = response.json()
+
+    response = client_authenticated.post(
+        "/tags/", json={"name": "tag-test-2", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    new_tag_2 = response.json()
+
+    print([new_tag, new_tag_2])
+    response = client_authenticated.post(f"/tags/delete", json=[new_tag, new_tag_2])
+    print(response.json())
+    assert response.status_code == status.HTTP_200_OK

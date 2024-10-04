@@ -3,9 +3,10 @@ import datetime
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Cookie
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, List
 from src.exceptions import PermissionDenied
 from src.database import get_db
 from src.user.schemas import User
@@ -15,6 +16,7 @@ from src.tenant import models as tenant_models
 from src.folder import models as folder_models
 from src.device import models as device_models
 from src.tag import models as tag_models
+from src.tag import schemas as tag_schemas
 from src.folder.exceptions import FolderNotFound
 from src.device.exceptions import DeviceNotFound
 from src.auth import service, exceptions
@@ -165,15 +167,16 @@ async def has_access_to_folder(
         return user
 
 
-async def has_access_to_tag(
-    tag_name: str,
+async def has_access_to_tags(
+    tags: List[tag_schemas.Tag],
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
-):
+) -> Union[None, User]:
+
     tags = (
         db.query(tag_models.Tag)
-        .filter(tag_models.Tag.name.like(f"%{tag_name}%"))
-        .filter(await has_access_to_tenant(tag_models.Tag.tenant_id, db, user))
+        .filter(or_(tag_models.Tag.name.like(f"%{t.name}%") for t in tags))
+        .filter(or_(tag_models.Tag.tenant_id.in_(user.get_tenants_ids()), user.is_admin))
         .all()
     )
 

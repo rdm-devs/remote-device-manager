@@ -1,6 +1,6 @@
-from sqlalchemy import Select, select, insert, update, or_, and_
+from sqlalchemy import Select, select, insert, update, or_, and_, delete
 from sqlalchemy.orm import Session
-from typing import Union
+from typing import Union, List
 from src.auth.dependencies import (
     has_role,
     has_admin_role,
@@ -249,3 +249,15 @@ def delete_tag(db: Session, db_tag: schemas.Tag):
     db.delete(db_tag)
     db.commit()
     return db_tag.id
+
+
+def delete_tag_multi(db: Session, user: User, tag_ids: List[int]) -> List[int]:
+    result = db.execute(
+        delete(models.Tag).where(
+            models.Tag.id.in_(tag_ids), 
+            models.Tag.type == models.Type.USER_CREATED,
+            or_(models.Tag.created_by_id == user.id, user.is_admin)
+        )
+    )
+    db.commit()
+    return tag_ids, result.rowcount

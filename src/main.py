@@ -13,6 +13,7 @@ from .role.router import router as role_router
 from .tag.router import router as tag_router
 from .tenant.router import router as tenant_router
 from .user.router import router as user_router
+from src.auth.middleware import AuthUserRequestContextMiddleware
 
 
 load_dotenv()
@@ -39,6 +40,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuthUserRequestContextMiddleware)
 
 
 add_pagination(app)

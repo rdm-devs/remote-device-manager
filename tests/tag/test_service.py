@@ -17,12 +17,14 @@ from src.tag.service import (
     get_device_available_tags,
     delete_tag,
     update_tag,
+    delete_tag_multi,
 )
 from src.tag.schemas import (
     TagCreate,
     TagUpdate,
 )
 from src.user import models as user_models
+from src.user import service as user_service
 
 
 @pytest.mark.parametrize(
@@ -350,3 +352,27 @@ async def test_get_device_available_tags(
     available_tags_query = get_device_available_tags(session, device_id, tags)
     available_tags = session.scalars(available_tags_query).all()
     assert len(available_tags) == n_expected_items
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, n_expected_tags_deleted",
+    [
+        (1, 5),
+        (2, 0),
+        (3, 0),
+        (4, 0),
+    ],
+)
+async def test_delete_tag_multi(
+    session: Session, user_id: int, n_expected_tags_deleted: int
+) -> None:
+    user = user_service.get_user(session, user_id)
+    tags = await get_tags(session, user, user.id)
+    tag_ids = list(map(lambda t: t.id, tags))
+
+    deleted_tag_ids, deleted_rows = delete_tag_multi(
+        session, user=user, tag_ids=tag_ids
+    )
+    assert deleted_tag_ids == tag_ids
+    assert deleted_rows == n_expected_tags_deleted

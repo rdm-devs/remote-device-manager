@@ -4,12 +4,12 @@ from sqlalchemy.orm import Session
 # from fastapi_pagination import Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from src.utils import CustomBigPage
-from typing import Union, List
+from typing import Union, List, Dict, Any
 from src.auth.dependencies import (
     get_current_active_user,
     has_admin_role,
     has_admin_or_owner_role,
-    has_access_to_tag,
+    has_access_to_tags,
     has_access_to_user,
     has_access_to_user_id,
 )
@@ -27,6 +27,7 @@ def create_tag(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
+    #print(f"auth_user_ctx.get(): {auth_user_ctx.get()}")
     db_tag = service.create_tag(db, tag)
     return db_tag
 
@@ -83,7 +84,7 @@ def update_tag(
 
 
 @router.delete("/{tag_id}", response_model=schemas.TagDelete)
-def delete_device(
+def delete_tag(
     tag_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
@@ -95,4 +96,18 @@ def delete_device(
     return {
         "id": deleted_tag_id,
         "msg": f"Tag {deleted_tag_id} removed succesfully!",
+    }
+
+
+@router.post("/delete", response_model=Dict[Any, Any])
+def delete_tags(
+    tags: List[schemas.Tag],
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_tags),
+):
+    tag_ids = list(map(lambda t: t.id, tags))
+    deleted_tag_ids, deleted_rows = service.delete_tag_multi(db, user, tag_ids)
+    return {
+        "ids": deleted_tag_ids,
+        "msg": f"{deleted_rows} Tags {deleted_tag_ids} removed succesfully!",
     }
