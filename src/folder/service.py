@@ -86,17 +86,25 @@ def get_root_folder(db: Session, tenant_id: int):
 
 def create_folder(db: Session, folder: schemas.FolderCreate):
     # sanity check
-    check_tenant_exists(db, folder.tenant_id)
+    if folder.parent_id:
+        check_folder_exist(db, folder_id=folder.parent_id)
+        folder.tenant_id = get_folder(db, folder.parent_id).tenant_id
+    else:
+        check_tenant_exists(db, folder.tenant_id)
+        root_folder = get_root_folder(db, folder.tenant_id)
+        folder.parent_id = root_folder.id
+
+    # check_tenant_exists(db, folder.tenant_id)
     check_folder_name_taken(db, folder.name, folder.tenant_id)
 
     entity = create_entity_auto(db)
 
-    root_folder = get_root_folder(db, folder.tenant_id)
+    # root_folder = get_root_folder(db, folder.tenant_id)
 
-    if folder.parent_id:
-        check_folder_exist(db, folder_id=folder.parent_id)
-    else:
-        folder.parent_id = root_folder.id
+    # if folder.parent_id:
+    #    check_folder_exist(db, folder_id=folder.parent_id)
+    # else:
+    #    folder.parent_id = root_folder.id
 
     folder = models.Folder(**folder.model_dump(), entity_id=entity.id)
     db.add(folder)
@@ -104,14 +112,16 @@ def create_folder(db: Session, folder: schemas.FolderCreate):
 
     formatted_name = folder.tenant.name.lower().replace(" ", "-")
     formatted_name += f"-{folder.name.lower().replace(' ', '-')}"
-    folder.add_tag(create_tag(
-        db,
-        TagAdminCreate(
-            name=f"folder-{formatted_name}-tag",
-            tenant_id=folder.tenant_id,
-            type=Type.FOLDER,
-        ),
-    ))
+    folder.add_tag(
+        create_tag(
+            db,
+            TagAdminCreate(
+                name=f"folder-{formatted_name}-tag",
+                tenant_id=folder.tenant_id,
+                type=Type.FOLDER,
+            ),
+        )
+    )
 
     db.commit()
     db.refresh(folder)
