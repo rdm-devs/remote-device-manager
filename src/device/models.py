@@ -8,7 +8,7 @@ from ..audit_mixin import AuditMixin
 from ..folder.models import Folder
 from ..entity.models import Entity
 
-class Device(Base, AuditMixin):
+class Device(AuditMixin, Base):
     __tablename__ = "device"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

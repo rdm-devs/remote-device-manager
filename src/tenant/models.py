@@ -17,7 +17,7 @@ tenants_and_users_table = Table(
 )
 
 
-class Tenant(Base, AuditMixin):
+class Tenant(AuditMixin, Base):
     __tablename__ = "tenant"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

@@ -4,7 +4,7 @@ from src.database import Base
 from src.audit_mixin import AuditMixin
 
 
-class Role(Base, AuditMixin):
+class Role(AuditMixin, Base):
     __tablename__ = "role"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

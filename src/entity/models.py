@@ -5,7 +5,7 @@ from ..audit_mixin import AuditMixin
 from ..tag.models import entities_and_tags_table
 
 
-class Entity(Base, AuditMixin):
+class Entity(AuditMixin, Base):
     __tablename__ = "entity"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

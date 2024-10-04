@@ -5,7 +5,7 @@ from ..database import Base
 from ..audit_mixin import AuditMixin
 
 
-class AuthRefreshToken(Base, AuditMixin):
+class AuthRefreshToken(AuditMixin, Base):
     __tablename__ = "auth_refresh_tokens"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

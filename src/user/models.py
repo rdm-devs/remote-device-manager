@@ -10,7 +10,7 @@ from ..role.models import Role
 from ..tenant.models import tenants_and_users_table
 
 
-class User(Base, AuditMixin):
+class User(AuditMixin, Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)

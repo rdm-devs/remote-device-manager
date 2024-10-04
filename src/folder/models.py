@@ -6,7 +6,7 @@ from typing import Optional, List
 from ..database import Base
 from ..audit_mixin import AuditMixin
 
-class Folder(Base, AuditMixin):
+class Folder(AuditMixin, Base):
     __tablename__ = "folder"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
