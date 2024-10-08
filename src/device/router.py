@@ -1,5 +1,6 @@
 import os
 from fastapi import Depends, APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from fastapi_pagination.ext.sqlalchemy import paginate
 from typing import List
@@ -35,10 +36,10 @@ def register_device(
 @router.get("/shared")
 def connect_to_shared_device(id: str, db: Session = Depends(get_db)):
     redirect_url = service.verify_share_url(db, id)
-    return redirect_url
+    return RedirectResponse(redirect_url)
 
 
-@router.get("/{device_id}", response_model=schemas.Device)
+@router.get("/{device_id:int}", response_model=schemas.Device)
 def read_device(
     device_id: int,
     db: Session = Depends(get_db),
