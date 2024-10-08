@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime, timedelta, UTC
 from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError
 from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -177,9 +178,12 @@ def share_device(
 
 def verify_share_url(db: Session, token: str) -> str:
     # decoding data to obtain shared device metadata
-    shared_device_metadata = jwt.decode(
-        token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
-    )
+    try:
+        shared_device_metadata = jwt.decode(
+            token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
+        )
+    except ExpiredSignatureError as e:
+        raise exceptions.ExpiredShareDeviceURL()
 
     # checking that the device share_url is not null
     device = db.scalars(
