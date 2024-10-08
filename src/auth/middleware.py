@@ -8,8 +8,11 @@ from src.audit_mixin import _auth_user_ctx
 
 class AuthUserRequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        if "authorization" in request.headers.keys():
-            token = request.headers["authorization"].replace("Bearer ","")
+        if (
+            "authorization" in request.headers.keys()
+            and "Bearer" in request.headers["authorization"]
+        ):
+            token = request.headers["authorization"].replace("Bearer ", "")
             user = await get_current_user(token, next(get_db()))
             _auth_user_ctx.set(user.id)
         response = await call_next(request)
