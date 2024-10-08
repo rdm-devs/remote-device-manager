@@ -16,3 +16,7 @@ class DeviceCredentialsNotConfigured(BadRequest):
 
 class ExpiredShareDeviceURL(BadRequest):
     DETAIL = ErrorCode.EXPIRED_SHARE_URL
+
+
+class InvalidExpirationHours(BadRequest):
+    DETAIL = ErrorCode.INVALID_EXPIRATION_HOURS

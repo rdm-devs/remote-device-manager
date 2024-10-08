@@ -5,3 +5,4 @@ class ErrorCode:
         "Device's remote management credentials are invalid."
     )
     EXPIRED_SHARE_URL = "The URL provided has expired!"
+    INVALID_EXPIRATION_HOURS = "Expiration hours should be a positive value."

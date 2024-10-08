@@ -154,6 +154,8 @@ def share_device(
 ) -> schemas.ShareDeviceURL:
     # extracting expiration_hours from share_params
     expiration_hours = share_params.expiration_hours
+    if expiration_hours <= 0:
+        raise exceptions.InvalidExpirationHours()
 
     # creating share_url with the corresponding response schema
     share_url, expiration_dt = create_share_url(user_id, device_id, expiration_hours)
