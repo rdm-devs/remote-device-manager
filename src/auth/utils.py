@@ -78,7 +78,7 @@ def get_refresh_token_settings(
         "httponly": True,
         "samesite": "none",
         "secure": os.getenv("SECURE_COOKIES"),
-        "domain": os.getenv("SITE_DOMAIN"),
+        "domain": os.getenv(f"API_SITE_DOMAIN_{os.getenv("ENV")}"),
     }
     if expired:
         return base_cookie
