@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from src.tag.schemas import Tag
 
+
 class DeviceBase(BaseModel):
     name: str
     ip_address: str
@@ -31,6 +32,8 @@ class Device(DeviceCreate):
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()
     tags: List[Tag] = []
+    share_url: Optional[str] = None
+    share_url_expires_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True, "extra": "ignore"}
 
@@ -41,6 +44,8 @@ class DeviceList(BaseModel):
     name: str
     is_online: bool
     heartbeat_timestamp: datetime = datetime.now()
+    share_url: Optional[str] = None
+    share_url_expires_at: Optional[datetime] = None
 
 
 class DeviceUpdate(DeviceCreate):
@@ -56,12 +61,16 @@ class DeviceUpdate(DeviceCreate):
     vendor_cores: Optional[int] = None
     vendor_ram_gb: Optional[int] = None
     tags: Optional[List[Tag]] = []
+    share_url: Optional[str] = None
+    share_url_expires_at: Optional[datetime] = None
+
     model_config = {"extra": "ignore"}
 
 
 class DeviceDelete(BaseModel):
     id: int
     msg: str
+
 
 class HeartBeat(BaseModel):
     id_rust: Optional[str] = None
@@ -73,3 +82,11 @@ class HeartBeat(BaseModel):
 class HeartBeatResponse(BaseModel):
     device_id: int
     timestamp: datetime
+
+
+class ShareParams(BaseModel):
+    expiration_hours: int
+
+
+class ShareDeviceURL(BaseModel):
+    url: str
