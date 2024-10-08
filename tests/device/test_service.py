@@ -2,7 +2,12 @@ from pydantic import ValidationError
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from src.device.exceptions import DeviceNameTaken, DeviceNotFound
+from src.device.exceptions import (
+    DeviceNameTaken,
+    DeviceNotFound,
+    InvalidExpirationHours,
+    ExpiredShareDeviceURL
+)
 from src.folder.exceptions import FolderNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
 from src.device.service import (
@@ -12,8 +17,11 @@ from src.device.service import (
     get_devices,
     delete_device,
     update_device,
+    share_device,
+    verify_share_url,
+    create_share_url,
 )
-from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate
+from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate, ShareParams
 from src.tenant.service import get_tenant
 from src.tag.models import entities_and_tags_table
 
@@ -269,3 +277,35 @@ def test_delete_device_with_invalid_id(
     db_device.id = 5
     with pytest.raises(DeviceNotFound):
         deleted_device_id = delete_device(session, db_device=db_device)
+
+
+def test_share_device(session: Session) -> None:
+    share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=1))
+    assert share_device_url.url is not None
+
+
+def test_share_device_with_invalid_expiration_hours(session: Session) -> None:
+    with pytest.raises(InvalidExpirationHours):
+        share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=0))
+
+    with pytest.raises(InvalidExpirationHours):
+        share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=-1))
+
+
+def test_share_device_with_invalid_device_id(session: Session) -> None:
+    with pytest.raises(DeviceNotFound):
+        share_device_url = share_device(session, 1, -1, ShareParams(expiration_hours=1))
+
+
+def test_verify_share_url(session: Session) -> None:
+    share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=1))
+    valid_url = share_device_url.url
+    assert valid_url is not None
+
+    redirect_url = verify_share_url(session, valid_url.split("id=")[1])
+    assert "id" in redirect_url and "otp" in redirect_url
+
+def test_verify_share_url_has_expired(session: Session) -> None:
+    expired_url, _ = create_share_url(device_id=1, user_id=1, expiration_hours=-1) # negative timedelta makes it expired
+    with pytest.raises(ExpiredShareDeviceURL):
+        _ = verify_share_url(session, expired_url.url.split("id=")[1])

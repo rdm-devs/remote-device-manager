@@ -708,3 +708,39 @@ async def test_send_token_to_rustdesk(
     # attempting to get token using invalid device id and valid otp
     response = client.get(f"/auth/device/{invalid_device_id}/connect/{otp}")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth_user_id, device_id, expected_status_code",
+    [
+        (1, 1, status.HTTP_200_OK),
+        (1, 2, status.HTTP_200_OK),
+        (1, 3, status.HTTP_200_OK),
+        (1, 4, status.HTTP_404_NOT_FOUND),
+        (2, 1, status.HTTP_200_OK),
+        (2, 2, status.HTTP_200_OK),
+        (2, 3, status.HTTP_403_FORBIDDEN),
+        (3, 1, status.HTTP_403_FORBIDDEN),
+        (3, 2, status.HTTP_403_FORBIDDEN),
+        (3, 3, status.HTTP_200_OK),
+    ],
+)
+async def test_share_device(
+    client: TestClient,
+    session: Session,
+    auth_user_id: int,
+    device_id: int,
+    expected_status_code: int,
+) -> None:
+    auth_tokens = await get_auth_tokens_with_user_id(session, auth_user_id)
+    access_tokens = auth_tokens["access_token"]
+
+    response = client.post(
+        f"/devices/{device_id}/share",
+        headers={"Authorization": f"Bearer {access_tokens}"},
+        json={"expiration_hours": 1}
+    )
+
+    data = response.json()
+    assert response.status_code == expected_status_code

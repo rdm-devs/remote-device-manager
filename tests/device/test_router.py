@@ -280,3 +280,26 @@ def test_update_device_heartbeat(
         result = response.json()
         assert result["id_rust"] == body["id_rust"]
         assert result["pass_rust"] == body["pass_rust"]
+
+
+@pytest.mark.parametrize(
+    "device_id, body, expected_status_code",
+    [
+        (1, {"expiration_hours": 1}, status.HTTP_200_OK),
+        (1, {"expiration_hours": 0}, status.HTTP_400_BAD_REQUEST),
+        (1, {"expiration_hours": -1}, status.HTTP_400_BAD_REQUEST),
+        (1, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
+    ],
+)
+def test_share_device(
+    device_id: int,
+    body: dict,
+    expected_status_code: int,
+    session: Session,
+    client_authenticated: TestClient,
+):
+    response = client_authenticated.post(f"/devices/{device_id}/share", json=body)
+    share_data = response.json()
+    assert response.status_code == expected_status_code
+    if response.status_code == status.HTTP_200_OK:
+        assert "url" in share_data
