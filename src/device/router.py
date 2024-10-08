@@ -32,6 +32,12 @@ def register_device(
     return db_device
 
 
+@router.get("/shared")
+def connect_to_shared_device(id: str, db: Session = Depends(get_db)):
+    redirect_url = service.verify_share_url(db, id)
+    return redirect_url
+
+
 @router.get("/{device_id}", response_model=schemas.Device)
 def read_device(
     device_id: int,
@@ -45,7 +51,7 @@ def read_device(
 @tenant_router.get(
     "/{tenant_id}/devices", response_model=CustomBigPage[schemas.DeviceList]
 )
-def read_devices(
+def read_devices_from_tenant(
     tenant_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
@@ -72,7 +78,6 @@ def update_device(
     updated_device = service.update_device(db, db_device, updated_device=device)
 
     return updated_device
-
 
 
 @router.delete("/{device_id}", response_model=schemas.DeviceDelete)
@@ -109,3 +114,13 @@ def update_heartbeat(
     device_status = service.update_device_heartbeat(db, device_id, heartbeat)
     return device_status
 
+
+@router.post("/{device_id}/share", response_model=schemas.ShareDeviceURL)
+def share_device(
+    device_id: int,
+    share_params: schemas.ShareParams,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_device),
+):
+    share_url = service.share_device(db, user.id, device_id, share_params)
+    return share_url
