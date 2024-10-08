@@ -158,11 +158,14 @@ def share_device(
     if expiration_hours <= 0:
         raise exceptions.InvalidExpirationHours()
 
-    # creating share_url with the corresponding response schema
-    share_url, expiration_dt = create_share_url(user_id, device_id, expiration_hours)
 
     # updating device attributes (share_url + share exp time)
     device = get_device(db, device_id)
+    if not device.id_rust or not device.pass_rust:
+        raise exceptions.DeviceCredentialsNotConfigured() 
+
+    # creating share_url with the corresponding response schema
+    share_url, expiration_dt = create_share_url(user_id, device_id, expiration_hours)
     device = update_device(
         db,
         device,
