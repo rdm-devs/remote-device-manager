@@ -37,6 +37,8 @@ class Device(AuditMixin, Base):
     vendor_model: Mapped[str] = mapped_column(String(255))
     vendor_cores: Mapped[int] = mapped_column()
     vendor_ram_gb: Mapped[int] = mapped_column()
+    share_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    share_url_expires_at: Mapped[datetime] = mapped_column(nullable=True)
 
     @property
     def tags(self):
