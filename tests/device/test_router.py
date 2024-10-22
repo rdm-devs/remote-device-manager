@@ -283,9 +283,9 @@ def test_update_device_heartbeat(
 @pytest.mark.parametrize(
     "device_id, body, expected_status_code",
     [
-        (1, {"expiration_hours": 1}, status.HTTP_200_OK),
-        (1, {"expiration_hours": 0}, status.HTTP_200_OK),
-        (1, {"expiration_hours": -1}, status.HTTP_400_BAD_REQUEST),
+        (1, {"expiration_minutes": 1}, status.HTTP_200_OK),
+        (1, {"expiration_minutes": 0}, status.HTTP_200_OK),
+        (1, {"expiration_minutes": -1}, status.HTTP_400_BAD_REQUEST),
         (1, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )

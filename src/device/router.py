@@ -39,6 +39,16 @@ def connect_to_shared_device(id: str, db: Session = Depends(get_db)):
     return RedirectResponse(redirect_url)
 
 
+# TODO: remove
+# @router.get("/verify-url")
+# def connect_to_shared_device(url: str, db: Session = Depends(get_db)):
+#     try:
+#         redirect_url = service.verify_share_url(db, url.split("?id=")[1])
+#         return True if redirect_url else False
+#     except:
+#         return False
+
+
 @router.get("/{device_id:int}", response_model=schemas.Device)
 def read_device(
     device_id: int,
@@ -106,6 +116,7 @@ async def connect(
     url = create_connection_url(db, device_id, otp)
     return {"url": url}
 
+
 @router.post("/{device_id}/heartbeat", response_model=schemas.HeartBeatResponse)
 def update_heartbeat(
     device_id: int,
@@ -125,3 +136,12 @@ def share_device(
 ):
     share_url = service.share_device(db, user.id, device_id, share_params)
     return share_url
+
+
+@router.get("/{device_id:int}/revoke-share-url", response_model=schemas.Device)
+def revoke_share_url(
+    device_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_device),
+):
+    return service.revoke_share_url(db, device_id)

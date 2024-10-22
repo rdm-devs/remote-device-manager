@@ -18,5 +18,5 @@ class ExpiredShareDeviceURL(BadRequest):
     DETAIL = ErrorCode.EXPIRED_SHARE_URL
 
 
-class InvalidExpirationHours(BadRequest):
-    DETAIL = ErrorCode.INVALID_EXPIRATION_HOURS
+class InvalidExpirationMinutes(BadRequest):
+    DETAIL = ErrorCode.INVALID_EXPIRATION_MINUTES

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from src.device.exceptions import (
     DeviceNameTaken,
     DeviceNotFound,
-    InvalidExpirationHours,
+    InvalidExpirationMinutes,
     ExpiredShareDeviceURL,
 )
 from src.folder.exceptions import FolderNotFound
@@ -287,22 +287,22 @@ def test_delete_device_with_invalid_id(
 
 
 def test_share_device(session: Session) -> None:
-    share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=1))
+    share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
     assert share_device_url.url is not None
 
 
-def test_share_device_with_invalid_expiration_hours(session: Session) -> None:
-    with pytest.raises(InvalidExpirationHours):
-        share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=-1))
+def test_share_device_with_invalid_expiration_minutes(session: Session) -> None:
+    with pytest.raises(InvalidExpirationMinutes):
+        share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=-1))
 
 
 def test_share_device_with_invalid_device_id(session: Session) -> None:
     with pytest.raises(DeviceNotFound):
-        share_device_url = share_device(session, 1, -1, ShareParams(expiration_hours=1))
+        share_device_url = share_device(session, 1, -1, ShareParams(expiration_minutes=1))
 
 
 def test_verify_share_url(session: Session) -> None:
-    share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=1))
+    share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
     valid_url = share_device_url.url
     assert valid_url is not None
 
@@ -312,7 +312,7 @@ def test_verify_share_url(session: Session) -> None:
 
 def test_verify_share_url_has_expired(session: Session) -> None:
     expired_url, _ = create_share_url(
-        device_id=1, user_id=1, expiration_hours=-1
+        device_id=1, user_id=1, expiration_minutes=-1
     )  # negative timedelta makes it expired
     with pytest.raises(ExpiredShareDeviceURL):
         _ = verify_share_url(session, expired_url.url.split("id=")[1])

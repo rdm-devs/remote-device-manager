@@ -134,14 +134,14 @@ def delete_device(db: Session, db_device: schemas.Device):
 
 
 def create_share_url(
-    user_id: int, device_id: int, expiration_hours: int
+    user_id: int, device_id: int, expiration_minutes: int
 ) -> tuple[schemas.ShareDeviceURL, datetime]:
-    expiration_hours = (
-        expiration_hours * int(os.getenv("SHARE_URL_MAX_DURATION_HOURS"))
-        if expiration_hours == 0
-        else expiration_hours
+    expiration_minutes = (
+        int(os.getenv("SHARE_URL_MAX_DURATION_MINUTES"))
+        if expiration_minutes == 0
+        else expiration_minutes
     )
-    expiration_dt = datetime.now(UTC) + timedelta(hours=expiration_hours)
+    expiration_dt = datetime.now(UTC) + timedelta(minutes=expiration_minutes)
     to_encode = {
         "user_id": user_id,
         "device_id": device_id,
@@ -158,10 +158,10 @@ def create_share_url(
 def share_device(
     db: Session, user_id: int, device_id: int, share_params: schemas.ShareParams
 ) -> schemas.ShareDeviceURL:
-    # extracting expiration_hours from share_params
-    expiration_hours = share_params.expiration_hours
-    if expiration_hours < 0:
-        raise exceptions.InvalidExpirationHours()
+    # extracting expiration_minutes from share_params
+    expiration_minutes = share_params.expiration_minutes
+    if expiration_minutes < 0:
+        raise exceptions.InvalidExpirationMinutes()
 
 
     # updating device attributes (share_url + share exp time)
@@ -170,7 +170,7 @@ def share_device(
         raise exceptions.DeviceCredentialsNotConfigured() 
 
     # creating share_url with the corresponding response schema
-    share_url, expiration_dt = create_share_url(user_id, device_id, expiration_hours)
+    share_url, expiration_dt = create_share_url(user_id, device_id, expiration_minutes)
     device = update_device(
         db,
         device,
@@ -198,6 +198,7 @@ def verify_share_url(db: Session, token: str) -> str:
         select(models.Device)
         .where(models.Device.id == shared_device_metadata["device_id"])
         .where(models.Device.share_url.is_not(None))
+        .where(models.Device.share_url.contains(token))
     ).first()
 
     if not device:
@@ -211,3 +212,18 @@ def verify_share_url(db: Session, token: str) -> str:
     otp = create_otp()
     redirect_url = create_connection_url(db, device.id, otp)
     return redirect_url
+
+
+def revoke_share_url(db: Session, device_id: int) -> schemas.Device:
+    device = get_device(db, device_id)
+    device = update_device(
+        db,
+        device,
+        schemas.DeviceUpdate(
+            share_url=None,
+            share_url_expires_at=None,
+            tags=device.tags,
+        ),
+    )
+
+    return device

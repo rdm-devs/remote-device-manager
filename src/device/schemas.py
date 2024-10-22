@@ -87,7 +87,7 @@ class HeartBeatResponse(BaseModel):
 
 
 class ShareParams(BaseModel):
-    expiration_hours: int
+    expiration_minutes: int
 
 
 class ShareDeviceURL(BaseModel):

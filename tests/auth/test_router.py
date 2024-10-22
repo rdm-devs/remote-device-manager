@@ -715,15 +715,15 @@ async def test_send_token_to_rustdesk(
     "auth_user_id, device_id, expected_status_code",
     [
         (1, 1, status.HTTP_200_OK),
-        (1, 2, status.HTTP_200_OK),
-        (1, 3, status.HTTP_200_OK),
+        (1, 2, status.HTTP_400_BAD_REQUEST), #dev2 doesn't have rust credentials set
+        (1, 3, status.HTTP_400_BAD_REQUEST), #dev3 doesn't have rust credentials set
         (1, 4, status.HTTP_404_NOT_FOUND),
         (2, 1, status.HTTP_200_OK),
-        (2, 2, status.HTTP_200_OK),
+        (2, 2, status.HTTP_400_BAD_REQUEST), #dev2 doesn't have rust credentials set
         (2, 3, status.HTTP_403_FORBIDDEN),
         (3, 1, status.HTTP_403_FORBIDDEN),
         (3, 2, status.HTTP_403_FORBIDDEN),
-        (3, 3, status.HTTP_200_OK),
+        (3, 3, status.HTTP_400_BAD_REQUEST), #dev3 doesn't have rust credentials set
     ],
 )
 async def test_share_device(
@@ -739,10 +739,12 @@ async def test_share_device(
     response = client.post(
         f"/devices/{device_id}/share",
         headers={"Authorization": f"Bearer {access_tokens}"},
-        json={"expiration_hours": 1}
+        json={"expiration_minutes": 1}
     )
 
     data = response.json()
+    if "detail" in data:
+        print(data["detail"])
     assert response.status_code == expected_status_code
 
 
