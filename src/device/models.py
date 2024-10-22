@@ -39,6 +39,7 @@ class Device(AuditMixin, Base):
     vendor_ram_gb: Mapped[int] = mapped_column()
     share_url: Mapped[str] = mapped_column(String(255), nullable=True)
     share_url_expires_at: Mapped[datetime] = mapped_column(nullable=True)
+    serialno: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
 
     @property
     def tags(self):

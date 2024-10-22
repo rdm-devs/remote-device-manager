@@ -11,6 +11,7 @@ class DeviceBase(BaseModel):
     id_rust: Optional[str] = None
     pass_rust: Optional[str] = None
     last_screenshot_path: Optional[str] = None
+    serialno: Optional[str] = None
 
 
 class DeviceCreate(DeviceBase):
@@ -46,6 +47,7 @@ class DeviceList(BaseModel):
     heartbeat_timestamp: datetime = datetime.now()
     share_url: Optional[str] = None
     share_url_expires_at: Optional[datetime] = None
+    serialno: Optional[str] = None
 
 
 class DeviceUpdate(DeviceCreate):

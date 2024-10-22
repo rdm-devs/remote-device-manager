@@ -136,6 +136,11 @@ def delete_device(db: Session, db_device: schemas.Device):
 def create_share_url(
     user_id: int, device_id: int, expiration_hours: int
 ) -> tuple[schemas.ShareDeviceURL, datetime]:
+    expiration_hours = (
+        expiration_hours * int(os.getenv("SHARE_URL_MAX_DURATION_HOURS"))
+        if expiration_hours == 0
+        else expiration_hours
+    )
     expiration_dt = datetime.now(UTC) + timedelta(hours=expiration_hours)
     to_encode = {
         "user_id": user_id,
@@ -155,7 +160,7 @@ def share_device(
 ) -> schemas.ShareDeviceURL:
     # extracting expiration_hours from share_params
     expiration_hours = share_params.expiration_hours
-    if expiration_hours <= 0:
+    if expiration_hours < 0:
         raise exceptions.InvalidExpirationHours()
 
 
