@@ -1,7 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
 from src.user.schemas import User
-
+from src.device.schemas import Device
 
 class Token(BaseModel):
     access_token: str
@@ -22,3 +22,7 @@ class ConnectionToken(BaseModel):
 
 class ConnectionUrl(BaseModel):
     url: HttpUrl
+
+class LoginData(BaseModel):
+    token: Token
+    device: Optional[Device]
