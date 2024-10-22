@@ -744,3 +744,35 @@ async def test_share_device(
 
     data = response.json()
     assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "serialno, expected_device_id, expected_status_code",
+    [
+        ("DeviceSerialno0001", 1, status.HTTP_200_OK),
+        ("DeviceSerialno0002", 2, status.HTTP_200_OK),
+        ("DeviceSerialno0003", 3, status.HTTP_200_OK),
+        ("DeviceSerialno0004", 4, status.HTTP_200_OK),
+        (None, None, status.HTTP_200_OK),
+        (0, None, status.HTTP_200_OK),
+    ],
+)
+def test_login_with_device_serialno(
+    session: Session,
+    client: TestClient,
+    serialno: str,
+    expected_device_id: int,
+    expected_status_code: int,
+) -> None:
+    response = client.post(
+        "/auth/token",
+        data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_", "serialno": serialno},
+    )
+    assert response.status_code == expected_status_code, response.text
+    data = response.json()
+    device = data["device"]
+
+    if device:
+        assert device.id == expected_device_id
+    else:
+        assert device == None 

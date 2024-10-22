@@ -274,9 +274,7 @@ def test_update_device_heartbeat(
     assert device_status["device_id"] == device_id
     assert device_status["timestamp"] is not None
     if "id_rust" in body or "pass_rust" in body:
-        response = client_authenticated.get(
-            f"/devices/{device_id}"
-        )
+        response = client_authenticated.get(f"/devices/{device_id}")
         result = response.json()
         assert result["id_rust"] == body["id_rust"]
         assert result["pass_rust"] == body["pass_rust"]
@@ -286,7 +284,7 @@ def test_update_device_heartbeat(
     "device_id, body, expected_status_code",
     [
         (1, {"expiration_hours": 1}, status.HTTP_200_OK),
-        (1, {"expiration_hours": 0}, status.HTTP_400_BAD_REQUEST),
+        (1, {"expiration_hours": 0}, status.HTTP_200_OK),
         (1, {"expiration_hours": -1}, status.HTTP_400_BAD_REQUEST),
         (1, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],

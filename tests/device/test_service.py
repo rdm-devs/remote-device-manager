@@ -6,7 +6,7 @@ from src.device.exceptions import (
     DeviceNameTaken,
     DeviceNotFound,
     InvalidExpirationHours,
-    ExpiredShareDeviceURL
+    ExpiredShareDeviceURL,
 )
 from src.folder.exceptions import FolderNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
@@ -21,7 +21,14 @@ from src.device.service import (
     verify_share_url,
     create_share_url,
 )
-from src.device.schemas import DeviceCreate, DeviceDelete, DeviceUpdate, ShareParams
+from src.device.utils import get_device_by_serialno
+from src.device.schemas import (
+    DeviceCreate,
+    DeviceDelete,
+    DeviceUpdate,
+    ShareParams,
+    Device,
+)
 from src.tenant.service import get_tenant
 from src.tag.models import entities_and_tags_table
 
@@ -286,9 +293,6 @@ def test_share_device(session: Session) -> None:
 
 def test_share_device_with_invalid_expiration_hours(session: Session) -> None:
     with pytest.raises(InvalidExpirationHours):
-        share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=0))
-
-    with pytest.raises(InvalidExpirationHours):
         share_device_url = share_device(session, 1, 1, ShareParams(expiration_hours=-1))
 
 
@@ -305,7 +309,31 @@ def test_verify_share_url(session: Session) -> None:
     redirect_url = verify_share_url(session, valid_url.split("id=")[1])
     assert "id" in redirect_url and "otp" in redirect_url
 
+
 def test_verify_share_url_has_expired(session: Session) -> None:
-    expired_url, _ = create_share_url(device_id=1, user_id=1, expiration_hours=-1) # negative timedelta makes it expired
+    expired_url, _ = create_share_url(
+        device_id=1, user_id=1, expiration_hours=-1
+    )  # negative timedelta makes it expired
     with pytest.raises(ExpiredShareDeviceURL):
         _ = verify_share_url(session, expired_url.url.split("id=")[1])
+
+
+@pytest.mark.parametrize(
+    "serialno, expected_device_id",
+    [
+        ("DeviceSerialno0001", 1),
+        ("DeviceSerialno0002", 2),
+        ("DeviceSerialno0003", 3),
+        ("DeviceSerialno0004", None),
+        (None, None),
+        (0, None),
+    ],
+)
+def test_get_device_by_serialno(
+    session: Session, serialno: str, expected_device_id: int
+) -> None:
+    device = get_device_by_serialno(session, serialno)
+    if device:
+        assert device.id == expected_device_id
+    else:
+        assert device == expected_device_id

@@ -115,6 +115,7 @@ def session(
             ip_address="96.119.132.44",
             id_rust="myRustDeskId",
             pass_rust="myRustDeskPass",
+            serialno="DeviceSerialno0001",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -127,6 +128,7 @@ def session(
             folder_id=folder_2.id,
             mac_address="61:68:0C:1E:93:9F",
             ip_address="96.119.132.45",
+            serialno="DeviceSerialno0002",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -139,6 +141,7 @@ def session(
             folder_id=folder_3.id,
             mac_address="61:68:00:1F:95:AA",
             ip_address="96.119.132.46",
+            serialno="DeviceSerialno0003",
             **mock_os_data,
             **mock_vendor_data
         ),
