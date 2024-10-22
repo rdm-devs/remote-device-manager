@@ -24,5 +24,6 @@ class ConnectionUrl(BaseModel):
     url: HttpUrl
 
 class LoginData(BaseModel):
-    token: Token
+    access_token: str
+    refresh_token: str
     device: Optional[Device]

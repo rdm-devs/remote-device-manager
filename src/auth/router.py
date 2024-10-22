@@ -38,12 +38,12 @@ async def login(
     user = authenticate_user(form_data.username, form_data.password, db)
     refresh_token_value = await service.create_refresh_token(db, user.id)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
-
-    token = Token(
-        access_token=create_access_token(user), refresh_token=refresh_token_value
-    )
     device = get_device_by_serialno(db, serialno)
-    return LoginData(token=token, device=device)
+    return LoginData(
+        access_token=create_access_token(user),
+        refresh_token=refresh_token_value,
+        device=device,
+    )
 
 
 @router.put("/token", response_model=Token)
