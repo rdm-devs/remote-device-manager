@@ -34,15 +34,6 @@ def get_device(db: Session, device_id: int) -> models.Device:
     return device
 
 
-# TODO: marking this function for deletion. check is not used anywhere first.
-def get_devices_from_tenant(db: Session, tenant_id: int):
-    return (
-        db.query(models.Device)
-        .filter(folder_models.Folder.id == models.Device.folder_id)
-        .filter(folder_models.Folder.tenant_id == tenant_id)
-    )
-
-
 def expire_invalid_share_urls(db: Session) -> None:
     db.execute(
         update(models.Device)
@@ -163,11 +154,10 @@ def share_device(
     if expiration_minutes < 0:
         raise exceptions.InvalidExpirationMinutes()
 
-
     # updating device attributes (share_url + share exp time)
     device = get_device(db, device_id)
     if not device.id_rust or not device.pass_rust:
-        raise exceptions.DeviceCredentialsNotConfigured() 
+        raise exceptions.DeviceCredentialsNotConfigured()
 
     # creating share_url with the corresponding response schema
     share_url, expiration_dt = create_share_url(user_id, device_id, expiration_minutes)

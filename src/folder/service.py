@@ -21,6 +21,7 @@ from src.user.models import User
 from src.user.exceptions import UserTenantNotAssigned
 from src.user.service import get_user
 from src.device.models import Device
+from src.device.utils import reset_devices_folder_id
 
 
 def check_folder_exist(db: Session, folder_id: int):
@@ -255,6 +256,10 @@ def delete_folder(db: Session, db_folder: schemas.Folder):
     check_folder_exist(db, db_folder.id)
     tag_ids = [t.id for t in db_folder.tags if t.type == Type.FOLDER]
     delete_entity_tags(db, db_folder.entity, tag_ids)
+
+    # assigning devices to root_folder from tenant1
+    tenant1_root_folder = get_root_folder(db, tenant_id=1)
+    reset_devices_folder_id(db, db_folder.id, tenant1_root_folder.id)
 
     db.delete(db_folder.entity) # db_folder debiera eliminarse por cascada al eliminar su entity
     db.commit()

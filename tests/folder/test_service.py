@@ -16,7 +16,8 @@ from src.folder.service import (
     get_folders,
     delete_folder,
     update_folder,
-    create_root_folder
+    create_root_folder,
+    get_root_folder,
 )
 from src.folder.schemas import (
     FolderCreate,
@@ -234,3 +235,20 @@ def test_delete_folder_with_invalid_id(session: Session) -> None:
     db_folder.id = 16  # this id must not exist
     with pytest.raises(FolderNotFound):
         delete_folder(session, db_folder=db_folder)
+
+
+def test_delete_folder_and_reset_devices_folder_id(session: Session) -> None:
+    folder = get_folder(session, folder_id=1)
+    tenant1_root_folder = get_root_folder(session, tenant_id=1)
+    devices = folder.devices
+
+    deleted_folder_id = delete_folder(session, db_folder=folder)
+    assert deleted_folder_id == folder.id
+
+    post_delete_devices_folder_id = [d.folder_id for d in devices]
+    assert all(
+        [
+            folder_id == tenant1_root_folder.id
+            for folder_id in post_delete_devices_folder_id
+        ]
+    )
