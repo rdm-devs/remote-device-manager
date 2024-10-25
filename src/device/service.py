@@ -31,7 +31,7 @@ def expire_invalid_share_urls(db: Session, device_id: Union[int, None]) -> None:
     update_stmt = (
         update(models.Device)
         .where(models.Device.share_url.is_not(None))
-        .where(models.Device.share_url_expires_at < datetime.now(UTC))
+        .where(models.Device.share_url_expires_at < datetime.now())
     )
     if device_id:
         update_stmt = update_stmt.where(models.Device.id == device_id)
