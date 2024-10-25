@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timedelta, UTC
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
-from typing import Optional
+from typing import Optional, Union
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from src.auth.utils import create_otp, create_connection_url
@@ -27,20 +27,24 @@ def check_device_name_taken(
             raise exceptions.DeviceNameTaken()
 
 
+def expire_invalid_share_urls(db: Session, device_id: Union[int, None]) -> None:
+    update_stmt = (
+        update(models.Device)
+        .where(models.Device.share_url.is_not(None))
+        .where(models.Device.share_url_expires_at < datetime.now(UTC))
+    )
+    if device_id:
+        update_stmt = update_stmt.where(models.Device.id == device_id)
+
+    db.execute(update_stmt.values(share_url=None, share_url_expires_at=None))
+
+
 def get_device(db: Session, device_id: int) -> models.Device:
+    expire_invalid_share_urls(db, device_id=device_id)
     device = db.query(models.Device).filter(models.Device.id == device_id).first()
     if not device:
         raise exceptions.DeviceNotFound()
     return device
-
-
-def expire_invalid_share_urls(db: Session) -> None:
-    db.execute(
-        update(models.Device)
-        .where(models.Device.share_url.is_not(None))
-        .where(models.Device.share_url_expires_at < datetime.now(UTC))
-        .values(share_url=None, share_url_expires_at=None)
-    )
 
 
 def get_devices(db: Session, user_id: int):
