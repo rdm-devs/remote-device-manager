@@ -27,7 +27,7 @@ def check_device_name_taken(
             raise exceptions.DeviceNameTaken()
 
 
-def expire_invalid_share_urls(db: Session, device_id: Union[int, None]) -> None:
+def expire_invalid_share_urls(db: Session, device_id: Union[int, None] = None) -> None:
     update_stmt = (
         update(models.Device)
         .where(models.Device.share_url.is_not(None))
