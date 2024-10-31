@@ -85,12 +85,12 @@ def update_device(
     # sanity checks
     values = updated_device.model_dump(exclude_unset=True)
     device = get_device(db, db_device.id)
+    tags = values.pop("tags", None)
     if updated_device.folder_id:
         check_folder_exist(db, updated_device.folder_id)
     check_device_name_taken(db, updated_device.name, device.id)
 
-    if updated_device.tags or len(updated_device.tags) == 0:
-        tags = values.pop("tags")
+    if tags is not None and len(tags) >= 0:
         tag_ids = filter_tag_ids(tags, device.folder.tenant_id)
         device.entity = update_entity_tags(
             db=db,

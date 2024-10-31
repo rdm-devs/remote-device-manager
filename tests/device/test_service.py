@@ -237,6 +237,27 @@ def test_update_device_to_remove_all_tags(session: Session) -> None:
     assert len(device.tags) == 0
 
 
+def test_move_device_to_another_folder(
+    session: Session, mock_os_data: dict, mock_vendor_data: dict
+) -> None:
+    device = create_device(
+        session,
+        DeviceCreate(
+            name="dev5",
+            folder_id=2,
+            os_id=1,
+            vendor_id=1,
+            mac_address=TEST_MAC_ADDR,
+            ip_address=TEST_IP_ADDR,
+            **mock_os_data,
+            **mock_vendor_data
+        ),
+    )
+    assert device.folder_id == 2
+    updated_device = update_device(session, device, DeviceUpdate(folder_id=1))
+    assert updated_device.folder_id == 1
+
+
 def test_delete_device(
     session: Session, mock_os_data: dict, mock_vendor_data: dict
 ) -> None:
