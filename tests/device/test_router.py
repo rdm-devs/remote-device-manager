@@ -112,6 +112,27 @@ def test_create_duplicated_device(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.DEVICE_NAME_TAKEN
 
+    # a device with that serialno was created in session, see: tests/database.py
+    # it will be updated with all the other data.
+    serialno = "DeviceSerialno0001"
+    response = client_authenticated.post(
+        "/devices/",
+        json={
+            "name": "dev5",
+            "folder_id": 1,
+            "os_id": 1,
+            "vendor_id": 1,
+            "mac_address": TEST_MAC_ADDR,
+            "ip_address": TEST_IP_ADDR,
+            "serialno": serialno,  # already exists
+            **mock_os_data,
+            **mock_vendor_data,
+        },
+    )  
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["name"] == "dev5"
+    assert response.json()["serialno"] == serialno
+
 
 def test_create_incomplete_device(
     session: Session,

@@ -17,7 +17,7 @@ from src.auth.schemas import ConnectionUrl
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
 from src.database import get_db
-from src.device import service, schemas
+from src.device import service, schemas, utils
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
@@ -29,6 +29,10 @@ def register_device(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
+    if device.serialno is not None:
+        db_device = utils.get_device_by_serialno(db, device.serialno)
+        if db_device:
+            return update_device(db_device.id, device, db, user)
     db_device = service.create_device(db=db, device=device)
     return db_device
 
