@@ -31,3 +31,6 @@ class TenantUpdate(TenantCreate):
 class TenantDelete(BaseModel):
     id: int
     msg: str
+
+class TenantFull(Tenant):
+    folders: List[Folder] = []

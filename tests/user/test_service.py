@@ -31,6 +31,7 @@ from src.tag.models import Tag, entities_and_tags_table
 from src.entity.exceptions import EntityTenantRelationshipMissing
 from src.user.models import User
 
+
 def test_create_user(session: Session) -> None:
     user = create_user(
         session,
@@ -160,11 +161,13 @@ def test_update_user_tags(session: Session) -> None:
     )
 
     tenant_id = 1
+
     def update_tags(user: User, tenant_id: int):
         tenant = get_tenant(session, tenant_id)
 
-        tags_tenant_1 = session.scalars(select(Tag).where(Tag.tenant_id == tenant_id)).all()
-        #import ipdb; ipdb.set_trace()
+        tags_tenant_1 = session.scalars(
+            select(Tag).where(Tag.tenant_id == tenant_id)
+        ).all()
         user = update_user(
             session,
             db_user=user,
@@ -184,6 +187,7 @@ def test_update_user_tags(session: Session) -> None:
     assert relationship_tag_ids is not None
     assert all(t.id in relationship_tag_ids for t in user.tags)
 
+
 def test_update_user_with_empty_lists(session: Session) -> None:
     user = get_user(session, 2)
 
@@ -193,7 +197,7 @@ def test_update_user_with_empty_lists(session: Session) -> None:
     user = update_user(
         session,
         db_user=user,
-        updated_user=UserUpdate(tags=[], tenant_ids=[]),
+        updated_user=UserUpdate(tags=[], tenants=[]),
     )
     assert len(user.tags) == 0
     assert len(user.tenants) == 0
@@ -309,7 +313,7 @@ def test_assign_tenant(session: Session) -> None:
         (3, 1, 2, 2),
     ],
 )
-def test_update_user_multiple_tenants(
+def test_update_user_add_multiple_tenants(
     session,
     user: Union[int, UserCreate],
     n_tenants_before_update: int,
@@ -338,21 +342,46 @@ def test_update_user_multiple_tenants(
     another_user_tenants = session.scalars(
         get_tenants(session, user_id=another_user_id)
     ).all()
-    another_user_tenants_ids = [t.id for t in another_user_tenants]
 
     user = update_user(
         session,
         db_user=user,
-        updated_user=UserUpdate(
-            tenant_ids=[*user.get_tenants_ids(), *another_user_tenants_ids]
-        ),
+        updated_user=UserUpdate(tenants=user.tenants + another_user_tenants),
     )
 
     # after the update, user.tenants has new tenant/s associated
     # and new entries have been added to the associative table.
-    assert (
-        len(another_user_tenants_ids) + n_tenants_before_update
-        == n_tenants_after_update
-    )
+    assert len(another_user_tenants) + n_tenants_before_update == n_tenants_after_update
     assert len(user.tenants) == n_tenants_after_update
     assert len(session.scalars(t_and_u_entries_query).all()) == n_tenants_after_update
+
+
+def test_update_user_remove_tenants(
+    session,
+) -> None:
+
+    # creating a new user
+    user = create_user(
+        session,
+        UserCreate(
+            username="test-user-5@sia.com",
+            password="_s3cr3tp@5sw0rd_",
+        ),
+    )
+    t1 = session.scalars(get_tenants(session, user_id=2)).first()
+    t2 = session.scalars(get_tenants(session, user_id=3)).first()
+
+    # assigning two tenants to it
+    user.add_tenant(t1)
+    user.add_tenant(t2)
+
+    # checking two tenants have been assigned
+    assert len(user.tenants) == 2
+
+    # removing one tenant
+    assert len(user.tenants[:-1]) == 1
+    tenants = user.tenants[:-1]
+
+    # updating user tenants with a list that contains only one of the tenants assigned previously.
+    updated_user = update_user(session, user, UserUpdate(tenants=tenants))
+    assert len(user.tenants) == 1

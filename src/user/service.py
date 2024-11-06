@@ -109,6 +109,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def update_user_tenants(db: Session, user: models.User, tenant_ids: List[int]):
+
     tenants = [
         db.scalars(select(Tenant).where(Tenant.id == t_id)).first()
         for t_id in tenant_ids
@@ -130,14 +131,17 @@ def update_user(
     updated_user: schemas.UserUpdate,
 ):
     # sanity checks
-    values = updated_user.model_dump(exclude_unset=True)
-    tenant_ids = values.pop("tenant_ids", None)
-    tags = values.pop("tags", None)
-
     check_user_exists(db, user_id=db_user.id)
     check_username_exists(db, username=updated_user.username, user_id=db_user.id)
 
     user = get_user(db, db_user.id)
+    values = updated_user.model_dump(exclude_unset=True)
+    tags = values.pop("tags", None)
+    tenants = values.pop("tenants", None)
+    tenant_ids = None
+    if not tenant_ids and tenants is not None:
+        tenant_ids = [t["id"] for t in tenants]
+
     if tenant_ids is not None and len(tenant_ids) >= 0:
         user = update_user_tenants(db, user, tenant_ids)
     if tags is not None and len(tags) >= 0:

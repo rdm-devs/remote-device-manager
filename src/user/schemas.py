@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from src.tag.schemas import Tag
+from src.tenant.schemas import TenantFull
 
 class UserBase(BaseModel):  # used as common fields
     username: EmailStr
@@ -28,7 +29,8 @@ class UserUpdate(UserBase):
     username: Optional[EmailStr] = None
     password: Optional[str] = None
     role_id: Optional[int] = None
-    tenant_ids: Optional[List[int]] = None
+    #    tenant_ids: Optional[List[int]] = None
+    tenants: Optional[List[TenantFull]] = None
     tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 
@@ -36,4 +38,3 @@ class UserUpdate(UserBase):
 class UserDelete(BaseModel):
     id: int
     msg: str
-
