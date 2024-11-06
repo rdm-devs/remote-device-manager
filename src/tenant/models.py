@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Table, Column, DateTime, String
+from sqlalchemy import ForeignKey, Table, Column, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from typing import List
@@ -10,10 +10,12 @@ from src.entity.models import Entity
 tenants_and_users_table = Table(
     "tenants_and_users",
     Base.metadata,
-    Column("tenant_id", ForeignKey("tenant.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", ForeignKey("user.id", ondelete="CASCADE"), primary_key=True),
+    Column("id", Integer, autoincrement=True, primary_key=True),
+    Column("tenant_id", ForeignKey("tenant.id", ondelete="CASCADE")),
+    Column("user_id", ForeignKey("user.id", ondelete="CASCADE")),
     Column("created_at", DateTime, default=func.now()),
     Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+    UniqueConstraint("tenant_id", "user_id", name="uix_tenant_user"),
 )
 
 
