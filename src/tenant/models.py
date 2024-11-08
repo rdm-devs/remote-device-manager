@@ -10,12 +10,10 @@ from src.entity.models import Entity
 tenants_and_users_table = Table(
     "tenants_and_users",
     Base.metadata,
-    Column("id", Integer, autoincrement=True, primary_key=True),
-    Column("tenant_id", ForeignKey("tenant.id", ondelete="CASCADE"), nullable=False),
-    Column("user_id", ForeignKey("user.id", ondelete="CASCADE"), nullable=False),
+    Column("tenant_id", ForeignKey("tenant.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", ForeignKey("user.id", ondelete="CASCADE"), primary_key=True),
     Column("created_at", DateTime, default=func.now()),
     Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
-    UniqueConstraint("tenant_id", "user_id", name="uix_tenant_user"),
 )
 
 
