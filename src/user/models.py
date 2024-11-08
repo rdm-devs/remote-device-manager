@@ -39,7 +39,8 @@ class User(AuditMixin, Base):
         return self.entity.tags
 
     def add_tenant(self, tenant: "src.tenant.models.Tenant") -> None:
-        self.tenants.append(tenant)
+        if tenant not in self.tenants:
+            self.tenants.append(tenant)
 
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)

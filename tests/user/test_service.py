@@ -385,3 +385,14 @@ def test_update_user_remove_tenants(
     # updating user tenants with a list that contains only one of the tenants assigned previously.
     updated_user = update_user(session, user, UserUpdate(tenants=tenants))
     assert len(user.tenants) == 1
+
+def test_update_user_add_existing_tenant(session: Session) -> None:
+    user = get_user(session, 2)
+    tenant = get_tenant(session, user.tenants[0].id)
+    tenant_id = tenant.id
+    assert len(user.tenants) == 1
+
+    # attempting to assign a tenant to the user again. It should not work.
+    user = assign_tenant(session, user.id, tenant.id)
+    assert len(user.tenants) == 1 # remains the same.
+    assert user.tenants[0].id == tenant_id
