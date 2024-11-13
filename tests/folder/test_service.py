@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from src.tenant.exceptions import TenantNotFound
 from tests.database import session, mock_os_data, mock_vendor_data
 
@@ -18,6 +18,7 @@ from src.folder.service import (
     update_folder,
     create_root_folder,
     get_root_folder,
+    get_folder_ids_in_tree,
 )
 from src.folder.schemas import (
     FolderCreate,
@@ -32,6 +33,11 @@ from src.tag.exceptions import TagNotFound
 from src.tenant.service import get_tenant
 from src.entity.service import get_entity
 from src.entity.exceptions import EntityNotFound
+from src.device.models import Device
+from src.device.service import create_device
+from src.device.schemas import DeviceCreate
+from src.device.utils import get_devices_in_tree
+from src.folder.models import Folder
 
 
 def test_create_folder(session: Session) -> None:
@@ -252,3 +258,81 @@ def test_delete_folder_and_reset_devices_folder_id(session: Session) -> None:
             for folder_id in post_delete_devices_folder_id
         ]
     )
+
+
+def test_delete_folder_and_subfolders(session: Session, mock_os_data: dict, mock_vendor_data: dict) -> None:
+    # folder structure where * denotes that the folder has a device.
+    #
+    #                    f
+    #                s1*     s2*
+    #             s11*     s21
+    #
+
+    folder = create_folder(session, FolderCreate(name="folder5", tenant_id=1))
+    root_folder = get_root_folder(session, folder.tenant_id)
+    sub1 = create_folder(session, FolderCreate(name="sub1", tenant_id=1, parent_id=folder.id))
+    sub11 = create_folder(session, FolderCreate(name="sub11", tenant_id=1, parent_id=sub1.id))
+
+    sub2 = create_folder(session, FolderCreate(name="sub2", tenant_id=1, parent_id=folder.id))
+    sub21 = create_folder(session, FolderCreate(name="sub21", tenant_id=1, parent_id=sub2.id))
+
+    dev_test = create_device(
+        session,
+        DeviceCreate(
+            name="dev-test",
+            folder_id=sub1.id,
+            mac_address="61:68:0C:1E:93:8C",
+            ip_address="96.119.132.41",
+            id_rust="myRustDeskId",
+            pass_rust="myRustDeskPass",
+            serialno="DeviceSerialno0004",
+            **mock_os_data,
+            **mock_vendor_data
+        ),
+    )
+    dev_test_2 = create_device(
+        session,
+        DeviceCreate(
+            name="dev-test-2",
+            folder_id=sub11.id,
+            mac_address="61:68:0C:1E:93:1C",
+            ip_address="96.119.132.31",
+            id_rust="myRustDeskId",
+            pass_rust="myRustDeskPass",
+            serialno="DeviceSerialno0005",
+            **mock_os_data,
+            **mock_vendor_data
+        ),
+    )
+
+    dev_test_3 = create_device(
+        session,
+        DeviceCreate(
+            name="dev-test-3",
+            folder_id=sub2.id,
+            mac_address="61:68:0C:1E:A3:1C",
+            ip_address="96.119.132.21",
+            id_rust="myRustDeskId",
+            pass_rust="myRustDeskPass",
+            serialno="DeviceSerialno0006",
+            **mock_os_data,
+            **mock_vendor_data
+        ),
+    )
+
+    folder_tree = get_folder_ids_in_tree(folder)
+    subfolders = folder.subfolders
+
+    deleted_folder_id = delete_folder(session, db_folder=folder)
+    assert deleted_folder_id == folder.id
+
+    # after deleting a folder, none of the subfolders should exist. (cascade)
+    with pytest.raises(FolderNotFound):
+        for sf_id in folder_tree:
+            f = get_folder(session, sf_id)
+
+    # after deleting a folder all the previously associated devices should now 
+    # be associated with the root folder of tenant1. 
+    device_ids = get_devices_in_tree(session, folder_tree)
+    devs = session.scalars(select(Device).where(Device.id.in_(device_ids))).all()
+    assert all(d.folder_id == root_folder.id for d in devs)

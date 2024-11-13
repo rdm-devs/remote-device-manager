@@ -251,6 +251,13 @@ def update_folder(
     return folder
 
 
+def get_folder_ids_in_tree(folder: models.Folder, folder_ids: List[int] =[]):
+    folder_ids.append(folder.id)
+    for sf in folder.subfolders:
+        get_folder_ids_in_tree(sf, folder_ids)
+    return folder_ids
+
+
 def delete_folder(db: Session, db_folder: schemas.Folder):
     # sanity check
     check_folder_exist(db, db_folder.id)
@@ -259,7 +266,8 @@ def delete_folder(db: Session, db_folder: schemas.Folder):
 
     # assigning devices to root_folder from tenant1
     tenant1_root_folder = get_root_folder(db, tenant_id=1)
-    reset_devices_folder_id(db, db_folder.id, tenant1_root_folder.id)
+    folder_tree = get_folder_ids_in_tree(db_folder)
+    reset_devices_folder_id(db, folder_tree, tenant1_root_folder.id)
 
     db.delete(db_folder.entity) # db_folder debiera eliminarse por cascada al eliminar su entity
     db.commit()

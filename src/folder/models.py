@@ -21,8 +21,8 @@ class Folder(AuditMixin, Base):
     devices: Mapped[List["src.device.models.Device"]] = relationship(
         "src.device.models.Device", back_populates="folder"
     )
-    parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id"), nullable=True)
-    subfolders = relationship("Folder")
+    parent_id: Mapped[int] = mapped_column(ForeignKey("folder.id", ondelete="cascade"), nullable=True)
+    subfolders = relationship("Folder", cascade="all, delete")
 
     @property
     def tags(self):
