@@ -175,3 +175,4 @@ panto-nginx.conf
 fastapi-sia-backup.sql
 fastapi-sia-backup.db
 fastapi-sia.db.bk
+*.sql

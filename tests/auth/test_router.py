@@ -92,12 +92,6 @@ def test_read_devices_unauthorized(client: TestClient) -> None:
 async def test_read_devices_authorized(
     client: TestClient, admin_auth_tokens: dict
 ) -> None:
-    # response = client.post(
-    #     "/auth/token", data={"username": "test-user-1", "password": "_s3cr3tp@5sw0rd_"}
-    # )
-    # assert response.status_code == status.HTTP_200_OK, response.text
-    # assert response.json()["access_token"]
-    # assert response.json()["refresh_token"]
 
     response = client.get(
         "/devices",
@@ -715,15 +709,15 @@ async def test_send_token_to_rustdesk(
     "auth_user_id, device_id, expected_status_code",
     [
         (1, 1, status.HTTP_200_OK),
-        (1, 2, status.HTTP_400_BAD_REQUEST), #dev2 doesn't have rust credentials set
-        (1, 3, status.HTTP_400_BAD_REQUEST), #dev3 doesn't have rust credentials set
+        (1, 2, status.HTTP_400_BAD_REQUEST),  # dev2 doesn't have rust credentials set
+        (1, 3, status.HTTP_400_BAD_REQUEST),  # dev3 doesn't have rust credentials set
         (1, 4, status.HTTP_404_NOT_FOUND),
         (2, 1, status.HTTP_200_OK),
-        (2, 2, status.HTTP_400_BAD_REQUEST), #dev2 doesn't have rust credentials set
+        (2, 2, status.HTTP_400_BAD_REQUEST),  # dev2 doesn't have rust credentials set
         (2, 3, status.HTTP_403_FORBIDDEN),
         (3, 1, status.HTTP_403_FORBIDDEN),
         (3, 2, status.HTTP_403_FORBIDDEN),
-        (3, 3, status.HTTP_400_BAD_REQUEST), #dev3 doesn't have rust credentials set
+        (3, 3, status.HTTP_400_BAD_REQUEST),  # dev3 doesn't have rust credentials set
     ],
 )
 async def test_share_device(
@@ -739,7 +733,7 @@ async def test_share_device(
     response = client.post(
         f"/devices/{device_id}/share",
         headers={"Authorization": f"Bearer {access_tokens}"},
-        json={"expiration_minutes": 1}
+        json={"expiration_minutes": 1},
     )
 
     data = response.json()
@@ -768,7 +762,11 @@ def test_login_with_device_serialno(
 ) -> None:
     response = client.post(
         "/auth/token",
-        data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_", "serialno": serialno},
+        data={
+            "username": "test-user-1@sia.com",
+            "password": "_s3cr3tp@5sw0rd_",
+            "serialno": serialno,
+        },
     )
     assert response.status_code == expected_status_code, response.text
     data = response.json()
@@ -777,4 +775,4 @@ def test_login_with_device_serialno(
     if device:
         assert device.id == expected_device_id
     else:
-        assert device == None 
+        assert device == None

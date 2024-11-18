@@ -54,6 +54,7 @@ def override_get_db():
     finally:
         db.close()
 
+app.user_middleware = [] # removing middleware added in main.py for testing purposes.
 
 add_pagination(app)
 app.dependency_overrides[get_db] = override_get_db

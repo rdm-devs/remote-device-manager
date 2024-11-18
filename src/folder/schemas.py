@@ -9,6 +9,7 @@ class FolderTenantList(BaseModel):
     name: str
     parent_id: Optional[int] = None
 
+    model_config = {"from_attributes": True}
 
 class FolderBase(BaseModel):
     name: str

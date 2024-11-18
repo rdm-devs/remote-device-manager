@@ -156,30 +156,18 @@ def test_update_user(session: Session, client_authenticated: TestClient) -> None
     data = response.json()
     username = data["username"]
 
+    tenant_1 = client_authenticated.get(f"/tenants/1").json()
+    tenant_2 = client_authenticated.get(f"/tenants/2").json()
+
     # updating user's username
     response = client_authenticated.patch(
         f"/users/{user_id}",
-        json={"username": "test-user-updated@sia.com", "tenant_ids": [1, 2]},
+        json={"username": "test-user-updated@sia.com", "tenants": [tenant_1, tenant_2]},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["username"] == "test-user-updated@sia.com"
     assert len(data["tenants"]) == 2
-
-
-# def test_update_user_with_empty_lists(
-#     session: Session,
-#     client_authenticated: TestClient,
-# ) -> None:
-#     # updating user's username
-#     response = client_authenticated.patch(
-#         f"/users/2",
-#         json={
-#             "tenant_ids": [],
-#             "tags": [],
-#         },
-#     )
-#     assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.parametrize(
