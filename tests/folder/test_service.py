@@ -28,7 +28,7 @@ from src.user.service import create_user
 from src.user.schemas import UserCreate
 from src.user.exceptions import UserTenantNotAssigned
 from src.tag.models import Tag, entities_and_tags_table
-from src.tag.service import get_tag_by_name
+from src.tag.service import get_tag_by_name, get_tag
 from src.tag.exceptions import TagNotFound
 from src.tenant.service import get_tenant
 from src.entity.service import get_entity
@@ -228,11 +228,23 @@ def test_delete_folder(session: Session) -> None:
     db_folder = get_folder(session, folder.id)
 
     folder_id = folder.id
+    entity = folder.entity
+    tag_ids = [t.id for t in folder.tags]
+
     deleted_folder_id = delete_folder(session, db_folder=db_folder)
     assert deleted_folder_id == folder_id
 
     with pytest.raises(FolderNotFound):
         get_folder(session, folder.id)
+
+    # after removing folder, the related entity has been deleted
+    with pytest.raises(EntityNotFound):
+        get_entity(session, entity_id=entity.id)
+
+    # after removing folder, the related tags have been deleted
+    with pytest.raises(TagNotFound):
+        for tid in tag_ids:
+            get_tag(session, tid)
 
 
 def test_delete_folder_with_invalid_id(session: Session) -> None:
