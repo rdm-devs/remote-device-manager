@@ -146,7 +146,7 @@ def create_share_url(
     share_hash = jwt.encode(
         to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM")
     )
-    share_url = f"{os.getenv(f"API_SITE_DOMAIN_{os.getenv("ENV")}")}/devices/shared?id={share_hash}"
+    share_url = f"{os.getenv(f"DEVICE_SHARE_URL_BASE_{os.getenv("ENV")}")}/devices/shared?id={share_hash}"
     return schemas.ShareDeviceURL(url=share_url), expiration_dt
 
 
