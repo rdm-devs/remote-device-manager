@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, UTC
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 from typing import Optional, Union
-from sqlalchemy import select, update
+from sqlalchemy import select, update, insert
 from sqlalchemy.orm import Session
 from src.auth.utils import create_otp, create_connection_url
 from src.device import schemas, models, exceptions
@@ -55,7 +55,22 @@ def get_devices(db: Session, user_id: int):
     else:
         device_ids = user.get_device_ids()
         devices = select(models.Device).where(models.Device.id.in_(device_ids))
-    return devices
+
+    latest_heartbeat = (
+        select(models.Heartbeat)
+        .order_by(models.Heartbeat.timestamp.desc())
+        .limit(1)
+        .subquery()
+    )
+    stmt = (
+        devices.add_columns(
+            latest_heartbeat.c.timestamp.label("heartbeat_timestamp")
+        )  # creating an alias that matches the schema attr.
+        .join(latest_heartbeat, isouter=True)
+        .group_by(models.Device.id)
+    )
+
+    return stmt.select()
 
 
 def get_device_by_name(db: Session, device_name: str):
@@ -111,12 +126,24 @@ def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.Hear
     # sanity checks
     values = heartbeat.model_dump(exclude_none=True)
     timestamp = datetime.now()
-    values.update({"heartbeat_timestamp": timestamp})
     db.execute(
-        update(models.Device).where(models.Device.id == device_id).values(values)
+        insert(models.Heartbeat).values(
+            {"device_id": device_id, "timestamp": timestamp, **values}
+        ),
+    )
+
+    device_update = schemas.DeviceUpdate(**values)
+    db.execute(
+        update(models.Device)
+        .where(models.Device.id == device_id)
+        .values(**device_update.model_dump(exclude_unset=True))
     )
     db.commit()
-    return {"device_id": device_id, "timestamp": timestamp}
+    return schemas.HeartBeatResponse(
+        device_id=device_id,
+        timestamp=timestamp,
+        heartbeat_s=int(os.getenv("HEARTBEAT_S")),
+    )
 
 
 def delete_device(db: Session, db_device: schemas.Device):

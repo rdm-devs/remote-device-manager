@@ -14,9 +14,6 @@ class Device(AuditMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
     is_online: Mapped[bool] = mapped_column(default=True, index=True)
-    heartbeat_timestamp: Mapped[datetime] = mapped_column(
-        default=func.now(), onupdate=func.now()
-    )
     folder_id: Mapped[Optional[int]] = mapped_column(ForeignKey("folder.id"), nullable=True)
     folder: Mapped[Optional[Folder]] = relationship(Folder, back_populates="devices")
     id_rust: Mapped[Optional[str]] = mapped_column(String(255))
