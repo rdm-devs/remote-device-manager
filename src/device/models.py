@@ -47,3 +47,15 @@ class Device(AuditMixin, Base):
 
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)
+
+
+class Heartbeat(Base):
+    __tablename__ = "heartbeat_logs"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"))
+    CPU_load: Mapped[Optional[int]] = mapped_column()
+    MEM_load_mb: Mapped[Optional[int]] = mapped_column()
+    free_space_mb: Mapped[Optional[int]] = mapped_column()
+    timestamp: Mapped[datetime] = mapped_column(
+        default=func.now(), onupdate=func.now()
+    )

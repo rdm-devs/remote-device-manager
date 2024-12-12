@@ -77,6 +77,9 @@ class DeviceDelete(BaseModel):
 class HeartBeat(BaseModel):
     id_rust: Optional[str] = None
     pass_rust: Optional[str] = None
+    CPU_load: Mapped[Optional[int]] = None
+    MEM_load_mb: Mapped[Optional[int]] = None
+    free_space_mb: Mapped[Optional[int]] = None
 
     model_config = {"extra": "ignore"}
 
