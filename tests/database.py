@@ -62,7 +62,7 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture
 def mock_os_data() -> Generator[dict, None, None]:
-    return {"os_name": "android", "os_version": "10", "os_kernel_version": "6"}
+    return {"SO_name": "android", "SO_version": "10", "os_kernel_version": "6"}
 
 
 @pytest.fixture
@@ -112,11 +112,12 @@ def session(
         DeviceCreate(
             name="dev1",
             folder_id=folder_1.id,
-            mac_address="61:68:0C:1E:93:8F",
-            ip_address="96.119.132.44",
+            MAC_addresses="61:68:0C:1E:93:8F",
+            local_ips="96.119.132.44",
+            time_zone="America/Argentina/Buenos_Aires",
             id_rust="myRustDeskId",
             pass_rust="myRustDeskPass",
-            serialno="DeviceSerialno0001",
+            serial_number="DeviceSerialno0001",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -127,9 +128,10 @@ def session(
         DeviceCreate(
             name="dev2",
             folder_id=folder_2.id,
-            mac_address="61:68:0C:1E:93:9F",
-            ip_address="96.119.132.45",
-            serialno="DeviceSerialno0002",
+            MAC_addresses="61:68:0C:1E:93:9F",
+            local_ips="96.119.132.45",
+            time_zone="America/Argentina/Buenos_Aires",
+            serial_number="DeviceSerialno0002",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -140,9 +142,10 @@ def session(
         DeviceCreate(
             name="dev3",
             folder_id=folder_3.id,
-            mac_address="61:68:00:1F:95:AA",
-            ip_address="96.119.132.46",
-            serialno="DeviceSerialno0003",
+            MAC_addresses="61:68:00:1F:95:AA",
+            local_ips="96.119.132.46",
+            time_zone="America/Argentina/Buenos_Aires",
+            serial_number="DeviceSerialno0003",
             **mock_os_data,
             **mock_vendor_data
         ),

@@ -125,6 +125,9 @@ def update_device(
 def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.HeartBeat):
     # sanity checks
     values = heartbeat.model_dump(exclude_none=True)
+    id_rust = values.pop("id_rust", None)
+    pass_rust = values.pop("pass_rust", None)
+
     timestamp = datetime.now()
     db.execute(
         insert(models.Heartbeat).values(
@@ -132,7 +135,7 @@ def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.Hear
         ),
     )
 
-    device_update = schemas.DeviceUpdate(**values)
+    device_update = schemas.DeviceUpdate(id_rust=id_rust, pass_rust= pass_rust)
     db.execute(
         update(models.Device)
         .where(models.Device.id == device_id)

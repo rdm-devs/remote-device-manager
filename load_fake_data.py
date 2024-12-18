@@ -18,8 +18,8 @@ from src.tag.schemas import TagCreate, TagAdminCreate
 
 db = SessionLocal()
 
-mock_os_data_1 = {"os_name": "android", "os_version": "10", "os_kernel_version": "6"}
-mock_os_data_2 = {"os_name": "android", "os_version": "9", "os_kernel_version": "5"}
+mock_os_data_1 = {"SO_name": "android", "SO_version": "10", "os_kernel_version": "6"}
+mock_os_data_2 = {"SO_name": "android", "SO_version": "9", "os_kernel_version": "5"}
 
 mock_vendor_data_1 = {
     "vendor_name": "samsung",
@@ -74,8 +74,9 @@ device_1 = create_device(
     DeviceCreate(
         name="dev1",
         folder_id=folder_1.id,
-        mac_address="61:68:0C:1E:93:8F",
-        ip_address="96.119.132.44",
+        MAC_addresses="61:68:0C:1E:93:8F",
+        local_ips="96.119.132.44",
+        time_zone="America/Argentina/Buenos_Aires"
         **mock_os_data_1,
         **mock_vendor_data_1
     ),
@@ -86,8 +87,9 @@ device_2 = create_device(
     DeviceCreate(
         name="dev2",
         folder_id=folder_2.id,
-        mac_address="61:68:0C:1E:93:9F",
-        ip_address="96.119.132.45",
+        MAC_addresses="61:68:0C:1E:93:9F",
+        local_ips="96.119.132.45",
+        time_zone="America/Argentina/Buenos_Aires"
         **mock_os_data_1,
         **mock_vendor_data_2
     ),
@@ -98,8 +100,9 @@ device_3 = create_device(
     DeviceCreate(
         name="dev3",
         folder_id=folder_3.id,
-        mac_address="61:68:00:1F:95:AA",
-        ip_address="96.119.132.46",
+        MAC_addresses="61:68:00:1F:95:AA",
+        local_ips="96.119.132.46",
+        time_zone="America/Argentina/Buenos_Aires"
         **mock_os_data_2,
         **mock_vendor_data_2
     ),

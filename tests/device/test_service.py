@@ -21,7 +21,7 @@ from src.device.service import (
     verify_share_url,
     create_share_url,
 )
-from src.device.utils import get_device_by_serialno
+from src.device.utils import get_device_by_serial_number
 from src.device.schemas import (
     DeviceCreate,
     DeviceDelete,
@@ -46,8 +46,9 @@ def test_create_device(
             folder_id=1,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -67,8 +68,9 @@ def test_create_duplicated_device(
                 folder_id=1,
                 os_id=1,
                 vendor_id=1,
-                mac_address=TEST_MAC_ADDR,
-                ip_address=TEST_IP_ADDR,
+                MAC_addresses=TEST_MAC_ADDR,
+                local_ips=TEST_IP_ADDR,
+                time_zone="America/Argentina/Buenos_Aires",
                 **mock_os_data,
                 **mock_vendor_data
             ),
@@ -129,8 +131,9 @@ def test_update_device(
             folder_id=3,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -180,8 +183,9 @@ def test_update_device_with_invalid_data(
             folder_id=3,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -247,8 +251,9 @@ def test_move_device_to_another_folder(
             folder_id=2,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -268,8 +273,9 @@ def test_delete_device(
             folder_id=3,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -294,8 +300,9 @@ def test_delete_device_with_invalid_id(
             folder_id=3,
             os_id=1,
             vendor_id=1,
-            mac_address=TEST_MAC_ADDR,
-            ip_address=TEST_IP_ADDR,
+            MAC_addresses=TEST_MAC_ADDR,
+            local_ips=TEST_IP_ADDR,
+            time_zone="America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -340,7 +347,7 @@ def test_verify_share_url_has_expired(session: Session) -> None:
 
 
 @pytest.mark.parametrize(
-    "serialno, expected_device_id",
+    "serial_number, expected_device_id",
     [
         ("DeviceSerialno0001", 1),
         ("DeviceSerialno0002", 2),
@@ -350,10 +357,10 @@ def test_verify_share_url_has_expired(session: Session) -> None:
         (0, None),
     ],
 )
-def test_get_device_by_serialno(
-    session: Session, serialno: str, expected_device_id: int
+def test_get_device_by_serial_number(
+    session: Session, serial_number: str, expected_device_id: int
 ) -> None:
-    device = get_device_by_serialno(session, serialno)
+    device = get_device_by_serial_number(session, serial_number)
     if device:
         assert device.id == expected_device_id
     else:

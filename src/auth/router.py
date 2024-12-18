@@ -22,7 +22,7 @@ from src.auth.dependencies import (
 )
 from src.auth.schemas import LoginData, Token, ConnectionToken
 from src.auth import service
-from src.device.utils import get_device_by_serialno
+from src.device.utils import get_device_by_serial_number
 
 load_dotenv()
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -31,14 +31,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/token")
 async def login(
     response: Response,
-    serialno: Optional[str] = None,
+    serial_number: Optional[str] = None,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ) -> LoginData:
     user = authenticate_user(form_data.username, form_data.password, db)
     refresh_token_value = await service.create_refresh_token(db, user.id)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
-    device = get_device_by_serialno(db, serialno)
+    device = get_device_by_serial_number(db, serial_number)
     return LoginData(
         access_token=create_access_token(user),
         refresh_token=refresh_token_value,

@@ -4,11 +4,11 @@ from typing import Union, Optional, List
 from src.device import models
 
 
-def get_device_by_serialno(
-    db: Session, serialno: Optional[str] = None
+def get_device_by_serial_number(
+    db: Session, serial_number: Optional[str] = None
 ) -> Union[models.Device | None]:
-    stmt = select(models.Device).where(models.Device.serialno == serialno)
-    return None if serialno is None else db.scalars(stmt).first()
+    stmt = select(models.Device).where(models.Device.serial_number == serial_number)
+    return None if serial_number is None else db.scalars(stmt).first()
 
 
 def get_devices_from_folder(db: Session, folder_id: int):

@@ -293,11 +293,12 @@ def test_delete_folder_and_subfolders(session: Session, mock_os_data: dict, mock
         DeviceCreate(
             name="dev-test",
             folder_id=sub1.id,
-            mac_address="61:68:0C:1E:93:8C",
-            ip_address="96.119.132.41",
+            MAC_addresses="61:68:0C:1E:93:8C",
+            local_ips="96.119.132.41",
+            time_zone="America/Argentina/Buenos_Aires",
             id_rust="myRustDeskId",
             pass_rust="myRustDeskPass",
-            serialno="DeviceSerialno0004",
+            serial_number="DeviceSerialno0004",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -307,11 +308,12 @@ def test_delete_folder_and_subfolders(session: Session, mock_os_data: dict, mock
         DeviceCreate(
             name="dev-test-2",
             folder_id=sub11.id,
-            mac_address="61:68:0C:1E:93:1C",
-            ip_address="96.119.132.31",
+            MAC_addresses="61:68:0C:1E:93:1C",
+            local_ips="96.119.132.31",
+            time_zone="America/Argentina/Buenos_Aires",
             id_rust="myRustDeskId",
             pass_rust="myRustDeskPass",
-            serialno="DeviceSerialno0005",
+            serial_number="DeviceSerialno0005",
             **mock_os_data,
             **mock_vendor_data
         ),
@@ -322,11 +324,12 @@ def test_delete_folder_and_subfolders(session: Session, mock_os_data: dict, mock
         DeviceCreate(
             name="dev-test-3",
             folder_id=sub2.id,
-            mac_address="61:68:0C:1E:A3:1C",
-            ip_address="96.119.132.21",
+            MAC_addresses="61:68:0C:1E:A3:1C",
+            local_ips="96.119.132.21",
+            time_zone="America/Argentina/Buenos_Aires",
             id_rust="myRustDeskId",
             pass_rust="myRustDeskPass",
-            serialno="DeviceSerialno0006",
+            serial_number="DeviceSerialno0006",
             **mock_os_data,
             **mock_vendor_data
         ),

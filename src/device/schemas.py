@@ -6,20 +6,22 @@ from src.tag.schemas import Tag
 
 class DeviceBase(BaseModel):
     name: str
-    ip_address: str
-    mac_address: str
+    local_ips: str
+    MAC_addresses: str
     id_rust: Optional[str] = None
     pass_rust: Optional[str] = None
     last_screenshot_path: Optional[str] = None
-    serialno: Optional[str] = None
+    serial_number: Optional[str] = None
+    time_zone: Optional[str] = None
 
 
 class DeviceCreate(DeviceBase):
     folder_id: Optional[int] = None
-    mac_address: Optional[str] = None
-    ip_address: Optional[str] = None
-    os_name: str
-    os_version: str
+    MAC_addresses: Optional[str] = None
+    local_ips: Optional[str] = None
+    time_zone: str
+    SO_name: str
+    SO_version: str
     os_kernel_version: str
     vendor_name: str
     vendor_model: str
@@ -47,16 +49,16 @@ class DeviceList(BaseModel):
     heartbeat_timestamp: Optional[datetime] = None
     share_url: Optional[str] = None
     share_url_expires_at: Optional[datetime] = None
-    serialno: Optional[str] = None
+    serial_number: Optional[str] = None
 
 
 class DeviceUpdate(DeviceCreate):
     name: Optional[str] = None
     folder_id: Optional[int] = None
-    mac_address: Optional[str] = None
-    ip_address: Optional[str] = None
-    os_name: Optional[str] = None
-    os_version: Optional[str] = None
+    MAC_addresses: Optional[str] = None
+    local_ips: Optional[str] = None
+    SO_name: Optional[str] = None
+    SO_version: Optional[str] = None
     os_kernel_version: Optional[str] = None
     vendor_name: Optional[str] = None
     vendor_model: Optional[str] = None
@@ -65,6 +67,7 @@ class DeviceUpdate(DeviceCreate):
     tags: Optional[List[Tag]] = []
     share_url: Optional[str] = None
     share_url_expires_at: Optional[datetime] = None
+    time_zone: Optional[str] = None
 
     model_config = {"extra": "ignore"}
 

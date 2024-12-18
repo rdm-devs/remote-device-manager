@@ -8,13 +8,16 @@ from ..audit_mixin import AuditMixin
 from ..folder.models import Folder
 from ..entity.models import Entity
 
+
 class Device(AuditMixin, Base):
     __tablename__ = "device"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
     is_online: Mapped[bool] = mapped_column(default=True, index=True)
-    folder_id: Mapped[Optional[int]] = mapped_column(ForeignKey("folder.id"), nullable=True)
+    folder_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("folder.id"), nullable=True
+    )
     folder: Mapped[Optional[Folder]] = relationship(Folder, back_populates="devices")
     id_rust: Mapped[Optional[str]] = mapped_column(String(255))
     pass_rust: Mapped[Optional[str]] = mapped_column(String(255))
@@ -23,12 +26,12 @@ class Device(AuditMixin, Base):
     entity: Mapped[Entity] = relationship(Entity)
 
     # device metadata attrs:
-    mac_address: Mapped[Optional[str]] = mapped_column(String(17))
-    ip_address: Mapped[Optional[str]] = mapped_column(
-        String(15)
+    MAC_addresses: Mapped[Optional[str]] = mapped_column(String(512))
+    local_ips: Mapped[Optional[str]] = mapped_column(
+        String(512)
     )  # alternatively: https://sqlalchemy-utils.readthedocs.io/en/latest/data_types.html#module-sqlalchemy_utils.types.ip_address
-    os_name: Mapped[str] = mapped_column(String(255), index=True)
-    os_version: Mapped[str] = mapped_column(String(255))
+    SO_name: Mapped[str] = mapped_column(String(255), index=True)
+    SO_version: Mapped[str] = mapped_column(String(255))
     os_kernel_version: Mapped[str] = mapped_column(String(255))
     vendor_name: Mapped[str] = mapped_column(String(255), index=True)
     vendor_model: Mapped[str] = mapped_column(String(255))
@@ -36,7 +39,10 @@ class Device(AuditMixin, Base):
     vendor_ram_gb: Mapped[int] = mapped_column()
     share_url: Mapped[str] = mapped_column(String(255), nullable=True)
     share_url_expires_at: Mapped[datetime] = mapped_column(nullable=True)
-    serialno: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    serial_number: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, unique=True
+    )
+    time_zone: Mapped[Optional[str]] = mapped_column(String(1000))
 
     @property
     def tags(self):
@@ -53,6 +59,4 @@ class Heartbeat(Base):
     CPU_load: Mapped[Optional[int]] = mapped_column()
     MEM_load_mb: Mapped[Optional[int]] = mapped_column()
     free_space_mb: Mapped[Optional[int]] = mapped_column()
-    timestamp: Mapped[datetime] = mapped_column(
-        default=func.now(), onupdate=func.now()
-    )
+    timestamp: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())

@@ -29,8 +29,8 @@ def register_device(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):
-    if device.serialno is not None:
-        db_device = utils.get_device_by_serialno(db, device.serialno)
+    if device.serial_number is not None:
+        db_device = utils.get_device_by_serial_number(db, device.serial_number)
         if db_device:
             return update_device(db_device.id, device, db, user)
     db_device = service.create_device(db=db, device=device)

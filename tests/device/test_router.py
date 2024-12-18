@@ -38,8 +38,9 @@ def test_read_device(
             "folder_id": 1,
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
+            "time_zone": "America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data,
         },
@@ -77,8 +78,9 @@ def test_create_device(
             "folder_id": 1,
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
+            "time_zone": "America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data,
         },
@@ -103,8 +105,9 @@ def test_create_duplicated_device(
             "folder_id": 1,
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
+            "time_zone": "America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data,
         },
@@ -114,7 +117,7 @@ def test_create_duplicated_device(
 
     # a device with that serialno was created in session, see: tests/database.py
     # it will be updated with all the other data.
-    serialno = "DeviceSerialno0001"
+    serial_number = "DeviceSerialno0001"
     response = client_authenticated.post(
         "/devices/",
         json={
@@ -122,16 +125,17 @@ def test_create_duplicated_device(
             "folder_id": 1,
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
-            "serialno": serialno,  # already exists
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
+            "time_zone": "America/Argentina/Buenos_Aires",
+            "serial_number": serial_number,  # already exists
             **mock_os_data,
             **mock_vendor_data,
         },
-    )  
+    )
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["name"] == "dev5"
-    assert response.json()["serialno"] == serialno
+    assert response.json()["serial_number"] == serial_number
 
 
 def test_create_incomplete_device(
@@ -146,8 +150,8 @@ def test_create_incomplete_device(
             # "name": "dev5",
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
             **mock_os_data,
             **mock_vendor_data,
         },
@@ -168,8 +172,9 @@ def test_create_device_with_non_existing_folder(
             "folder_id": -1,
             "os_id": 1,
             "vendor_id": 1,
-            "mac_address": TEST_MAC_ADDR,
-            "ip_address": TEST_IP_ADDR,
+            "MAC_addresses": TEST_MAC_ADDR,
+            "local_ips": TEST_IP_ADDR,
+            "time_zone": "America/Argentina/Buenos_Aires",
             **mock_os_data,
             **mock_vendor_data,
         },
