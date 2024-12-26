@@ -19,7 +19,7 @@ class DeviceCreate(DeviceBase):
     folder_id: Optional[int] = None
     MAC_addresses: Optional[str] = None
     local_ips: Optional[str] = None
-    time_zone: str
+    time_zone: Optional[str] = None
     SO_name: str
     SO_version: str
     os_kernel_version: str
