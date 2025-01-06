@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -133,3 +134,41 @@ def test_delete_non_existent_tenant(
     tenant_id = 5
     response = client_authenticated.delete(f"/tenants/{tenant_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    "tenant_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        (99, status.HTTP_404_NOT_FOUND),
+    ],
+)
+def test_read_tenant_settings(
+    session: Session,
+    client_authenticated: TestClient,
+    tenant_id: int,
+    expected_status_code: int,
+) -> None:
+    response = client_authenticated.get(f"/tenants/{tenant_id}/settings")
+    assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "tenant_id, body, expected_status_code",
+    [
+        (1, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (1, {"heartbeat_s": 20}, status.HTTP_200_OK),
+        (1, {"heartbeat_s": 20, "color": "red"}, status.HTTP_200_OK),
+        (99, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (99, {"heartbeat_s": 20}, status.HTTP_404_NOT_FOUND),
+    ],
+)
+def test_update_tenant_settings(
+    session: Session,
+    client_authenticated: TestClient,
+    tenant_id: int,
+    body: dict,
+    expected_status_code: int,
+) -> None:
+    response = client_authenticated.patch(f"/tenants/{tenant_id}/settings", json=body)
+    assert response.status_code == expected_status_code

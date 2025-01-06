@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing import Union
@@ -18,6 +20,9 @@ from src.folder.schemas import FolderCreate
 from src.user.schemas import User
 from src.user.models import tenants_and_users_table
 from src.user.service import get_user
+from pydantic import ValidationError
+
+load_dotenv()
 
 
 def get_tenant(db: Session, tenant_id: int):
@@ -60,9 +65,16 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
     # creating automatic tag
     # TODO: definir una convención de nombres??
     formatted_name = tenant.name.lower().replace(" ", "-")
-    db_tenant.add_tag(create_tag(
-        db, TagAdminCreate(name=f"tenant-{formatted_name}-tag", tenant_id=db_tenant.id, type=Type.TENANT)
-    ))
+    db_tenant.add_tag(
+        create_tag(
+            db,
+            TagAdminCreate(
+                name=f"tenant-{formatted_name}-tag",
+                tenant_id=db_tenant.id,
+                type=Type.TENANT,
+            ),
+        )
+    )
     db.commit()
     db.refresh(db_tenant)
     # creating a root folder
@@ -71,7 +83,9 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
     # assigning tags
     if tags is not None and len(tags) >= 0:
         tag_ids = filter_tag_ids(tags, db_tenant.id)
-        tag_ids.extend([t.id for t in db_tenant.tags]) # when creating we want to maintain the automatic tag
+        tag_ids.extend(
+            [t.id for t in db_tenant.tags]
+        )  # when creating we want to maintain the automatic tag
         db_tenant.entity = update_entity_tags(
             db=db,
             entity=db_tenant.entity,
@@ -81,6 +95,7 @@ def create_tenant(db: Session, tenant: schemas.TenantCreate):
         db.commit()
 
     db.refresh(db_tenant)
+    create_default_tenant_settings(db, db_tenant.id)
     return db_tenant
 
 
@@ -140,3 +155,54 @@ async def get_tenant_tags(
         )
     else:
         raise PermissionDenied()
+
+
+def get_tenant_settings(db: Session, tenant_id: int):
+    check_tenant_exists(db, tenant_id)
+    settings = db.scalar(
+        select(models.TenantSettings).where(
+            models.TenantSettings.tenant_id == tenant_id
+        )
+    )
+    if not settings:
+        settings = create_default_tenant_settings(db, tenant_id)
+    return settings
+
+
+def create_default_tenant_settings(db: Session, tenant_id: int):
+    return create_tenant_settings(
+        db,
+        tenant_id,
+        schemas.TenantSettingsCreate(heartbeat_s=int(os.getenv("HEARTBEAT_S"))),
+    )
+
+
+def create_tenant_settings(
+    db: Session, tenant_id: int, tenant_settings: schemas.TenantSettingsCreate
+):
+    check_tenant_exists(db, tenant_id)
+    settings = models.TenantSettings(
+        **tenant_settings.model_dump(exclude_unset=True), tenant_id=tenant_id
+    )
+
+    db.add(settings)
+    db.commit()
+    db.refresh(settings)
+    return settings
+
+
+def update_tenant_settings(
+    db: Session, tenant_id: int, tenant_settings: schemas.TenantSettingsUpdate
+):
+    check_tenant_exists(db, tenant_id)
+    current_settings = get_tenant_settings(db, tenant_id)
+
+    db.execute(
+        update(models.TenantSettings)
+        .where(models.TenantSettings.tenant_id == tenant_id)
+        .values(**tenant_settings.model_dump(exclude_unset=True))
+    )
+    db.commit()
+    db.refresh(current_settings)
+
+    return current_settings

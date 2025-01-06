@@ -11,7 +11,8 @@ from src.device import schemas, models, exceptions
 from src.entity.service import create_entity_auto, update_entity_tags
 from src.folder.models import Folder
 from src.folder.service import check_folder_exist, get_folders
-from src.tenant.models import tenants_and_users_table
+from src.tenant.models import tenants_and_users_table, TenantSettings
+from src.tenant.service import get_tenant_settings
 from src.tenant.utils import filter_tag_ids
 from src.user.service import get_user
 
@@ -135,17 +136,23 @@ def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.Hear
         ),
     )
 
-    device_update = schemas.DeviceUpdate(id_rust=id_rust, pass_rust= pass_rust)
+    device_update = schemas.DeviceUpdate(id_rust=id_rust, pass_rust=pass_rust)
     db.execute(
         update(models.Device)
         .where(models.Device.id == device_id)
         .values(**device_update.model_dump(exclude_unset=True))
     )
     db.commit()
+
+    # updating heartbeat frequency according to tenant settings
+    db_device: models.Device = db.scalar(
+        select(models.Device).where(models.Device.id == device_id)
+    )
+    tenant_settings = get_tenant_settings(db, db_device.folder.tenant_id)
     return schemas.HeartBeatResponse(
         device_id=device_id,
         timestamp=timestamp,
-        heartbeat_s=int(os.getenv("HEARTBEAT_S")),
+        heartbeat_s=tenant_settings.heartbeat_s,
     )
 
 

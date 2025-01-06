@@ -1,11 +1,17 @@
+import os
 import pytest
+from dotenv import load_dotenv
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from typing import Union
 from tests.database import session, mock_os_data, mock_vendor_data
 
-from src.tenant.exceptions import TenantNameTaken, TenantNotFound, TenantCannotBeDeleted
+from src.tenant.exceptions import (
+    TenantNameTaken,
+    TenantNotFound,
+    TenantCannotBeDeleted,
+)
 from src.tenant.service import (
     create_tenant,
     get_tenant,
@@ -13,15 +19,18 @@ from src.tenant.service import (
     get_tenants,
     delete_tenant,
     update_tenant,
+    get_tenant_settings,
+    create_default_tenant_settings,
+    create_tenant_settings,
+    update_tenant_settings,
 )
-from src.tenant.schemas import (
-    TenantCreate,
-    TenantUpdate,
-)
+from src.tenant.schemas import TenantCreate, TenantUpdate, TenantSettings
 from src.user import models as user_models
 from src.tag.schemas import TagCreate
 from src.tag.service import create_tag
 from src.tag.models import entities_and_tags_table, Tag, Type
+
+load_dotenv()
 
 
 def test_create_tenant(session: Session) -> None:
@@ -32,7 +41,9 @@ def test_create_tenant(session: Session) -> None:
     assert len(tenant5.tags) == 1
     assert len(tenant5.tags_for_tenant) == 2
 
-    tag = create_tag(session, TagCreate(name="custom-new-tag", tenant_id=None, type=Type.GLOBAL))
+    tag = create_tag(
+        session, TagCreate(name="custom-new-tag", tenant_id=None, type=Type.GLOBAL)
+    )
     tenant6 = create_tenant(session, TenantCreate(name="tenant6", tags=[tag]))
     assert tenant6.name == "tenant6"
     assert len(tenant6.folders) == 1
@@ -131,6 +142,7 @@ def test_update_tenant(session: Session) -> None:
     )
     assert all(t in tenant.tags for t in new_tags)
 
+
 def test_update_tenant_with_empty_tag_list(session: Session) -> None:
     tenant_id = 1
     tenant = get_tenant(session, tenant_id)
@@ -140,9 +152,7 @@ def test_update_tenant_with_empty_tag_list(session: Session) -> None:
     )
 
     tenant = update_tenant(
-        session,
-        db_tenant=tenant,
-        updated_tenant=TenantUpdate(tags=[])
+        session, db_tenant=tenant, updated_tenant=TenantUpdate(tags=[])
     )
     assert all(t not in tenant.tags for t in user_created_tags)
 
@@ -175,3 +185,57 @@ def test_delete_tenant_with_invalid_id(session: Session) -> None:
     db_tenant.id = 5
     with pytest.raises(TenantNotFound):
         delete_tenant(session, db_tenant=db_tenant)
+
+
+@pytest.mark.parametrize(
+    "tenant_id, exception",
+    [
+        (1, None),
+        (2, None),
+        (3, TenantNotFound),
+        (99, TenantNotFound),
+    ],
+)
+def test_read_tenant_settings(
+    session: Session, tenant_id: int, exception: Union[None, TenantNotFound]
+) -> None:
+    expected_result = TenantSettings(heartbeat_s=int(os.getenv("HEARTBEAT_S")))
+    if exception:
+        with pytest.raises(exception):
+            settings = get_tenant_settings(session, tenant_id)
+    else:
+        settings = get_tenant_settings(session, tenant_id)
+        assert settings.heartbeat_s == expected_result.heartbeat_s
+
+
+@pytest.mark.parametrize(
+    "tenant_id, tenant_settings_before, tenant_settings_after, exception",
+    [
+        (1, {"heartbeat_s": 6}, {"heartbeat_s": 20}, None),
+        (1, {"heartbeat_s": 6}, {"heartbeat_s": -10}, ValidationError),
+        (99, None, None, TenantNotFound),
+    ],
+)
+def test_update_tenant_settings(
+    session: Session,
+    tenant_id: int,
+    tenant_settings_before: dict,
+    tenant_settings_after: dict,
+    exception: Union[None, TenantNotFound, ValidationError],
+) -> None:
+    if exception:
+        with pytest.raises(exception):
+            settings = get_tenant_settings(session, tenant_id)
+
+            new_settings = update_tenant_settings(
+                session, tenant_id, TenantSettings(**tenant_settings_after)
+            )
+
+    else:
+        settings = get_tenant_settings(session, tenant_id)
+        assert settings.heartbeat_s == tenant_settings_before["heartbeat_s"]
+
+        new_settings = update_tenant_settings(
+            session, tenant_id, TenantSettings(**tenant_settings_after)
+        )
+        assert new_settings.heartbeat_s == tenant_settings_after["heartbeat_s"]

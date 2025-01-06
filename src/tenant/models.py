@@ -1,11 +1,14 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import ForeignKey, Table, Column, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
-from typing import List
+from typing import List, Optional
 from src.database import Base
 from src.audit_mixin import AuditMixin
 from src.entity.models import Entity
 
+load_dotenv()
 
 tenants_and_users_table = Table(
     "tenants_and_users",
@@ -33,6 +36,7 @@ class Tenant(AuditMixin, Base):
     tags_for_tenant: Mapped[List["src.tag.models.Tag"]] = relationship(
         "src.tag.models.Tag", back_populates="tenant"
     )
+    settings: Mapped["TenantSettings"] = relationship("TenantSettings")
 
     @property
     def tags(self):
@@ -40,3 +44,10 @@ class Tenant(AuditMixin, Base):
 
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)
+
+
+class TenantSettings(AuditMixin, Base):
+    __tablename__ = "tenant_settings"
+
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id", ondelete="cascade"), primary_key=True, index=True)
+    heartbeat_s: Mapped[int] = mapped_column(default=int(os.getenv("HEARTBEAT_S")), nullable=False)

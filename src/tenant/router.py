@@ -78,3 +78,21 @@ async def read_tags(
 ):
     # TODO: make it work with filters (folder_id, device_id, tag name)
     return paginate(db, await service.get_tenant_tags(db, user, tenant_id=tenant_id))
+
+
+@router.get("/{tenant_id}/settings", response_model=schemas.TenantSettings)
+async def read_settings(
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_tenant),
+):
+    return service.get_tenant_settings(db, tenant_id)
+
+@router.patch("/{tenant_id}/settings", response_model=schemas.TenantSettings)
+async def update_settings(
+    tenant_id: int,
+    tenant_settings: schemas.TenantSettingsUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(has_access_to_tenant),
+):
+    return service.update_tenant_settings(db, tenant_id, tenant_settings)
