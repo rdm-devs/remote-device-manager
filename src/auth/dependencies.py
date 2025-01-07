@@ -21,7 +21,7 @@ from src.folder.exceptions import FolderNotFound
 from src.device.exceptions import DeviceNotFound
 from src.auth import service, exceptions
 from src.auth.schemas import TokenData
-from src.auth.utils import get_user_by_username
+from src.auth.utils import get_user_by_username, _is_valid_refresh_token
 
 load_dotenv()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -122,12 +122,6 @@ async def valid_refresh_token_user(
     return user
 
 
-def _is_valid_refresh_token(db_refresh_token: Dict[str, Any]) -> bool:
-    return datetime.datetime.now(
-        datetime.UTC
-    ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
-
-
 async def has_access_to_tenant(
     tenant_id: int,
     db: Session = Depends(get_db),
@@ -176,7 +170,9 @@ async def has_access_to_tags(
     tags = (
         db.query(tag_models.Tag)
         .filter(or_(tag_models.Tag.name.like(f"%{t.name}%") for t in tags))
-        .filter(or_(tag_models.Tag.tenant_id.in_(user.get_tenants_ids()), user.is_admin))
+        .filter(
+            or_(tag_models.Tag.tenant_id.in_(user.get_tenants_ids()), user.is_admin)
+        )
         .all()
     )
 

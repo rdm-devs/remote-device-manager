@@ -22,7 +22,10 @@ def get_devices_in_tree(db: Session, folder_ids: List[int]):
         select(models.Device.id).where(models.Device.folder_id.in_(folder_ids))
     ).all()
 
-def reset_devices_folder_id(db: Session, folder_ids: List[int], tenant1_root_folder_id: int) -> None:
+
+def reset_devices_folder_id(
+    db: Session, folder_ids: List[int], tenant1_root_folder_id: int
+) -> None:
     # when deleting a folder every device assigned to it should be assigned to the root folder from tenant1.
     update_stmt = (
         update(models.Device)

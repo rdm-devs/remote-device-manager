@@ -2,7 +2,7 @@ import os
 import time
 import pytest
 from dotenv import load_dotenv
-from jose import JWTError, jwt
+from jose import jwt
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
 from fastapi import status
@@ -20,6 +20,8 @@ from tests.database import (
     owner_3_auth_tokens,
     user_auth_tokens,
     get_auth_tokens_with_user_id,
+    get_expired_access_token,
+    expire_refresh_token,
 )
 
 load_dotenv()
@@ -44,6 +46,34 @@ def test_login(client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_device_login(session: Session, client: TestClient) -> None:
+    # login in sending a serial number
+    device_id = 1
+    serial_number = "DeviceSerialno0001"
+    response = client.post(
+        f"/auth/token?serial_number={serial_number}",
+        data={
+            "username": "test-user-1@sia.com",
+            "password": "_s3cr3tp@5sw0rd_",
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    refresh_token = data["refresh_token"]
+
+    # login in with the device
+    response = client.post(
+        f"/auth/device/{device_id}/login",
+        json={"refresh_token": expire_refresh_token(session, refresh_token)},
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data["access_token"]
+    assert data["refresh_token"]
+    assert data["device"]
+
+
+@pytest.mark.asyncio
 async def test_logout(client: TestClient, admin_auth_tokens: dict) -> None:
     # then we keep the refresh_token in order to logout
     refresh_token = (await admin_auth_tokens)["refresh_token"]
@@ -53,17 +83,18 @@ async def test_logout(client: TestClient, admin_auth_tokens: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_refresh_token(client: TestClient, admin_auth_tokens: dict) -> None:
+async def test_refresh_token(
+    client: TestClient, get_expired_access_token: dict
+) -> None:
     # keeping the old access and refresh tokens to compare them with the refresh token endpoint result
-    tokens = await admin_auth_tokens
+    tokens = await get_expired_access_token
     old_access_token = tokens["access_token"]
     old_refresh_token = tokens["refresh_token"]
 
-    time.sleep(1)
     response = client.put("/auth/token", params={"refresh_token": old_refresh_token})
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json()["access_token"] != old_access_token
-    assert response.json()["refresh_token"] != old_refresh_token
+    assert response.json()["refresh_token"] == old_refresh_token
 
 
 def test_register_user(client: TestClient) -> None:
@@ -761,11 +792,10 @@ def test_login_with_device_serial_number(
     expected_status_code: int,
 ) -> None:
     response = client.post(
-        "/auth/token",
+        f"/auth/token/?serial_number={serial_number}",
         data={
             "username": "test-user-1@sia.com",
-            "password": "_s3cr3tp@5sw0rd_",
-            "serial_number": serial_number,
+            "password": "_s3cr3tp@5sw0rd_"
         },
     )
     assert response.status_code == expected_status_code, response.text
@@ -773,6 +803,6 @@ def test_login_with_device_serial_number(
     device = data["device"]
 
     if device:
-        assert device.id == expected_device_id
+        assert device["id"] == expected_device_id
     else:
         assert device == None

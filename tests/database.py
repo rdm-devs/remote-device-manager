@@ -1,10 +1,12 @@
 import os
 import pytest
+from datetime import datetime, timedelta, UTC
+from jose import jwt
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.testclient import TestClient
 from fastapi_pagination import add_pagination
 from typing import Generator
-from sqlalchemy import StaticPool, create_engine
+from sqlalchemy import StaticPool, create_engine, update
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from src import folder
@@ -16,6 +18,7 @@ from src.auth.dependencies import (
 )
 from src.auth import service as auth_service
 from src.auth import utils as auth_utils
+from src.auth import models as auth_models
 from src.database import get_db, Base
 from src.user.models import User
 from src.device.service import create_device
@@ -54,7 +57,8 @@ def override_get_db():
     finally:
         db.close()
 
-app.user_middleware = [] # removing middleware added in main.py for testing purposes.
+
+app.user_middleware = []  # removing middleware added in main.py for testing purposes.
 
 add_pagination(app)
 app.dependency_overrides[get_db] = override_get_db
@@ -223,7 +227,9 @@ def session(
     tag_8 = create_tag(db, TagCreate(name="tag-user-2", tenant_id=tenant_1.id))
     user_2.add_tag(tag_8)
 
-    tag_9 = create_tag(db, TagAdminCreate(name="tag-global-1", tenant_id=None, type=Type.GLOBAL))
+    tag_9 = create_tag(
+        db, TagAdminCreate(name="tag-global-1", tenant_id=None, type=Type.GLOBAL)
+    )
     user_2.add_tag(tag_9)
     tenant_1.add_tag(tag_9)
 
@@ -281,15 +287,60 @@ def client_authenticated(session: Session):
     return TestClient(app)
 
 
+@pytest.fixture
+async def get_expired_access_token(session: Session):
+    user = session.query(User).filter(User.role_id == 1).first()
+    access_token = auth_utils.create_access_token(
+        user, expiration_minutes=-10 * 60 * 30
+    )
+    refresh_token = await auth_service.create_refresh_token(session, user.id)
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
+
+def expire_refresh_token(session: Session, refresh_token: str) -> str:
+
+    # getting the original token
+    decoded_token = jwt.decode(
+        refresh_token,
+        key=os.getenv("SECRET_KEY"),
+        algorithms=[os.getenv("ALGORITHM")],
+    )
+
+    # creating the expired version of the jwt
+    expired_token = jwt.encode(
+        {
+            "sub": decoded_token["sub"],
+            "sn": decoded_token["sn"],
+            "exp": (datetime.now() - timedelta(days=-1)).astimezone(UTC),
+        },
+        key=os.getenv("SECRET_KEY"),
+        algorithm=os.getenv("ALGORITHM"),
+    )
+
+    # updating the db entry with the expired version
+    session.execute(
+        update(auth_models.AuthRefreshToken)
+        .where(
+            auth_models.AuthRefreshToken.refresh_token == refresh_token,
+        )
+        .values(refresh_token=expired_token)
+    )
+    session.commit()
+    return expired_token
+
+
 async def get_auth_tokens(session: Session, user: User):
     refresh_token = await auth_service.create_refresh_token(session, user.id)
     access_token = auth_utils.create_access_token(user)
 
     return {"access_token": access_token, "refresh_token": refresh_token}
 
+
 async def get_auth_tokens_with_user_id(session: Session, user_id: int):
     user = session.query(User).filter(User.id == user_id).first()
     return await get_auth_tokens(session, user)
+
 
 @pytest.fixture
 async def admin_auth_tokens(session: Session):

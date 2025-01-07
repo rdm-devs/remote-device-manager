@@ -59,12 +59,13 @@ def encode_access_token(data: dict, expires_delta: Optional[datetime.timedelta] 
 
 def create_access_token(
     user: models.User,
+    serial_number: Optional[str] = None,
     expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
 ):
     serialized_user = schemas.User.model_validate(user).model_dump_json()
     access_token_expires = datetime.timedelta(minutes=expiration_minutes)
     access_token = encode_access_token(
-        data={"sub": serialized_user}, expires_delta=access_token_expires
+        data={"sub": serialized_user, "sn": serial_number}, expires_delta=access_token_expires
     )
     return access_token
 
@@ -132,3 +133,9 @@ def create_connection_token(
         data={"sub": serialized_conn_token}, expires_delta=conn_token_expires
     )
     return conn_token
+
+
+def _is_valid_refresh_token(db_refresh_token: auth_schemas.AuthRefreshToken) -> bool:
+    return datetime.datetime.now(
+        datetime.UTC
+    ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)

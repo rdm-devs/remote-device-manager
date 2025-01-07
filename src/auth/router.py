@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.user.schemas import User, UserCreate
-from src.user.service import check_username_exists, create_user
+from src.user.service import check_username_exists, create_user, get_user
 from typing import Any, Dict, Optional
 from src.auth.utils import (
     authenticate_user,
@@ -20,9 +20,10 @@ from src.auth.dependencies import (
     valid_refresh_token_user,
     has_access_to_device,
 )
-from src.auth.schemas import LoginData, Token, ConnectionToken
+from src.auth.schemas import LoginData, Token, ConnectionToken, DeviceLoginData
 from src.auth import service
 from src.device.utils import get_device_by_serial_number
+from src.device import exceptions as device_exceptions
 
 load_dotenv()
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -36,11 +37,11 @@ async def login(
     db: Session = Depends(get_db),
 ) -> LoginData:
     user = authenticate_user(form_data.username, form_data.password, db)
-    refresh_token_value = await service.create_refresh_token(db, user.id)
+    refresh_token_value = await service.create_refresh_token(db, user.id, serial_number)
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
     device = get_device_by_serial_number(db, serial_number)
     return LoginData(
-        access_token=create_access_token(user),
+        access_token=create_access_token(user, serial_number),
         refresh_token=refresh_token_value,
         device=device,
     )
@@ -56,7 +57,7 @@ async def refresh_tokens(
 ):
     new_access_token = create_access_token(user)
     new_refresh_token = await service.create_refresh_token(
-        db, refresh_token.user_id, refresh_token=refresh_token
+        db, refresh_token.user_id, serial_number=refresh_token.serial_number, db_refresh_token=refresh_token
     )
     response.set_cookie(**get_refresh_token_settings(new_refresh_token))
 
@@ -96,3 +97,30 @@ async def get_device_connection_token(
 ) -> dict:
     conn_token = create_connection_token(db, device_id)
     return {"token": conn_token}
+
+
+@router.post("/device/{device_id}/login", response_model=LoginData)
+async def device_login(
+    response: Response,
+    device_id: int,
+    device_login_data: DeviceLoginData,
+    db: Session = Depends(get_db),
+) -> LoginData:
+    refresh_token = device_login_data.refresh_token
+    user_id, serial_number = await service.get_auth_data_from_token(db, refresh_token)
+    user = get_user(db, user_id)
+    device = get_device_by_serial_number(db, serial_number)
+    if not device:
+        raise device_exceptions.DeviceNotFound()
+
+    db_refresh_token = await service.get_refresh_token(db, refresh_token)
+    refresh_token_value = await service.create_refresh_token(
+        db, user_id, serial_number, db_refresh_token
+    )
+    response.set_cookie(**get_refresh_token_settings(refresh_token_value))
+
+    return LoginData(
+        access_token=create_access_token(user, serial_number),
+        refresh_token=refresh_token_value,
+        device=device,
+    )

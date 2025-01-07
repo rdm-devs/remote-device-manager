@@ -1,5 +1,6 @@
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
+from datetime import datetime
 from src.user.schemas import User
 from src.device.schemas import Device
 
@@ -27,3 +28,17 @@ class LoginData(BaseModel):
     access_token: str
     refresh_token: str
     device: Optional[Device]
+
+
+class AuthRefreshToken(BaseModel):
+    id: int
+    user_id: int
+    serial_number: str
+    refresh_token: str
+    expires_at: datetime
+    valid: bool
+
+    model_config = {"from_attributes": True}
+
+class DeviceLoginData(BaseModel):
+    refresh_token: str
