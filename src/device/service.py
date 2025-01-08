@@ -136,13 +136,15 @@ def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.Hear
         ),
     )
 
-    device_update = schemas.DeviceUpdate(id_rust=id_rust, pass_rust=pass_rust)
-    db.execute(
-        update(models.Device)
-        .where(models.Device.id == device_id)
-        .values(**device_update.model_dump(exclude_unset=True))
-    )
-    db.commit()
+    if id_rust is not None and pass_rust is not None:
+        # the attributes are not valid when equal to None so no modification is done.
+        device_update = schemas.DeviceUpdate(id_rust=id_rust, pass_rust=pass_rust)
+        db.execute(
+            update(models.Device)
+            .where(models.Device.id == device_id)
+            .values(**device_update.model_dump(exclude_unset=True))
+        )
+        db.commit()
 
     # updating heartbeat frequency according to tenant settings
     db_device: models.Device = db.scalar(
