@@ -298,7 +298,7 @@ async def get_expired_access_token(session: Session):
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 
-def expire_refresh_token(session: Session, refresh_token: str) -> str:
+def expire_refresh_token(session: Session, user_id: int, refresh_token: str, delta_days: int = -1) -> str:
 
     # getting the original token
     decoded_token = jwt.decode(
@@ -308,11 +308,12 @@ def expire_refresh_token(session: Session, refresh_token: str) -> str:
     )
 
     # creating the expired version of the jwt
+    expires_at = (datetime.now() - timedelta(days=delta_days)).astimezone(UTC)
     expired_token = jwt.encode(
         {
             "sub": decoded_token["sub"],
             "sn": decoded_token["sn"],
-            "exp": (datetime.now() - timedelta(days=-1)).astimezone(UTC),
+            "exp": expires_at,
         },
         key=os.getenv("SECRET_KEY"),
         algorithm=os.getenv("ALGORITHM"),
@@ -324,7 +325,7 @@ def expire_refresh_token(session: Session, refresh_token: str) -> str:
         .where(
             auth_models.AuthRefreshToken.refresh_token == refresh_token,
         )
-        .values(refresh_token=expired_token)
+        .values(refresh_token=expired_token, expires_at=expires_at)
     )
     session.commit()
     return expired_token

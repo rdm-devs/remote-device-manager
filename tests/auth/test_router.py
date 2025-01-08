@@ -49,6 +49,7 @@ def test_login(client: TestClient) -> None:
 async def test_device_login(session: Session, client: TestClient) -> None:
     # login in sending a serial number
     device_id = 1
+    user_id = 1
     serial_number = "DeviceSerialno0001"
     response = client.post(
         f"/auth/token?serial_number={serial_number}",
@@ -64,7 +65,7 @@ async def test_device_login(session: Session, client: TestClient) -> None:
     # login in with the device
     response = client.post(
         f"/auth/device/{device_id}/login",
-        json={"refresh_token": expire_refresh_token(session, refresh_token)},
+        json={"refresh_token": expire_refresh_token(session, user_id, refresh_token)},
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -806,3 +807,62 @@ def test_login_with_device_serial_number(
         assert device["id"] == expected_device_id
     else:
         assert device == None
+
+@pytest.mark.asyncio
+async def test_is_valid_refresh_token(
+    session: Session,
+    client: TestClient,
+    
+) -> None:
+    response = client.post(
+        "/auth/token",
+        data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    refresh_token = data["refresh_token"]
+
+    response = client.get(
+        f"/auth/validate-token/?refresh_token={refresh_token}",
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data["is_valid"] == True
+
+    user_id = 1
+    expired_token = expire_refresh_token(session, user_id, refresh_token, 10)
+    response = client.get(
+        f"/auth/validate-token/?refresh_token={expired_token}",
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data["is_valid"] == False
+
+
+
+@pytest.mark.asyncio
+async def test_repeated_login(
+    session: Session,
+    client: TestClient,
+    
+) -> None:
+    
+    def login() -> str: 
+        response = client.post(
+            "/auth/token",
+            data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
+        )
+        assert response.status_code == status.HTTP_200_OK, response.text
+        data = response.json()
+        refresh_token = data["refresh_token"]
+        return refresh_token
+
+    rt1 = login()
+    rt2 = login()
+    assert rt1 == rt2
+
+
+    rt1 = login()
+    time.sleep(5)
+    rt2 = login()
+    assert rt1 == rt2

@@ -4,7 +4,7 @@ import random
 import datetime
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from src.auth import models, utils, exceptions
 from src.auth.utils import _is_valid_refresh_token
@@ -46,8 +46,8 @@ async def create_refresh_token(
     db: Session,
     user_id: int,
     serial_number: Optional[str] = None,
-    db_refresh_token: Optional[models.AuthRefreshToken] = None,
 ) -> str:
+    db_refresh_token = db.scalar(select(models.AuthRefreshToken).where(models.AuthRefreshToken.user_id == user_id))
     if db_refresh_token:
         if _is_valid_refresh_token(db_refresh_token):
             return db_refresh_token.refresh_token

@@ -13,6 +13,7 @@ from src.auth.utils import (
     get_refresh_token_settings,
     create_connection_token,
     is_valid_otp,
+    _is_valid_refresh_token
 )
 from src.auth.dependencies import (
     get_current_active_user,
@@ -57,7 +58,7 @@ async def refresh_tokens(
 ):
     new_access_token = create_access_token(user)
     new_refresh_token = await service.create_refresh_token(
-        db, refresh_token.user_id, serial_number=refresh_token.serial_number, db_refresh_token=refresh_token
+        db, refresh_token.user_id, serial_number=refresh_token.serial_number
     )
     response.set_cookie(**get_refresh_token_settings(new_refresh_token))
 
@@ -113,9 +114,8 @@ async def device_login(
     if not device:
         raise device_exceptions.DeviceNotFound()
 
-    db_refresh_token = await service.get_refresh_token(db, refresh_token)
     refresh_token_value = await service.create_refresh_token(
-        db, user_id, serial_number, db_refresh_token
+        db, user_id, serial_number
     )
     response.set_cookie(**get_refresh_token_settings(refresh_token_value))
 
@@ -124,3 +124,13 @@ async def device_login(
         refresh_token=refresh_token_value,
         device=device,
     )
+
+
+@router.get("/validate-token", response_model=dict)
+async def validate_token(
+    refresh_token: str,
+    db: Session = Depends(get_db),
+) -> dict:
+    db_refresh_token = await service.get_refresh_token(db, refresh_token)
+    is_valid_token = _is_valid_refresh_token(db_refresh_token)
+    return {"is_valid": is_valid_token}
