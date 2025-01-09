@@ -1,6 +1,7 @@
 import os
 import time
 import pytest
+from typing import Optional
 from dotenv import load_dotenv
 from jose import jwt
 from sqlalchemy.orm import Session
@@ -830,3 +831,32 @@ async def test_repeated_login(
     time.sleep(5)
     rt2 = login()
     assert rt1 == rt2
+
+
+@pytest.mark.asyncio
+async def test_login_with_and_without_a_device(
+    session: Session,
+    client: TestClient,
+) -> None:
+
+    def login(serial_number: Optional[str] = None) -> str:
+        url = f"/auth/token/?serial_number={serial_number}" if serial_number else "/auth/token"
+        
+        response = client.post(
+            url,
+            data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
+        )
+        assert response.status_code == status.HTTP_200_OK, response.text
+        data = response.json()
+        refresh_token = data["refresh_token"]
+        return refresh_token
+
+    rt1 = login()
+    rt2 = login()
+    rt3 = login("DeviceSerialno0001")
+    rt4 = login("DeviceSerialno0001")
+    rt5 = login("DeviceSerialno0002")
+    assert rt1 == rt2
+    assert rt2 != rt3
+    assert rt3 == rt4
+    assert rt4 != rt5

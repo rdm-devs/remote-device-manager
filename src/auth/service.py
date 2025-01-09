@@ -47,7 +47,15 @@ async def create_refresh_token(
     user_id: int,
     serial_number: Optional[str] = None,
 ) -> str:
-    db_refresh_token = db.scalar(select(models.AuthRefreshToken).where(models.AuthRefreshToken.user_id == user_id))
+    if not serial_number:
+        db_refresh_token = db.scalar(select(models.AuthRefreshToken).where(models.AuthRefreshToken.user_id == user_id))
+    else:
+        db_refresh_token = db.scalars(
+            select(models.AuthRefreshToken).where(
+                models.AuthRefreshToken.serial_number == serial_number
+            )
+        ).first()
+
     if db_refresh_token:
         if _is_valid_refresh_token(db_refresh_token):
             return db_refresh_token.refresh_token
