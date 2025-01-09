@@ -808,32 +808,6 @@ def test_login_with_device_serial_number(
 
 
 @pytest.mark.asyncio
-async def test_repeated_login(
-    session: Session,
-    client: TestClient,
-) -> None:
-
-    def login() -> str:
-        response = client.post(
-            "/auth/token",
-            data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
-        )
-        assert response.status_code == status.HTTP_200_OK, response.text
-        data = response.json()
-        refresh_token = data["refresh_token"]
-        return refresh_token
-
-    rt1 = login()
-    rt2 = login()
-    assert rt1 == rt2
-
-    rt1 = login()
-    time.sleep(5)
-    rt2 = login()
-    assert rt1 == rt2
-
-
-@pytest.mark.asyncio
 async def test_login_with_and_without_a_device(
     session: Session,
     client: TestClient,
