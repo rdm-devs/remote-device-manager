@@ -31,7 +31,7 @@ async def get_refresh_token(
     return db_refresh_token
 
 
-async def delete_expired_refresh_token(
+async def delete_refresh_token(
     db: Session, refresh_token: str
 ) -> None:
     db.execute(
@@ -60,7 +60,7 @@ async def create_refresh_token(
         if _is_valid_refresh_token(db_refresh_token):
             return db_refresh_token.refresh_token
         else:
-            await delete_expired_refresh_token(db_refresh_token.refresh_token)
+            await delete_refresh_token(db, db_refresh_token.refresh_token)
 
     user = db.query(User).filter(User.id == user_id).first()
     expiration_minutes = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")) * 24 * 60

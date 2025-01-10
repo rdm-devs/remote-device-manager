@@ -77,7 +77,7 @@ async def logout_user(
     db: Session = Depends(get_db),
     refresh_token: Dict[str, Any] = Depends(valid_refresh_token),
 ) -> dict:
-    await service.expire_refresh_token(db, refresh_token.refresh_token)
+    await service.delete_refresh_token(db, refresh_token.refresh_token)
 
     response.delete_cookie(
         **get_refresh_token_settings(refresh_token.refresh_token, expired=True)
