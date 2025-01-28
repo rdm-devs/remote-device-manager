@@ -43,6 +43,14 @@ def connect_to_shared_device(id: str, db: Session = Depends(get_db)):
     return RedirectResponse(redirect_url)
 
 
+@router.get("/unassigned", response_model=CustomBigPage[schemas.DeviceList])
+def get_unassigned_devices(
+    db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
+):
+    unassigned_devices = service.get_unassigned_devices(db)
+    return paginate(db, unassigned_devices)
+
+
 # TODO: remove
 # @router.get("/verify-url")
 # def connect_to_shared_device(url: str, db: Session = Depends(get_db)):
@@ -61,17 +69,6 @@ def read_device(
 ):
     db_device = service.get_device(db, device_id=device_id)
     return db_device
-
-
-@tenant_router.get(
-    "/{tenant_id}/devices", response_model=CustomBigPage[schemas.DeviceList]
-)
-def read_devices_from_tenant(
-    tenant_id: int,
-    db: Session = Depends(get_db),
-    user: User = Depends(has_access_to_tenant),
-):
-    return paginate(service.get_devices(db, tenant_id=tenant_id))
 
 
 @router.get("/", response_model=CustomBigPage[schemas.DeviceList])

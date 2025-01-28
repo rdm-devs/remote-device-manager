@@ -256,7 +256,8 @@ def delete_tag_multi(db: Session, user: User, tag_ids: List[int]) -> List[int]:
         delete(models.Tag).where(
             models.Tag.id.in_(tag_ids), 
             models.Tag.type == models.Type.USER_CREATED,
-            or_(models.Tag.created_by_id == user.id, user.is_admin)
+            or_(models.Tag.created_by_id == user.id, user.is_admin),
+            models.Tag.tenant_id != 1
         )
     )
     db.commit()

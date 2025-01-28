@@ -32,7 +32,7 @@ def get_tenant(db: Session, tenant_id: int):
 
 def get_tenants(db: Session, user_id: int):
     user = get_user(db, user_id)
-    tenants = select(models.Tenant)
+    tenants = select(models.Tenant).where(models.Tenant.id != 1)
     if user.is_admin:
         return tenants
     else:

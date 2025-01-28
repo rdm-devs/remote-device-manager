@@ -73,6 +73,26 @@ def get_devices(db: Session, user_id: int):
 
     return stmt.select()
 
+def get_unassigned_devices(db: Session):
+    folder_id = db.scalar(select(Folder.id).where(Folder.tenant_id == 1))
+    devices = select(models.Device).where(models.Device.folder_id == folder_id)
+
+    latest_heartbeat = (
+        select(models.Heartbeat)
+        .order_by(models.Heartbeat.timestamp.desc())
+        .limit(1)
+        .subquery()
+    )
+    stmt = (
+        devices.add_columns(
+            latest_heartbeat.c.timestamp.label("heartbeat_timestamp")
+        )  # creating an alias that matches the schema attr.
+        .join(latest_heartbeat, isouter=True)
+        .group_by(models.Device.id)
+    )
+
+    return stmt.select()
+
 
 def get_device_by_name(db: Session, device_name: str):
     device = db.query(models.Device).filter(models.Device.name == device_name).first()

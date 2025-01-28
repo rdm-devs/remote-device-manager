@@ -12,6 +12,7 @@ from src.tag import schemas as tags_schemas
 from src.database import get_db
 from src.tenant import service, schemas
 from src.utils import CustomBigPage
+from src.exceptions import PermissionDenied
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
@@ -51,6 +52,8 @@ def update_tenant(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     db_tenant = read_tenant(tenant_id, db)
     updated_tenant = service.update_tenant(db, db_tenant, updated_tenant=tenant)
     return updated_tenant
@@ -62,6 +65,8 @@ def delete_tenant(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     db_tenant = read_tenant(tenant_id, db)
     deleted_tenant_id = service.delete_tenant(db, db_tenant)
     return {
@@ -76,6 +81,8 @@ async def read_tags(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     # TODO: make it work with filters (folder_id, device_id, tag name)
     return paginate(db, await service.get_tenant_tags(db, user, tenant_id=tenant_id))
 
@@ -86,6 +93,8 @@ async def read_settings(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     return service.get_tenant_settings(db, tenant_id)
 
 @router.patch("/{tenant_id}/settings", response_model=schemas.TenantSettings)
@@ -95,4 +104,6 @@ async def update_settings(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     return service.update_tenant_settings(db, tenant_id, tenant_settings)

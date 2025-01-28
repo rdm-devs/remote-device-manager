@@ -17,6 +17,7 @@ from src.user.schemas import User
 from src.user.router import router as user_router
 from src.database import get_db
 from src.tag import service, schemas
+from src.exceptions import PermissionDenied
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -43,6 +44,8 @@ async def read_tags(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
+    if tenant_id == 1:
+        raise PermissionDenied()
     if not user_id or user_id == "me":
         ignore_user_id = True
         user_id = user.id
@@ -66,6 +69,8 @@ def read_tag(
     user: User = Depends(get_current_active_user),
 ):
     db_tag = service.get_tag(db, tag_id)
+    if db_tag.tenant_id == 1:
+        raise PermissionDenied()
     return db_tag
 
 
@@ -77,6 +82,8 @@ def update_tag(
     user: User = Depends(get_current_active_user),
 ):
     db_tag = read_tag(tag_id, db)
+    if db_tag.tenant_id == 1:
+        raise PermissionDenied()
     updated_device = service.update_tag(db, db_tag, updated_tag=tag)
     if not updated_device:
         raise HTTPException(status_code=400, detail="Tag could not be updated")
@@ -90,6 +97,8 @@ def delete_tag(
     user: User = Depends(get_current_active_user),
 ):
     db_tag_group = read_tag(tag_id, db)
+    if db_tag.tenant_id == 1:
+        raise PermissionDenied()
     deleted_tag_id = service.delete_tag(db, db_tag_group)
     if not deleted_tag_id:
         raise HTTPException(status_code=400, detail="Tag could not be deleted")

@@ -274,51 +274,51 @@ def delete_folder(db: Session, db_folder: schemas.Folder):
     return db_folder.id
 
 
-def get_subfolders(
-    db: Session, parent_folder_id: int, user_id: int
-) -> List[models.Folder]:
-    user = get_user(db, user_id)
+# def get_subfolders(
+#     db: Session, parent_folder_id: int, user_id: int
+# ) -> List[models.Folder]:
+#     user = get_user(db, user_id)
 
-    if user.is_admin:
-        return db.query(models.Folder).filter(
-            models.Folder.parent_id == parent_folder_id
-        )
-    else:
-        parent_folder = get_folder(db, parent_folder_id)
-        subfolders_id = [s.id for s in parent_folder.subfolders]
-        return db.query(models.Folder).filter(models.Folder.id.in_(subfolders_id))
-
-
-def create_subfolder(
-    db: Session, parent_folder_id: int, subfolder: schemas.FolderCreate
-):
-    # sanity check
-    parent_folder = get_folder(db, parent_folder_id)
-    if not subfolder.parent_id or subfolder.parent_id != parent_folder_id:
-        subfolder.parent_id = parent_folder_id
-    db_folder = create_folder(db, subfolder)
-    return db_folder
+#     if user.is_admin:
+#         return db.query(models.Folder).filter(
+#             models.Folder.parent_id == parent_folder_id
+#         )
+#     else:
+#         parent_folder = get_folder(db, parent_folder_id)
+#         subfolders_id = [s.id for s in parent_folder.subfolders]
+#         return db.query(models.Folder).filter(models.Folder.id.in_(subfolders_id))
 
 
-def update_subfolder(
-    db: Session,
-    parent_folder_id: int,
-    db_subfolder: schemas.Folder,
-    subfolder: schemas.FolderUpdate,
-):
-    # sanity check
-    parent_folder = get_folder(db, parent_folder_id)
-    if not subfolder.parent_id or subfolder.parent_id != parent_folder_id:
-        raise exceptions.SubfolderParentMismatch()
-    db_folder = update_folder(db, db_subfolder, subfolder)
-    return db_folder
+# def create_subfolder(
+#     db: Session, parent_folder_id: int, subfolder: schemas.FolderCreate
+# ):
+#     # sanity check
+#     parent_folder = get_folder(db, parent_folder_id)
+#     if not subfolder.parent_id or subfolder.parent_id != parent_folder_id:
+#         subfolder.parent_id = parent_folder_id
+#     db_folder = create_folder(db, subfolder)
+#     return db_folder
 
 
-def delete_subfolder(db: Session, parent_folder_id: int, subfolder: schemas.Folder):
-    # sanity check
-    parent_folder = get_folder(db, parent_folder_id)
-    if parent_folder.id == subfolder.parent_id:
-        db_folder = delete_folder(db, subfolder)
-        return db_folder
-    else:
-        raise exceptions.SubfolderParentMismatch()
+# def update_subfolder(
+#     db: Session,
+#     parent_folder_id: int,
+#     db_subfolder: schemas.Folder,
+#     subfolder: schemas.FolderUpdate,
+# ):
+#     # sanity check
+#     parent_folder = get_folder(db, parent_folder_id)
+#     if not subfolder.parent_id or subfolder.parent_id != parent_folder_id:
+#         raise exceptions.SubfolderParentMismatch()
+#     db_folder = update_folder(db, db_subfolder, subfolder)
+#     return db_folder
+
+
+# def delete_subfolder(db: Session, parent_folder_id: int, subfolder: schemas.Folder):
+#     # sanity check
+#     parent_folder = get_folder(db, parent_folder_id)
+#     if parent_folder.id == subfolder.parent_id:
+#         db_folder = delete_folder(db, subfolder)
+#         return db_folder
+#     else:
+#         raise exceptions.SubfolderParentMismatch()
