@@ -29,6 +29,10 @@ from src.user import models as user_models
 from src.tag.schemas import TagCreate
 from src.tag.service import create_tag
 from src.tag.models import entities_and_tags_table, Tag, Type
+from src.exceptions import PermissionDenied
+from src.folder.service import delete_folder, get_folder
+from src.folder.exceptions import FolderNotFound
+from src.device.models import Device
 
 load_dotenv()
 
@@ -239,3 +243,42 @@ def test_update_tenant_settings(
             session, tenant_id, TenantSettings(**tenant_settings_after)
         )
         assert new_settings.heartbeat_s == tenant_settings_after["heartbeat_s"]
+
+
+def test_delete_tenant_permanent(
+    session: Session
+) -> None:
+    tenant_id = 2
+    tenant = get_tenant(session, tenant_id)
+    # saving folder ids to check that after tenant deletion these don't exist anymore
+    folder_ids = [f.id for f in tenant.folders]
+    # saving devices assigned to the tenant being deleted should be transferred to tenant 1.
+    devices = session.scalars(select(Device).where(Device.folder_id.in_(folder_ids))).all()
+
+    delete_tenant_id = delete_tenant(session, tenant)
+    assert delete_tenant_id == tenant_id
+
+    # checking that the tenant has been deleted
+    with pytest.raises(TenantNotFound):
+        tenant = get_tenant(session, tenant_id)
+
+    # checking that the tenant folders don't exist anymore
+    for f_id in folder_ids:
+        with pytest.raises(FolderNotFound):
+            folder = get_folder(session, f_id)
+
+    # checking that all the devices previosly assigned to the tenant being deleted were transferred to tenant 1
+    assert all(filter(lambda d: d.folder_id == 1, devices))
+
+def test_delete_non_nexistent_tenant(session: Session) -> None:
+    tenant_id = 99
+    with pytest.raises(TenantNotFound):
+        tenant = get_tenant(session, tenant_id)
+        delete_tenant(session, tenant)
+
+
+def test_delete_tenant_one(session: Session) -> None:
+    tenant_id = 1
+    with pytest.raises(PermissionDenied):
+        tenant = get_tenant(session, tenant_id)
+        delete_tenant(session, tenant)

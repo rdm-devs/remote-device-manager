@@ -15,7 +15,7 @@ from src.tenant.utils import (
     check_tenant_name_taken,
     filter_tag_ids,
 )
-from src.folder.service import create_root_folder
+from src.folder.service import create_root_folder, delete_folder
 from src.folder.schemas import FolderCreate
 from src.user.schemas import User
 from src.user.models import tenants_and_users_table
@@ -131,9 +131,13 @@ def update_tenant(
 
 def delete_tenant(db: Session, db_tenant: schemas.Tenant):
     # sanity check
+    if db_tenant.id == 1:
+        raise PermissionDenied()
     check_tenant_exists(db, tenant_id=db_tenant.id)
-    if len(db_tenant.folders) > 0:
-        raise exceptions.TenantCannotBeDeleted()
+    for folder in db_tenant.folders:
+        # deleting only the root folder as children folders will be automatically deleted in cascade
+        if folder.parent_id == None:
+            delete_folder(db, folder)
 
     db.delete(db_tenant)
     db.commit()

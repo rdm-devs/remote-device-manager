@@ -36,7 +36,9 @@ class Tenant(AuditMixin, Base):
     tags_for_tenant: Mapped[List["src.tag.models.Tag"]] = relationship(
         "src.tag.models.Tag", back_populates="tenant"
     )
-    settings: Mapped["TenantSettings"] = relationship("TenantSettings")
+    settings: Mapped["TenantSettings"] = relationship(
+        "TenantSettings", cascade="all, delete"
+    )
 
     @property
     def tags(self):
@@ -49,5 +51,6 @@ class Tenant(AuditMixin, Base):
 class TenantSettings(AuditMixin, Base):
     __tablename__ = "tenant_settings"
 
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id", ondelete="cascade"), primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id", ondelete="cascade"), index=True)
     heartbeat_s: Mapped[int] = mapped_column(default=int(os.getenv("HEARTBEAT_S")), nullable=False)
