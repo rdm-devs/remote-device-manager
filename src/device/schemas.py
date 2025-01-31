@@ -46,6 +46,8 @@ class DeviceList(BaseModel):
     entity_id: int
     name: str
     is_online: bool
+    id_rust: Optional[str] = None
+    pass_rust: Optional[str] = None
     tags: List[Tag] = []
     heartbeat_timestamp: Optional[datetime] = None
     share_url: Optional[str] = None
