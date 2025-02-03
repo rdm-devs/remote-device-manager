@@ -74,6 +74,7 @@ def get_devices(db: Session, user_id: int):
     return stmt.select()
 
 def get_unassigned_devices(db: Session):
+    expire_invalid_share_urls(db)
     folder_id = db.scalar(select(Folder.id).where(Folder.tenant_id == 1))
     devices = select(models.Device).where(models.Device.folder_id == folder_id)
 
