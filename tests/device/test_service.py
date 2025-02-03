@@ -315,8 +315,9 @@ def test_delete_device_with_invalid_id(
 
 
 def test_share_device(session: Session) -> None:
-    share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
-    assert share_device_url.url is not None
+    share_url, expiration_date  = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
+    assert share_url is not None
+    assert expiration_date is not None
 
 
 def test_share_device_with_invalid_expiration_minutes(session: Session) -> None:
@@ -330,9 +331,10 @@ def test_share_device_with_invalid_device_id(session: Session) -> None:
 
 
 def test_verify_share_url(session: Session) -> None:
-    share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
-    valid_url = share_device_url.url
+    share_device_url, expiration_date = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
+    valid_url = share_device_url
     assert valid_url is not None
+    assert expiration_date is not None
 
     redirect_url = verify_share_url(session, valid_url.split("id=")[1])
     assert "id" in redirect_url and "otp" in redirect_url
@@ -343,7 +345,7 @@ def test_verify_share_url_has_expired(session: Session) -> None:
         device_id=1, user_id=1, expiration_minutes=-1
     )  # negative timedelta makes it expired
     with pytest.raises(ExpiredShareDeviceURL):
-        _ = verify_share_url(session, expired_url.url.split("id=")[1])
+        _ = verify_share_url(session, expired_url.split("id=")[1])
 
 
 @pytest.mark.parametrize(

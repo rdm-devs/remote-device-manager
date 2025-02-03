@@ -190,7 +190,7 @@ def delete_device(db: Session, db_device: schemas.Device):
 
 def create_share_url(
     user_id: int, device_id: int, expiration_minutes: int
-) -> tuple[schemas.ShareDeviceURL, datetime]:
+) -> tuple[str, datetime]:
     expiration_minutes = (
         int(os.getenv("SHARE_URL_MAX_DURATION_MINUTES"))
         if expiration_minutes == 0
@@ -207,7 +207,7 @@ def create_share_url(
         to_encode, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM")
     )
     share_url = f"{os.getenv(f"DEVICE_SHARE_URL_BASE_{os.getenv("ENV")}")}/devices/shared?id={share_hash}"
-    return schemas.ShareDeviceURL(url=share_url), expiration_dt
+    return share_url, expiration_dt
 
 
 def share_device(
@@ -229,13 +229,13 @@ def share_device(
         db,
         device,
         schemas.DeviceUpdate(
-            share_url=share_url.url,
+            share_url=share_url,
             share_url_expires_at=expiration_dt,
             tags=device.tags,
         ),
     )
 
-    return share_url
+    return share_url, expiration_dt
 
 
 def verify_share_url(db: Session, token: str) -> str:
