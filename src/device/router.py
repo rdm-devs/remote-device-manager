@@ -135,10 +135,7 @@ def share_device(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_device),
 ):
-    share_url, expiration_date = service.share_device(
-        db, user.id, device_id, share_params
-    )
-    return schemas.ShareDeviceURL(url=share_url, expiration_date=expiration_date)
+    return service.share_device(db, user.id, device_id, share_params)
 
 
 @router.get("/{device_id:int}/revoke-share-url", response_model=schemas.Device)

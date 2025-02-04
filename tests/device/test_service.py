@@ -315,28 +315,29 @@ def test_delete_device_with_invalid_id(
 
 
 def test_share_device(session: Session) -> None:
-    share_url, expiration_date  = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
-    assert share_url is not None
-    assert expiration_date is not None
+    share_data  = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
+    assert share_data.url is not None
+    assert share_data.expiration_date is not None
+    assert share_data.time_zone is not None
 
 
 def test_share_device_with_invalid_expiration_minutes(session: Session) -> None:
     with pytest.raises(InvalidExpirationMinutes):
-        share_device_url = share_device(session, 1, 1, ShareParams(expiration_minutes=-1))
+        share_data = share_device(session, 1, 1, ShareParams(expiration_minutes=-1))
 
 
 def test_share_device_with_invalid_device_id(session: Session) -> None:
     with pytest.raises(DeviceNotFound):
-        share_device_url = share_device(session, 1, -1, ShareParams(expiration_minutes=1))
+        share_data = share_device(session, 1, -1, ShareParams(expiration_minutes=1))
 
 
 def test_verify_share_url(session: Session) -> None:
-    share_device_url, expiration_date = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
-    valid_url = share_device_url
-    assert valid_url is not None
-    assert expiration_date is not None
+    share_data = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
+    assert share_data.url is not None
+    assert share_data.expiration_date is not None
+    assert share_data.time_zone is not None
 
-    redirect_url = verify_share_url(session, valid_url.split("id=")[1])
+    redirect_url = verify_share_url(session, share_data.url.split("id=")[1])
     assert "id" in redirect_url and "otp" in redirect_url
 
 

@@ -73,6 +73,7 @@ def get_devices(db: Session, user_id: int):
 
     return stmt.select()
 
+
 def get_unassigned_devices(db: Session):
     expire_invalid_share_urls(db)
     folder_id = db.scalar(select(Folder.id).where(Folder.tenant_id == 1))
@@ -187,6 +188,10 @@ def delete_device(db: Session, db_device: schemas.Device):
     db.commit()
     return db_device.id
 
+def format_expiration_date(expiration_date: datetime) -> datetime:
+    date_format = "%Y-%m-%d %H:%M:%S"
+    return datetime.strptime(expiration_date.strftime(date_format), date_format)
+
 
 def create_share_url(
     user_id: int, device_id: int, expiration_minutes: int
@@ -196,7 +201,7 @@ def create_share_url(
         if expiration_minutes == 0
         else expiration_minutes
     )
-    expiration_dt = datetime.now(UTC) + timedelta(minutes=expiration_minutes)
+    expiration_dt = format_expiration_date(datetime.now(UTC) + timedelta(minutes=expiration_minutes))
     to_encode = {
         "user_id": user_id,
         "device_id": device_id,
@@ -235,7 +240,9 @@ def share_device(
         ),
     )
 
-    return share_url, expiration_dt
+    return schemas.ShareDeviceURL(
+        url=share_url, expiration_date=expiration_dt, time_zone=device.time_zone
+    )
 
 
 def verify_share_url(db: Session, token: str) -> str:

@@ -103,3 +103,4 @@ class ShareParams(BaseModel):
 class ShareDeviceURL(BaseModel):
     url: str
     expiration_date: datetime
+    time_zone: str
