@@ -20,7 +20,7 @@ from src.auth.dependencies import (
     valid_refresh_token_user,
     has_access_to_device,
 )
-from src.auth.schemas import LoginData, Token, ConnectionToken, DeviceLoginData
+from src.auth.schemas import LoginData, Token, ConnectionToken, DeviceLoginData, ForgotPasswordData, ForgotPasswordEmailSent
 from src.auth import service
 from src.device.utils import get_device_by_serial_number
 from src.device import exceptions as device_exceptions
@@ -121,3 +121,11 @@ async def device_login(
         refresh_token=refresh_token_value,
         device=device,
     )
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    forgot_password_data: ForgotPasswordData,
+    db: Session = Depends(get_db),
+) -> ForgotPasswordEmailSent:
+    return service.send_password_recovery_email(db, forgot_password_data)

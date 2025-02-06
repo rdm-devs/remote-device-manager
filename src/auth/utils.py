@@ -3,15 +3,17 @@ import datetime
 import pyotp
 from fastapi import Depends
 from dotenv import load_dotenv
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 from typing import Any, Optional, Dict, Union
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from src.database import get_db
-from src.user import models, schemas
+from src.user import models as user_models
+from src.user import schemas as user_schemas
 from src.user import exceptions as user_exceptions
 from src.auth import exceptions
+from src.auth.models import AuthPasswordRecoveryToken as RecoveryToken
 from src.auth import schemas as auth_schemas
 from src.device.models import Device
 from src.device import exceptions as device_exceptions
@@ -28,9 +30,9 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user_by_username(db: Session, username: str) -> models.User:
+def get_user_by_username(db: Session, username: str) -> user_models.User:
     user = db.scalars(
-        select(models.User).where(models.User.username == username)
+        select(user_models.User).where(user_models.User.username == username)
     ).first()
     if not user:
         raise user_exceptions.UserNotFound()
@@ -58,14 +60,15 @@ def encode_access_token(data: dict, expires_delta: Optional[datetime.timedelta] 
 
 
 def create_access_token(
-    user: models.User,
+    user: user_models.User,
     serial_number: Optional[str] = None,
     expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
 ):
-    serialized_user = schemas.User.model_validate(user).model_dump_json()
+    serialized_user = user_schemas.User.model_validate(user).model_dump_json()
     access_token_expires = datetime.timedelta(minutes=expiration_minutes)
     access_token = encode_access_token(
-        data={"sub": serialized_user, "sn": serial_number}, expires_delta=access_token_expires
+        data={"sub": serialized_user, "sn": serial_number},
+        expires_delta=access_token_expires,
     )
     return access_token
 
@@ -90,6 +93,7 @@ def get_refresh_token_settings(
         "max_age": int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")),
     }
 
+
 def check_device_has_rustdesk_credentials(db: Session, device_id: int):
     device = db.scalars(select(Device).where(Device.id == device_id)).first()
     if not device:
@@ -97,6 +101,7 @@ def check_device_has_rustdesk_credentials(db: Session, device_id: int):
     if not device.id_rust or not device.pass_rust:
         raise device_exceptions.DeviceCredentialsNotConfigured()
     return device
+
 
 def is_valid_otp(otp: str) -> bool:
     totp = pyotp.TOTP(
@@ -106,11 +111,13 @@ def is_valid_otp(otp: str) -> bool:
         return otp
     raise exceptions.InvalidOTP()
 
+
 def create_connection_url(db: Session, device_id: int, otp: str):
     _ = check_device_has_rustdesk_credentials(db, device_id)
 
     base_url = os.getenv(f"RUSTDESK_CLIENT_URL")
     return f"{base_url}?id={device_id}&otp={otp}"
+
 
 def create_otp(interval: int = int(os.getenv("OTP_INTERVAL_SECS"))):
     # should I write this in the db here?
@@ -139,3 +146,29 @@ def _is_valid_refresh_token(db_refresh_token: auth_schemas.AuthRefreshToken) -> 
     return datetime.datetime.now(
         datetime.UTC
     ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
+
+
+def get_most_recent_valid_recovery_token(db: Session, email: str) -> Union[RecoveryToken, None]:
+    return db.scalar(
+        select(RecoveryToken)
+        .where(
+            RecoveryToken.email == email,
+            RecoveryToken.expires_at > datetime.datetime.now(datetime.UTC),
+        )
+        .order_by(RecoveryToken.expires_at.desc())
+    )
+
+
+def expire_invalid_recovery_tokens(db: Session, email: str):
+    db.execute(
+        delete(RecoveryToken).where(
+            RecoveryToken.email == email,
+            RecoveryToken.expires_at < datetime.datetime.now(datetime.UTC),
+        )
+    )
+    db.commit()
+
+
+def expire_used_recovery_token(db: Session, email: str):
+    db.execute(delete(RecoveryToken).where(RecoveryToken.email == email))
+    db.commit()

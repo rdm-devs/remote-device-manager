@@ -14,3 +14,12 @@ class AuthRefreshToken(AuditMixin, Base):
     refresh_token: Mapped[str] = mapped_column(String(1000))
     expires_at: Mapped[datetime] = mapped_column()
     valid: Mapped[bool] = mapped_column(default=True)
+
+
+class AuthPasswordRecoveryToken(AuditMixin, Base):
+    __tablename__ = "auth_password_recovery_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(1000))
+    recovery_token: Mapped[str] = mapped_column(String(1000))
+    expires_at: Mapped[datetime] = mapped_column()

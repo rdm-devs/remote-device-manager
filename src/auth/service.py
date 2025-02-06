@@ -2,12 +2,20 @@ import os
 import string
 import random
 import datetime
-from typing import Any, Dict, Optional
+from hashlib import sha256
+from jose import JWTError, jwt
+from typing import Any, Dict, Optional, Union
 from dotenv import load_dotenv
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
-from src.auth import models, utils, exceptions
-from src.auth.utils import _is_valid_refresh_token
+from src.auth import models, utils, exceptions, schemas, constants
+from src.auth.utils import (
+    _is_valid_refresh_token,
+    get_user_by_username,
+    get_most_recent_valid_recovery_token,
+    expire_invalid_recovery_tokens,
+    expire_used_recovery_token,
+)
 from src.user.models import User
 
 load_dotenv()
@@ -31,9 +39,7 @@ async def get_refresh_token(
     return db_refresh_token
 
 
-async def delete_refresh_token(
-    db: Session, refresh_token: str
-) -> None:
+async def delete_refresh_token(db: Session, refresh_token: str) -> None:
     db.execute(
         delete(models.AuthRefreshToken).where(
             models.AuthRefreshToken.refresh_token == refresh_token
@@ -48,7 +54,11 @@ async def create_refresh_token(
     serial_number: Optional[str] = None,
 ) -> str:
     if not serial_number:
-        db_refresh_token = db.scalar(select(models.AuthRefreshToken).where(models.AuthRefreshToken.user_id == user_id))
+        db_refresh_token = db.scalar(
+            select(models.AuthRefreshToken).where(
+                models.AuthRefreshToken.user_id == user_id
+            )
+        )
     else:
         db_refresh_token = db.scalars(
             select(models.AuthRefreshToken).where(
@@ -92,3 +102,47 @@ async def get_auth_data_from_token(db: Session, token: str) -> str:
     if not db_token:
         raise exceptions.InvalidCredentials()
     return db_token.user_id, db_token.serial_number
+
+
+def create_recovery_token(db: Session, user: User) -> models.AuthPasswordRecoveryToken:
+    # Expiring invalid tokens first
+    expire_invalid_recovery_tokens(db, user.username)
+
+    # Checking and retrieving existing valid recovery token
+    existing_recovery_token = get_most_recent_valid_recovery_token(db, user.username)
+    if existing_recovery_token:
+        return existing_recovery_token
+
+    # Creating a new recovery token if none exists
+    expiration_date = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
+        minutes=int(os.getenv("RECOVERY_TOKEN_EXPIRATION_MINUTES"))
+    )
+
+    new_key = sha256(user.hashed_password[-10:].encode("utf-8")).hexdigest()
+    recovery_token = jwt.encode(
+        {"user_id": user.id, "email": user.username, "exp": expiration_date},
+        new_key,
+        algorithm=os.getenv("ALGORITHM"),
+    )
+
+    db_recovery_token = models.AuthPasswordRecoveryToken(
+        email=user.username, recovery_token=recovery_token, expires_at=expiration_date
+    )
+
+    db.add(db_recovery_token)
+    db.commit()
+    db.refresh(db_recovery_token)
+
+    return db_recovery_token
+
+
+def send_password_recovery_email(
+    db: Session, forgot_password_data: schemas.ForgotPasswordData
+) -> schemas.ForgotPasswordEmailSent:
+    user = get_user_by_username(db, forgot_password_data.email)
+    recovery_token = create_recovery_token(db, user)
+    recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery/?token={recovery_token}"
+    # TODO: send a real email with a message containing the recovery URL.
+
+    message = constants.Message.EMAIL_SENT_MSG.substitute({"email": user.username})
+    return schemas.ForgotPasswordEmailSent(msg=message)

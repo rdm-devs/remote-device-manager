@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, EmailStr
 from typing import Optional
 from datetime import datetime
 from src.user.schemas import User
@@ -42,3 +42,11 @@ class AuthRefreshToken(BaseModel):
 
 class DeviceLoginData(BaseModel):
     refresh_token: str
+
+
+class ForgotPasswordData(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordEmailSent(BaseModel):
+    msg: str
