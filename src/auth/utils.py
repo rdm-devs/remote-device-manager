@@ -2,6 +2,8 @@ import os
 import datetime
 import pyotp
 from fastapi import Depends
+from hashlib import sha256
+from pydantic import EmailStr
 from dotenv import load_dotenv
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
@@ -148,7 +150,9 @@ def _is_valid_refresh_token(db_refresh_token: auth_schemas.AuthRefreshToken) -> 
     ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
 
 
-def get_most_recent_valid_recovery_token(db: Session, email: str) -> Union[RecoveryToken, None]:
+def get_most_recent_valid_recovery_token(
+    db: Session, email: str
+) -> Union[RecoveryToken, None]:
     return db.scalar(
         select(RecoveryToken)
         .where(
@@ -172,3 +176,24 @@ def expire_invalid_recovery_tokens(db: Session, email: str):
 def expire_used_recovery_token(db: Session, email: str):
     db.execute(delete(RecoveryToken).where(RecoveryToken.email == email))
     db.commit()
+
+
+def check_is_valid_password_update_token(
+    token: str,
+    email: EmailStr,
+    db: Session = Depends(get_db),
+) -> None:
+    user = get_user_by_username(db, username=email)
+    key = sha256(user.hashed_password[-10:].encode("utf-8")).hexdigest()
+    try:
+        payload = jwt.decode(token, key, algorithms=[os.getenv("ALGORITHM")])
+        recovery_token_obj = db.scalar(
+            select(RecoveryToken).where(RecoveryToken.recovery_token == token)
+        )
+        if (
+            payload.get("email") != recovery_token_obj.email
+            or payload.get("user_id") != user.id
+        ):
+            raise exceptions.InvalidPasswordUpdateToken()
+    except JWTError:
+        raise exceptions.InvalidPasswordUpdateToken()

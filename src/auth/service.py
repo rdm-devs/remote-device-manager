@@ -17,6 +17,8 @@ from src.auth.utils import (
     expire_used_recovery_token,
 )
 from src.user.models import User
+from src.user.service import update_user
+from src.user.schemas import UserUpdate
 
 load_dotenv()
 
@@ -140,9 +142,26 @@ def send_password_recovery_email(
     db: Session, forgot_password_data: schemas.ForgotPasswordData
 ) -> schemas.ForgotPasswordEmailSent:
     user = get_user_by_username(db, forgot_password_data.email)
-    recovery_token = create_recovery_token(db, user)
-    recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery/?token={recovery_token}"
+    recovery_token_obj = create_recovery_token(db, user)
+    recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery/?token={recovery_token_obj.recovery_token}"
     # TODO: send a real email with a message containing the recovery URL.
+    print(recovery_token_obj.recovery_token)
 
     message = constants.Message.EMAIL_SENT_MSG.substitute({"email": user.username})
     return schemas.ForgotPasswordEmailSent(msg=message)
+
+
+def update_user_password(
+    db: Session, password_update_data: schemas.PasswordUpdateData
+) -> User:
+    user = get_user_by_username(db, password_update_data.email)
+    new_user = update_user(
+        db, user, UserUpdate(password=password_update_data.new_password)
+    )
+    db.execute(
+        delete(models.AuthPasswordRecoveryToken).where(
+            models.AuthPasswordRecoveryToken.email == password_update_data.email
+        )
+    )
+    db.commit()
+    return new_user

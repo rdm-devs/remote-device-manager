@@ -13,6 +13,7 @@ from src.auth.utils import (
     get_refresh_token_settings,
     create_connection_token,
     is_valid_otp,
+    check_is_valid_password_update_token,
 )
 from src.auth.dependencies import (
     get_current_active_user,
@@ -20,7 +21,15 @@ from src.auth.dependencies import (
     valid_refresh_token_user,
     has_access_to_device,
 )
-from src.auth.schemas import LoginData, Token, ConnectionToken, DeviceLoginData, ForgotPasswordData, ForgotPasswordEmailSent
+from src.auth.schemas import (
+    LoginData,
+    Token,
+    ConnectionToken,
+    DeviceLoginData,
+    ForgotPasswordData,
+    ForgotPasswordEmailSent,
+    PasswordUpdateData,
+)
 from src.auth import service
 from src.device.utils import get_device_by_serial_number
 from src.device import exceptions as device_exceptions
@@ -129,3 +138,13 @@ async def forgot_password(
     db: Session = Depends(get_db),
 ) -> ForgotPasswordEmailSent:
     return service.send_password_recovery_email(db, forgot_password_data)
+
+
+@router.post("/password-recovery")
+async def password_recovery(
+    token: str,
+    password_update_data: PasswordUpdateData,
+    db: Session = Depends(get_db),
+) -> User:
+    check_is_valid_password_update_token(token, password_update_data.email, db)
+    return service.update_user_password(db, password_update_data)
