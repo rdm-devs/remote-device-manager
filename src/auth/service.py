@@ -148,7 +148,7 @@ def send_password_recovery_email(
     print(recovery_token_obj.recovery_token)
 
     message = constants.Message.EMAIL_SENT_MSG.substitute({"email": user.username})
-    return schemas.ForgotPasswordEmailSent(msg=message)
+    return schemas.ForgotPasswordEmailSent(msg=message, url=recovery_url)
 
 
 def update_user_password(

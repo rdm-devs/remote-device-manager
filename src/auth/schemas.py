@@ -50,6 +50,7 @@ class ForgotPasswordData(BaseModel):
 
 class ForgotPasswordEmailSent(BaseModel):
     msg: str
+    url: str
 
 class PasswordUpdateData(BaseModel):
     email: EmailStr
