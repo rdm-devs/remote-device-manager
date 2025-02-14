@@ -178,22 +178,24 @@ def expire_used_recovery_token(db: Session, email: str):
     db.commit()
 
 
-def check_is_valid_password_update_token(
+def get_user_password_update_token(
     token: str,
-    email: EmailStr,
     db: Session = Depends(get_db),
 ) -> None:
-    user = get_user_by_username(db, username=email)
-    key = sha256(user.hashed_password[-10:].encode("utf-8")).hexdigest()
     try:
-        payload = jwt.decode(token, key, algorithms=[os.getenv("ALGORITHM")])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")])
         recovery_token_obj = db.scalar(
             select(RecoveryToken).where(RecoveryToken.recovery_token == token)
         )
+        if not recovery_token_obj:
+            raise exceptions.InvalidPasswordUpdateToken()
+
+        user = get_user_by_username(db, username=payload.get("email"))
         if (
             payload.get("email") != recovery_token_obj.email
             or payload.get("user_id") != user.id
         ):
             raise exceptions.InvalidPasswordUpdateToken()
+        return user
     except JWTError:
         raise exceptions.InvalidPasswordUpdateToken()

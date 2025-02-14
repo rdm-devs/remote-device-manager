@@ -2,7 +2,6 @@ import os
 import string
 import random
 import datetime
-from hashlib import sha256
 from jose import JWTError, jwt
 from typing import Any, Dict, Optional, Union
 from dotenv import load_dotenv
@@ -15,10 +14,12 @@ from src.auth.utils import (
     get_most_recent_valid_recovery_token,
     expire_invalid_recovery_tokens,
     expire_used_recovery_token,
+    get_user_password_update_token
 )
 from src.user.models import User
 from src.user.service import update_user
 from src.user.schemas import UserUpdate
+from src.user import exceptions as user_exceptions
 
 load_dotenv()
 
@@ -120,10 +121,9 @@ def create_recovery_token(db: Session, user: User) -> models.AuthPasswordRecover
         minutes=int(os.getenv("RECOVERY_TOKEN_EXPIRATION_MINUTES"))
     )
 
-    new_key = sha256(user.hashed_password[-10:].encode("utf-8")).hexdigest()
     recovery_token = jwt.encode(
         {"user_id": user.id, "email": user.username, "exp": expiration_date},
-        new_key,
+        os.getenv("SECRET_KEY"),
         algorithm=os.getenv("ALGORITHM"),
     )
 
@@ -141,7 +141,14 @@ def create_recovery_token(db: Session, user: User) -> models.AuthPasswordRecover
 def send_password_recovery_email(
     db: Session, forgot_password_data: schemas.ForgotPasswordData
 ) -> schemas.ForgotPasswordEmailSent:
-    user = get_user_by_username(db, forgot_password_data.email)
+    try:
+        user = get_user_by_username(db, forgot_password_data.email)
+    except user_exceptions.UserNotFound:
+        message = constants.Message.EMAIL_SENT_MSG.substitute(
+            {"email": forgot_password_data.email}
+        )
+        return schemas.ForgotPasswordEmailSent(msg=message, url=None)
+
     recovery_token_obj = create_recovery_token(db, user)
     recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery/?token={recovery_token_obj.recovery_token}"
     # TODO: send a real email with a message containing the recovery URL.
@@ -152,16 +159,16 @@ def send_password_recovery_email(
 
 
 def update_user_password(
-    db: Session, password_update_data: schemas.PasswordUpdateData
+    db: Session, token: str, password_update_data: schemas.PasswordUpdateData
 ) -> User:
-    user = get_user_by_username(db, password_update_data.email)
+    user = get_user_password_update_token(token, db)
     new_user = update_user(
         db, user, UserUpdate(password=password_update_data.new_password)
     )
     db.execute(
         delete(models.AuthPasswordRecoveryToken).where(
-            models.AuthPasswordRecoveryToken.email == password_update_data.email
+            models.AuthPasswordRecoveryToken.email == user.username
         )
     )
     db.commit()
-    return new_user
+    return schemas.PasswordUpdated(msg=constants.Message.PASSWORD_UPDATED_MSG)

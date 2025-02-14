@@ -16,3 +16,4 @@ class ErrorCode:
 
 class Message:
     EMAIL_SENT_MSG = Template("Email to $email sent successfuly!")
+    PASSWORD_UPDATED_MSG = "password updated successfuly!"

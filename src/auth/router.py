@@ -13,7 +13,6 @@ from src.auth.utils import (
     get_refresh_token_settings,
     create_connection_token,
     is_valid_otp,
-    check_is_valid_password_update_token,
 )
 from src.auth.dependencies import (
     get_current_active_user,
@@ -29,6 +28,7 @@ from src.auth.schemas import (
     ForgotPasswordData,
     ForgotPasswordEmailSent,
     PasswordUpdateData,
+    PasswordUpdated
 )
 from src.auth import service
 from src.device.utils import get_device_by_serial_number
@@ -145,6 +145,5 @@ async def password_recovery(
     token: str,
     password_update_data: PasswordUpdateData,
     db: Session = Depends(get_db),
-) -> User:
-    check_is_valid_password_update_token(token, password_update_data.email, db)
-    return service.update_user_password(db, password_update_data)
+) -> PasswordUpdated:
+    return service.update_user_password(db, token, password_update_data)
