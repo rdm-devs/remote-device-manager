@@ -20,6 +20,8 @@ from src.device.service import (
     share_device,
     verify_share_url,
     create_share_url,
+    update_device_heartbeat,
+    read_device_heartbeats,
 )
 from src.device.utils import get_device_by_serial_number
 from src.device.schemas import (
@@ -28,6 +30,7 @@ from src.device.schemas import (
     DeviceUpdate,
     ShareParams,
     Device,
+    HeartBeat,
 )
 from src.tenant.service import get_tenant
 from src.tag.models import entities_and_tags_table
@@ -315,7 +318,7 @@ def test_delete_device_with_invalid_id(
 
 
 def test_share_device(session: Session) -> None:
-    share_data  = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
+    share_data = share_device(session, 1, 1, ShareParams(expiration_minutes=1))
     assert share_data.url is not None
     assert share_data.expiration_date is not None
     assert share_data.time_zone is not None
@@ -368,3 +371,22 @@ def test_get_device_by_serial_number(
         assert device.id == expected_device_id
     else:
         assert device == expected_device_id
+
+
+def test_device_is_online(session: Session):
+    device_id = 1  # is offline initially
+    device = get_device(session, device_id)
+    assert device.is_online == False
+
+    fake_heartbeat = HeartBeat(
+        CPU_load=0,
+        MEM_load_mb=0,
+        free_space_mb=0,
+    )
+
+    # sending a heartbeat will recalculate the online status in new readings
+    response = update_device_heartbeat(session, device_id, fake_heartbeat)
+
+    # as the heartbeat is recent, the device will show up online
+    device = get_device(session, device_id)
+    assert device.is_online == True

@@ -3,11 +3,11 @@ import time
 from datetime import datetime, timedelta, UTC
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
-from typing import Optional, Union
+from typing import Optional, Union, Sequence
 from sqlalchemy import select, update, insert
 from sqlalchemy.orm import Session
 from src.auth.utils import create_otp, create_connection_url
-from src.device import schemas, models, exceptions
+from src.device import schemas, models, exceptions, utils
 from src.entity.service import create_entity_auto, update_entity_tags
 from src.folder.models import Folder
 from src.folder.service import check_folder_exist, get_folders
@@ -38,6 +38,7 @@ def expire_invalid_share_urls(db: Session, device_id: Union[int, None] = None) -
         update_stmt = update_stmt.where(models.Device.id == device_id)
 
     db.execute(update_stmt.values(share_url=None, share_url_expires_at=None))
+    db.commit()
 
 
 def get_device(db: Session, device_id: int) -> models.Device:
@@ -157,6 +158,7 @@ def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.Hear
             {"device_id": device_id, "timestamp": timestamp, **values}
         ),
     )
+    db.commit()
 
     if id_rust is not None and pass_rust is not None:
         # the attributes are not valid when equal to None so no modification is done.
@@ -188,6 +190,7 @@ def delete_device(db: Session, db_device: schemas.Device):
     db.commit()
     return db_device.id
 
+
 def format_expiration_date(expiration_date: datetime) -> datetime:
     date_format = "%Y-%m-%d %H:%M:%S"
     return datetime.strptime(expiration_date.strftime(date_format), date_format)
@@ -201,7 +204,9 @@ def create_share_url(
         if expiration_minutes == 0
         else expiration_minutes
     )
-    expiration_dt = format_expiration_date(datetime.now(UTC) + timedelta(minutes=expiration_minutes))
+    expiration_dt = format_expiration_date(
+        datetime.now(UTC) + timedelta(minutes=expiration_minutes)
+    )
     to_encode = {
         "user_id": user_id,
         "device_id": device_id,
@@ -288,3 +293,26 @@ def revoke_share_url(db: Session, device_id: int) -> schemas.Device:
     )
 
     return device
+
+
+def append_online_status_column(db: Session, device: models.Device):
+    return {
+        **device._asdict(),
+        # "is_online": utils.get_online_status(get_device(db, device[0])),
+        "is_online": get_device(db, device[0]).is_online,
+    }
+
+
+def device_transformer(
+    db: Session, devices: Sequence[models.Device]
+) -> Sequence[models.Device]:
+    return [append_online_status_column(db, device) for device in devices]
+
+
+def read_device_heartbeats(db: Session, device_id: int):
+    heartbeats = db.scalars(
+        select(models.Heartbeat)
+        .where(models.Heartbeat.device_id == device_id)
+        .order_by(models.Heartbeat.timestamp.desc())
+    ).all()
+    return heartbeats

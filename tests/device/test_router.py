@@ -1,5 +1,6 @@
 import os
 import pytest
+import time
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from tests.database import (
     session,
     mock_os_data,
     mock_vendor_data,
+    client_fixture,
     client_authenticated,
 )
 
@@ -327,3 +329,63 @@ def test_share_device(
     assert response.status_code == expected_status_code
     if response.status_code == status.HTTP_200_OK:
         assert "url" in share_data
+
+
+def test_device_is_online(session: Session, client_authenticated: TestClient, client: TestClient):
+    device_id = 1  # is offline initially
+    response = client_authenticated.get(f"/devices/{device_id}")
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    assert "is_online" in data
+    assert data["is_online"] == False
+
+    fake_heartbeat = {
+        "CPU_load": 0,
+        "MEM_load_mb": 0,
+        "free_space_mb": 0,
+    }
+
+    # sending a heartbeat will recalculate the online status in new readings
+    response = client.post(
+        f"/devices/{device_id}/heartbeat", json=fake_heartbeat
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+
+    # as the heartbeat is recent, the device will show up online
+    response = client_authenticated.get(f"/devices/{device_id}")
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    assert data["is_online"] == True
+
+
+def test_device_list_with_online_status(session: Session, client_authenticated: TestClient, client: TestClient):
+    response = client_authenticated.get(f"/devices")
+    devices = response.json()["items"]
+    assert response.status_code == status.HTTP_200_OK
+    for device in devices:
+        assert "is_online" in device.keys()
+        assert type(device["is_online"]) == bool
+
+    device_id = 1
+    fake_heartbeat = {
+        "CPU_load": 0,
+        "MEM_load_mb": 0,
+        "free_space_mb": 0,
+    }
+
+    # sending a heartbeat will recalculate the online status in new readings
+    response = client.post(
+        f"/devices/{device_id}/heartbeat", json=fake_heartbeat
+    )
+    data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+
+    # as the heartbeat is recent, the device will show up online
+    response = client_authenticated.get(f"/devices")
+    devices = response.json()["items"]
+    assert response.status_code == status.HTTP_200_OK
+    for device in devices:
+        assert "id" in device.keys()
+        if device_id == device["id"]:
+            assert device["is_online"] == True

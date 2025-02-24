@@ -1,6 +1,8 @@
-from datetime import datetime
-from sqlalchemy import ForeignKey, String
+import os
+from datetime import datetime, UTC, timedelta
+from sqlalchemy import ForeignKey, String, case
 from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
 from typing import Optional
 from ..database import Base
@@ -14,7 +16,7 @@ class Device(AuditMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
-    is_online: Mapped[bool] = mapped_column(default=True, index=True)
+    # is_online: Mapped[bool] = mapped_column(default=True, index=True)
     folder_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("folder.id"), nullable=True
     )
@@ -43,6 +45,9 @@ class Device(AuditMixin, Base):
         String(255), nullable=True, unique=True
     )
     time_zone: Mapped[Optional[str]] = mapped_column(String(1000))
+    heartbeats: Mapped[Optional[list["src.device.models.Heartbeat"]]] = relationship(
+        "src.device.models.Heartbeat"
+    )
 
     @property
     def tags(self):
@@ -50,6 +55,29 @@ class Device(AuditMixin, Base):
 
     def add_tag(self, tag: "src.tag.models.Tag") -> None:
         self.tags.append(tag)
+
+    @property
+    def is_online(self):
+        if not self.folder:
+            return False
+        if not self.folder.tenant:
+            return False
+        if not self.heartbeats:
+            return False
+
+        tenant_heartbeats_interval = self.folder.tenant.settings.heartbeat_s
+        # latest_heartbeat_timestamp = self.heartbeats[-1].timestamp
+        diff_minutes = (
+            datetime.now(UTC) - self.latest_heartbeat_timestamp.astimezone(UTC)
+        ).total_seconds() // 60
+
+        return diff_minutes <= tenant_heartbeats_interval * int(
+            os.getenv("MAX_TOLERANCE_HEARTBEATS")
+        )
+
+    @property
+    def latest_heartbeat_timestamp(self):
+        return self.heartbeats[-1].timestamp
 
 
 class Heartbeat(Base):

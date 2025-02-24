@@ -1,3 +1,5 @@
+import os
+from datetime import datetime, UTC
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing import Union, Optional, List
@@ -33,3 +35,23 @@ def reset_devices_folder_id(
         .values(folder_id=tenant1_root_folder_id)
     )
     db.execute(update_stmt)
+    db.commit()
+
+# TODO: pending tests. Will probably delete it.
+def get_online_status(device: models.Device):
+    if not device.folder:
+        return False
+    if not device.folder.tenant:
+        return False
+    if not device.heartbeats:
+        return False
+
+    tenant_heartbeats_interval = device.folder.tenant.settings.heartbeat_s
+    latest_heartbeat_timestamp = device.heartbeats[-1].timestamp
+    diff_minutes = (
+        datetime.now(UTC) - latest_heartbeat_timestamp.astimezone(UTC)
+    ).total_seconds() // 60
+    
+    return diff_minutes <= tenant_heartbeats_interval * int(
+        os.getenv("MAX_TOLERANCE_HEARTBEATS")
+    )

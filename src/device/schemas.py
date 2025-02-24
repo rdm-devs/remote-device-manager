@@ -33,7 +33,6 @@ class Device(DeviceCreate):
     id: int
     entity_id: int
     is_online: bool
-    #heartbeat_timestamp: datetime
     tags: List[Tag] = []
     share_url: Optional[str] = None
     share_url_expires_at: Optional[datetime] = None
@@ -53,6 +52,8 @@ class DeviceList(BaseModel):
     share_url: Optional[str] = None
     share_url_expires_at: Optional[datetime] = None
     serial_number: Optional[str] = None
+
+    model_config = {"from_attributes": True}
 
 
 class DeviceUpdate(DeviceCreate):
@@ -93,7 +94,7 @@ class HeartBeat(BaseModel):
 class HeartBeatResponse(BaseModel):
     device_id: int
     timestamp: datetime
-    heartbeat_s: int # seconds between messages
+    heartbeat_s: int  # seconds between messages
 
 
 class ShareParams(BaseModel):

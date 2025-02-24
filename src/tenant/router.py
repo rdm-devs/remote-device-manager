@@ -93,8 +93,6 @@ async def read_settings(
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_tenant),
 ):
-    if tenant_id == 1:
-        raise PermissionDenied()
     return service.get_tenant_settings(db, tenant_id)
 
 @router.patch("/{tenant_id}/settings", response_model=schemas.TenantSettings)

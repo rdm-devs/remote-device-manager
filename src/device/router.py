@@ -17,7 +17,7 @@ from src.auth.schemas import ConnectionUrl
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
 from src.database import get_db
-from src.device import service, schemas, utils
+from src.device import service, schemas, utils, models
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
@@ -48,7 +48,11 @@ def get_unassigned_devices(
     db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
 ):
     unassigned_devices = service.get_unassigned_devices(db)
-    return paginate(db, unassigned_devices)
+    return paginate(
+        db,
+        unassigned_devices,
+        transformer=lambda devices: service.device_transformer(db, devices),
+    )
 
 
 # TODO: remove
@@ -76,7 +80,11 @@ def read_devices(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    return paginate(db, service.get_devices(db, user.id))
+    return paginate(
+        db,
+        service.get_devices(db, user.id),
+        transformer=lambda devices: service.device_transformer(db, devices),
+    )
 
 
 @router.patch("/{device_id}", response_model=schemas.Device)
@@ -145,3 +153,12 @@ def revoke_share_url(
     user: User = Depends(has_access_to_device),
 ):
     return service.revoke_share_url(db, device_id)
+
+
+# @router.get("/{device_id:int}/heartbeats")
+# def get_device_heartbeats(
+#     device_id: int,
+#     db: Session = Depends(get_db),
+#     user: User = Depends(has_access_to_device),
+# ):
+#     return service.read_device_heartbeats(db, device_id)
