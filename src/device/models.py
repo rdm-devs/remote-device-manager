@@ -73,7 +73,7 @@ class Device(AuditMixin, Base):
 
         max_tolerance_minutes = (
             (tenant_heartbeats_interval // 60)
-            * int(os.getenv("MAX_TOLERANCE_HEARTBEATS"))
+            * float(os.getenv("MAX_TOLERANCE_HEARTBEATS"))
         ) 
         return diff_minutes <= max_tolerance_minutes
 
