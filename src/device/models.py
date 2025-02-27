@@ -71,9 +71,11 @@ class Device(AuditMixin, Base):
             datetime.now(UTC) - self.latest_heartbeat_timestamp.astimezone(UTC)
         ).total_seconds() // 60
 
-        return diff_minutes <= tenant_heartbeats_interval * int(
-            os.getenv("MAX_TOLERANCE_HEARTBEATS")
-        )
+        max_tolerance_minutes = (
+            (tenant_heartbeats_interval // 60)
+            * int(os.getenv("MAX_TOLERANCE_HEARTBEATS"))
+        ) 
+        return diff_minutes <= max_tolerance_minutes
 
     @property
     def latest_heartbeat_timestamp(self):
