@@ -1,3 +1,3 @@
 class ErrorCode:
-    ROLE_NOT_FOUND = "Role not found."
-    ROLE_NAME_TAKEN = "Role name is already taken."
+    ROLE_NOT_FOUND = "Rol no encontrado"
+    ROLE_NAME_TAKEN = "Otro rol ya tiene este nombre"

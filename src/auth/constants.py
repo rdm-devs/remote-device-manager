@@ -2,18 +2,18 @@ from string import Template
 
 
 class ErrorCode:
-    INCORRECT_USER_OR_PASSWORD = "Incorrect username or password"
-    INACTIVE_USER = "Inactive user"
-    AUTHENTICATION_REQUIRED = "Authentication required."
-    AUTHORIZATION_FAILED = "Authorization failed. User has no access."
-    INVALID_TOKEN = "Invalid token."
-    INVALID_CREDENTIALS = "Invalid credentials."
-    REFRESH_TOKEN_NOT_VALID = "Refresh token is not valid."
-    REFRESH_TOKEN_REQUIRED = "Refresh token is required either in the body or cookie."
-    INVALID_OTP = "Invalid OTP."
-    INVALID_PASSWORD_TOKEN = "Password update token is not valid."
+    INCORRECT_USER_OR_PASSWORD = "El nombre de usuario o la contraseña son incorrectos"
+    INACTIVE_USER = "Usuario inactivo"
+    AUTHENTICATION_REQUIRED = "Autenticación requerida"
+    AUTHORIZATION_FAILED = "La autorización ha fallado. El usuario no tiene acceso"
+    INVALID_TOKEN = "Token inválido"
+    INVALID_CREDENTIALS = "Credenciales inválidas"
+    REFRESH_TOKEN_NOT_VALID = "El refresh token es inválido"
+    REFRESH_TOKEN_REQUIRED = "El refresh token es requerido en el body o en las cookies"
+    INVALID_OTP = "OTP inválido"
+    INVALID_PASSWORD_TOKEN = "El token para actualizcación de password es inválido"
 
 
 class Message:
-    EMAIL_SENT_MSG = Template("Email to $email sent successfuly!")
-    PASSWORD_UPDATED_MSG = "password updated successfuly!"
+    EMAIL_SENT_MSG = Template("Email a $email enviado con éxito!")
+    PASSWORD_UPDATED_MSG = "Contraseña actualizada con éxito!"
