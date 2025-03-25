@@ -150,7 +150,7 @@ def send_password_recovery_email(
         return schemas.ForgotPasswordEmailSent(msg=message, url=None)
 
     recovery_token_obj = create_recovery_token(db, user)
-    recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery/?token={recovery_token_obj.recovery_token}"
+    recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery?token={recovery_token_obj.recovery_token}"
     # TODO: send a real email with a message containing the recovery URL.
     print(recovery_token_obj.recovery_token)
 
