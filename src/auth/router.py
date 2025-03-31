@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.database import get_db
+from src.exceptions import PermissionDenied
 from src.user.schemas import User, UserCreate
 from src.user.service import check_username_exists, create_user, get_user
 from typing import Any, Dict, Optional
@@ -19,6 +20,8 @@ from src.auth.dependencies import (
     valid_refresh_token,
     valid_refresh_token_user,
     has_access_to_device,
+    has_admin_or_owner_role,
+    has_access_to_user
 )
 from src.auth.schemas import (
     LoginData,
@@ -28,7 +31,8 @@ from src.auth.schemas import (
     ForgotPasswordData,
     ForgotPasswordEmailSent,
     PasswordUpdateData,
-    PasswordUpdated
+    PasswordUpdated,
+    PasswordResetData,
 )
 from src.auth import service
 from src.device.utils import get_device_by_serial_number
@@ -147,3 +151,15 @@ async def password_recovery(
     db: Session = Depends(get_db),
 ) -> PasswordUpdated:
     return service.update_user_password(db, token, password_update_data)
+
+
+@router.post("/password-reset")
+async def password_reset(
+    password_reset_data: PasswordResetData,
+    user = Depends(has_admin_or_owner_role),
+    db: Session = Depends(get_db),
+) -> PasswordUpdated:
+    if password_reset_data.user_id:
+        if not await has_access_to_user(password_reset_data.user_id, db, user):
+            raise PermissionDenied()
+    return service.reset_user_password(db, user, password_reset_data)

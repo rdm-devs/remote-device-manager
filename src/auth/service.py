@@ -2,6 +2,7 @@ import os
 import string
 import random
 import datetime
+import contextvars
 from jose import JWTError, jwt
 from typing import Any, Dict, Optional, Union
 from dotenv import load_dotenv
@@ -14,10 +15,11 @@ from src.auth.utils import (
     get_most_recent_valid_recovery_token,
     expire_invalid_recovery_tokens,
     expire_used_recovery_token,
-    get_user_password_update_token
+    get_user_password_update_token,
+    authenticate_user
 )
 from src.user.models import User
-from src.user.service import update_user
+from src.user.service import update_user, get_user, check_invalid_password
 from src.user.schemas import UserUpdate
 from src.user import exceptions as user_exceptions
 
@@ -172,3 +174,24 @@ def update_user_password(
     )
     db.commit()
     return schemas.PasswordUpdated(msg=constants.Message.PASSWORD_UPDATED_MSG)
+
+
+def reset_user_password(db: Session, user, password_reset_data: schemas.PasswordResetData):
+    if not password_reset_data.user_id:
+        auth_user = authenticate_user(user.username, password_reset_data.password, db)
+        if auth_user:
+            new_user = update_user(
+                db, user, UserUpdate(password=password_reset_data.new_password)
+            )
+            db.commit()
+            return schemas.PasswordUpdated(msg=constants.Message.PASSWORD_UPDATED_MSG)
+        else:
+            raise exceptions.IncorrectUserOrPassword()
+    else:
+        user = get_user(db, password_reset_data.user_id)
+        check_invalid_password(db, password_reset_data.new_password)
+        new_user = update_user(
+            db, user, UserUpdate(password=password_reset_data.new_password)
+        )
+        db.commit()
+        return schemas.PasswordUpdated(msg=constants.Message.PASSWORD_UPDATED_MSG)

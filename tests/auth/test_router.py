@@ -14,6 +14,7 @@ from tests.database import (
     app,
     session,
     client_fixture,
+    client_authenticated,
     mock_os_data,
     mock_vendor_data,
     admin_auth_tokens,
@@ -814,8 +815,12 @@ async def test_login_with_and_without_a_device(
 ) -> None:
 
     def login(serial_number: Optional[str] = None) -> str:
-        url = f"/auth/token/?serial_number={serial_number}" if serial_number else "/auth/token"
-        
+        url = (
+            f"/auth/token/?serial_number={serial_number}"
+            if serial_number
+            else "/auth/token"
+        )
+
         response = client.post(
             url,
             data={"username": "test-user-1@sia.com", "password": "_s3cr3tp@5sw0rd_"},
@@ -834,3 +839,126 @@ async def test_login_with_and_without_a_device(
     assert rt2 != rt3
     assert rt3 == rt4
     assert rt4 != rt5
+
+
+@pytest.mark.asyncio
+async def test_reset_password(
+    session: Session,
+    client: TestClient,
+    client_authenticated: TestClient
+) -> None:
+    user_id = 1
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = (await auth_tokens)["access_token"]
+
+    response = client_authenticated.post(
+        "/auth/password-reset",
+        json={
+            "password": "_s3cr3tp@5sw0rd_",
+            "new_password": "_s3cr3tp@5sw0rd_",
+        }
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    user_id = 3
+    response = client.post(
+        "/auth/password-reset",
+        json={
+            "user_id": user_id,
+            "new_password": "_s3cr3tp@5sw0rd_",
+        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json() 
+
+
+@pytest.mark.asyncio
+async def test_reset_password_invalid_permissions(
+    session: Session, client: TestClient, user_auth_tokens: dict
+) -> None:
+    user_id = 4
+    access_token = (await user_auth_tokens)["access_token"]
+
+    response = client.post(
+        "/auth/password-reset",
+        json={
+            "password": "_s3cr3tp@5sw0rd_",
+            "new_password": "_s3cr3tp@5sw0rd_",
+        },
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        },
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    user_id = 2
+    response = client.post(
+        "/auth/password-reset",
+        json={
+            "user_id": 1,
+            "new_password": "_s3cr3tp@5sw0rd_",
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    data = response.json()
+
+
+@pytest.mark.asyncio
+async def test_reset_password_invalid_current_password(
+    session: Session,
+    client: TestClient,
+    client_authenticated: TestClient
+) -> None:
+    user_id = 1
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = (await auth_tokens)["access_token"]
+
+    response = client_authenticated.post(
+        "/auth/password-reset",
+        json={
+            "password": "123456789",
+            "new_password": "_s3cr3tp@5sw0rd_",
+        }
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    data = response.json()
+
+@pytest.mark.asyncio
+async def test_reset_password_invalid_new_password(
+    session: Session, client: TestClient, client_authenticated: TestClient
+) -> None:
+    user_id = 1
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_tokens = (await auth_tokens)["access_token"]
+
+    response = client_authenticated.post(
+        "/auth/password-reset",
+        json={
+            "password": "_s3cr3tp@5sw0rd_",
+            "new_password": "1234",
+        },
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    data = response.json()
+
+    user_id = 1
+    response = client.post(
+        "/auth/password-reset",
+        json={
+            "user_id": user_id,
+            "new_password": "1234",
+        },
+        headers={"Authorization": f"Bearer {access_tokens}"},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    data = response.json()
