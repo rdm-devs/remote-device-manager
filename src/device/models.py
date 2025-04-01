@@ -46,7 +46,9 @@ class Device(AuditMixin, Base):
     )
     time_zone: Mapped[Optional[str]] = mapped_column(String(1000))
     heartbeats: Mapped[Optional[list["src.device.models.Heartbeat"]]] = relationship(
-        "src.device.models.Heartbeat"
+        "src.device.models.Heartbeat",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @property
