@@ -97,7 +97,7 @@ async def logout_user(
     )
 
     return {
-        "msg": "Logged out succesfully!",
+        "msg": "La sesión se ha cerrado exitosamente!",
     }
 
 

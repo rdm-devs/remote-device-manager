@@ -63,5 +63,5 @@ def delete_role(
 
     return {
         "id": deleted_role_id,
-        "msg": f"Role {deleted_role_id} removed succesfully!",
+        "msg": f"Rol {deleted_role_id} eliminado exitosamente!",
     }

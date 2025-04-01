@@ -86,7 +86,7 @@ def update_tag(
         raise PermissionDenied()
     updated_device = service.update_tag(db, db_tag, updated_tag=tag)
     if not updated_device:
-        raise HTTPException(status_code=400, detail="Tag could not be updated")
+        raise HTTPException(status_code=400, detail="El tag no pudo ser actualizado")
     return updated_device
 
 
@@ -101,10 +101,10 @@ def delete_tag(
         raise PermissionDenied()
     deleted_tag_id = service.delete_tag(db, db_tag)
     if not deleted_tag_id:
-        raise HTTPException(status_code=400, detail="Tag could not be deleted")
+        raise HTTPException(status_code=400, detail="El tag no pudo ser eliminado")
     return {
         "id": deleted_tag_id,
-        "msg": f"Tag {deleted_tag_id} removed succesfully!",
+        "msg": f"Tag {deleted_tag_id} eliminado exitosamente!",
     }
 
 
@@ -118,5 +118,5 @@ def delete_tags(
     deleted_tag_ids, deleted_rows = service.delete_tag_multi(db, user, tag_ids)
     return {
         "ids": deleted_tag_ids,
-        "msg": f"{deleted_rows} Tags {deleted_tag_ids} removed succesfully!",
+        "msg": f"{deleted_rows} Tags {deleted_tag_ids} eliminados exitosamente!",
     }

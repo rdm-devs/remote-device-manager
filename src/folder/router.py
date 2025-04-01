@@ -77,7 +77,7 @@ def delete_folder(
     deleted_folder_id = service.delete_folder(db, db_folder)
     return {
         "id": deleted_folder_id,
-        "msg": f"Folder {deleted_folder_id} removed succesfully!",
+        "msg": f"Carpeta {deleted_folder_id} eliminada exitosamente!",
     }
 
 

@@ -73,10 +73,10 @@ def delete_user(
     db_user = read_user(user_id, db)
     deleted_user_user_id = service.delete_user(db, db_user)
     if not deleted_user_user_id:
-        raise HTTPException(status_code=400, detail="User could not be deleted")
+        raise HTTPException(status_code=400, detail="El usuario no pudo ser eliminado")
     return {
         "id": deleted_user_user_id,
-        "msg": f"User {deleted_user_user_id} removed succesfully!",
+        "msg": f"Usuario {deleted_user_user_id} eliminado exitosamente!",
     }
 
 

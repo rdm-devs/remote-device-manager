@@ -111,7 +111,7 @@ def delete_device(
 
     return {
         "id": deleted_device_id,
-        "msg": f"Device {deleted_device_id} removed succesfully!",
+        "msg": f"Dispositivo {deleted_device_id} eliminado exitosamente!",
     }
 
 

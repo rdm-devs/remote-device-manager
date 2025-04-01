@@ -71,7 +71,7 @@ def delete_tenant(
     deleted_tenant_id = service.delete_tenant(db, db_tenant)
     return {
         "id": deleted_tenant_id,
-        "msg": f"Tenant {deleted_tenant_id} removed succesfully!",
+        "msg": f"Tenant {deleted_tenant_id} eliminado exitosamente!",
     }
 
 
