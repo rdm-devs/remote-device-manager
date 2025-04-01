@@ -102,7 +102,7 @@ async def can_assign_role(
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ) -> User:
-    if await has_role("admin", db, user) or role_id > user.role_id:
+    if await has_role("admin", db, user) or role_id >= user.role_id:
         return user
     raise PermissionDenied()
 

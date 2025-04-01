@@ -33,7 +33,7 @@ def get_roles(db: Session, user_id: int):
     if user.is_admin:
         return db.query(models.Role)
     else:
-        return db.query(models.Role).filter(models.Role.id > user.role_id)
+        return db.query(models.Role).filter(models.Role.id >= user.role_id)
 
 
 def create_role(db: Session, role: schemas.RoleCreate):
