@@ -159,6 +159,8 @@ def update_user(
         )  # rehash password
 
         values.pop("password")
+    if updated_user.role_id:
+        check_role_exists(db, role_id=updated_user.role_id)
 
     db.execute(update(models.User).where(models.User.id == user.id).values(values))
     db.commit()
