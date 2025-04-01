@@ -159,7 +159,8 @@ def update_user(
         )  # rehash password
 
         values.pop("password")
-    if updated_user.role_id:
+    
+    if updated_user.role_id is not None:
         check_role_exists(db, role_id=updated_user.role_id)
 
     db.execute(update(models.User).where(models.User.id == user.id).values(values))
