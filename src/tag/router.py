@@ -96,10 +96,10 @@ def delete_tag(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    db_tag_group = read_tag(tag_id, db)
+    db_tag = read_tag(tag_id, db)
     if db_tag.tenant_id == 1:
         raise PermissionDenied()
-    deleted_tag_id = service.delete_tag(db, db_tag_group)
+    deleted_tag_id = service.delete_tag(db, db_tag)
     if not deleted_tag_id:
         raise HTTPException(status_code=400, detail="Tag could not be deleted")
     return {
