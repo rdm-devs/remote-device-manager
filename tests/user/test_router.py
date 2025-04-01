@@ -401,3 +401,64 @@ def test_read_tags(
     response = client_authenticated.get(f"/users/{user_id}/tags")
     assert response.status_code == expected_status_code
     assert len(response.json()["assigned"]) == n_items
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "user_id, role_id, expected_status_code",
+    [
+        (1, 1, status.HTTP_200_OK),
+        (1, 2, status.HTTP_200_OK),
+        (1, 3, status.HTTP_200_OK),
+        (2, 1, status.HTTP_403_FORBIDDEN),
+        (2, 2, status.HTTP_403_FORBIDDEN),
+        (2, 3, status.HTTP_200_OK),
+        (3, 1, status.HTTP_403_FORBIDDEN),
+        (3, 2, status.HTTP_403_FORBIDDEN),
+        (3, 3, status.HTTP_200_OK),
+        (4, 1, status.HTTP_403_FORBIDDEN),
+        (4, 2, status.HTTP_403_FORBIDDEN),
+        (4, 3, status.HTTP_403_FORBIDDEN),
+    ],
+)
+async def test_create_user_full(
+    user_id: int,
+    role_id: int,
+    expected_status_code: int,
+    session: Session,
+    client: TestClient,
+) -> None:
+    auth_tokens = get_auth_tokens_with_user_id(session, user_id)
+    access_token = (await auth_tokens)["access_token"]
+
+    response = client.get(
+        "/tenants/", headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    tenants = response.json()["items"]
+
+    response = client.get(
+        f"/users/{user_id}", headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    tags = response.json()["tags"]
+
+    response = client.post(
+        "/users",
+        json={
+            "username": "test-user@email.com",
+            "password": "_s3cr3tp@5sw0rd_",
+            "role_id": role_id,
+            "tenants": tenants,
+            #"tags": tags # having assigned one or more tenants to the user, it also assigns the tags to it.
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == expected_status_code
+    data = response.json()
+    if expected_status_code == status.HTTP_200_OK:
+        assert "id" in data
+        assert data["username"] == "test-user@email.com"
+        assert data["role_id"] == role_id
+        assert len(data["tenants"]) >= 0
+        assert all(t in tags for t in data["tags"])

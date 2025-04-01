@@ -8,6 +8,7 @@ from src.auth.dependencies import (
     has_admin_or_owner_role,
     has_access_to_tenant,
     has_access_to_user,
+    can_assign_role
 )
 from src.database import get_db
 from src.device.schemas import DeviceList
@@ -38,6 +39,16 @@ def read_user(
     db_user = service.get_user(db, user_id=user_id)
     return db_user
 
+
+@router.post("/", response_model=utils.UserTenant)
+async def create_user(
+    user: schemas.UserCreateFull,
+    db: Session = Depends(get_db),
+    auth_user: schemas.User = Depends(has_admin_or_owner_role),
+):
+    if not await can_assign_role(user.role_id, db, auth_user):
+        raise exceptions.PermissionDenied()
+    return service.create_user_full(db, user)
 
 @router.patch("/{user_id}", response_model=utils.UserTenant)
 def update_user(

@@ -18,12 +18,10 @@ from src.user.service import (
     get_devices,
     get_folders,
     assign_tenant,
+    create_user_full,
 )
 from src.tenant.models import tenants_and_users_table
-from src.user.schemas import (
-    UserCreate,
-    UserUpdate,
-)
+from src.user.schemas import UserCreate, UserUpdate, UserCreateFull
 from src.tenant.service import get_tenants, get_tenant
 from src.tenant.schemas import Tenant as TenantSchema
 from src.auth.utils import get_user_by_username
@@ -386,6 +384,7 @@ def test_update_user_remove_tenants(
     updated_user = update_user(session, user, UserUpdate(tenants=tenants))
     assert len(user.tenants) == 1
 
+
 def test_update_user_add_existing_tenant(session: Session) -> None:
     user = get_user(session, 2)
     tenant = get_tenant(session, user.tenants[0].id)
@@ -394,5 +393,24 @@ def test_update_user_add_existing_tenant(session: Session) -> None:
 
     # attempting to assign a tenant to the user again. It should not work.
     user = assign_tenant(session, user.id, tenant.id)
-    assert len(user.tenants) == 1 # remains the same.
+    assert len(user.tenants) == 1  # remains the same.
     assert user.tenants[0].id == tenant_id
+
+
+def test_create_user_full(session):
+    role_id = 1
+    tenant_id = 1
+    tenants = [get_tenant(session, tenant_id)]
+    user = create_user_full(
+        session,
+        UserCreateFull(
+            username="test-user@email.com",
+            password="_s3cr3tp@5sw0rd_",
+            role_id=role_id,
+            tenants=tenants,
+        ),
+    )
+
+    assert user.username == "test-user@email.com"
+    assert user.role_id == role_id
+    assert all(t in user.tenants for t in tenants)

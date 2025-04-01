@@ -33,6 +33,14 @@ class UserUpdate(UserBase):
     tags: Optional[List[Tag]] = None
     model_config = {"extra": "ignore"}
 
+class UserCreateFull(BaseModel):
+    username: EmailStr
+    password: str
+    role_id: int
+    tenants: Optional[List[Tenant]] = None
+    tags: Optional[List[Tag]] = None
+    model_config = {"extra": "ignore"}
+
 
 class UserDelete(BaseModel):
     id: int

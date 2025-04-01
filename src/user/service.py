@@ -201,3 +201,12 @@ def assign_tenant(db: Session, user_id: int, tenant_id: int) -> utils.UserTenant
     db.refresh(user)
 
     return user
+
+def create_user_full(db: Session, user_full: schemas.UserCreateFull):
+    create_values = user_full.model_dump()
+    role_id = create_values.pop("role_id")
+    tenants = create_values.pop("tenants")
+    tags = create_values.pop("tags")
+    user = create_user(db, schemas.UserCreate(**create_values))
+    user = update_user(db, user, user_full)
+    return user
