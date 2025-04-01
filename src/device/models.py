@@ -85,7 +85,7 @@ class Device(AuditMixin, Base):
 class Heartbeat(Base):
     __tablename__ = "heartbeat_logs"
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"))
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id", ondelete="CASCADE"))
     CPU_load: Mapped[Optional[int]] = mapped_column()
     MEM_load_mb: Mapped[Optional[int]] = mapped_column()
     free_space_mb: Mapped[Optional[int]] = mapped_column()
