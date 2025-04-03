@@ -39,7 +39,7 @@ def check_tag_name_exists(db: Session, tag_name: str, tenant_id: int):
     # checking if the tag with `tag_name` already exists for tenant with `tenant_id`.
     tag = db.scalars(
         select(models.Tag).where(
-            models.Tag.name == tag_name, models.Tag.tenant_id == tenant_id
+            models.Tag.name.ilike(f"%{tag_name}%"), models.Tag.tenant_id == tenant_id
         )
     ).first()
     if tag:

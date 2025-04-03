@@ -61,6 +61,9 @@ def test_create_duplicated_tag(session: Session) -> None:
         create_tag(session, TagCreate(name="tag-tenant-1", tenant_id=1))
 
     with pytest.raises(exceptions.TagNameTaken):
+        create_tag(session, TagCreate(name="Tag-Tenant-1", tenant_id=1))
+
+    with pytest.raises(exceptions.TagNameTaken):
         create_tag(
             session,
             TagCreate(name="tag-global-1", tenant_id=None, type=models.Type.GLOBAL),
