@@ -43,7 +43,7 @@ def connect_to_shared_device(id: str, db: Session = Depends(get_db)):
     return RedirectResponse(redirect_url)
 
 
-@router.get("/unassigned", response_model=CustomBigPage[schemas.DeviceList])
+@router.get("/unassigned", response_model=CustomBigPage[schemas.Device])
 def get_unassigned_devices(
     db: Session = Depends(get_db), user: User = Depends(has_admin_or_owner_role)
 ):
