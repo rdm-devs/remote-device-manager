@@ -139,7 +139,7 @@ def delete_tenant(db: Session, db_tenant: schemas.Tenant):
         if folder.parent_id == None:
             delete_folder(db, folder)
 
-    db.delete(db_tenant)
+    db.delete(db_tenant.entity)
     db.commit()
     return db_tenant.id
 

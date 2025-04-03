@@ -14,5 +14,8 @@ class Entity(AuditMixin, Base):
     #   1- https://stackoverflow.com/questions/183042/how-can-i-use-uuids-in-sqlalchemy
     #   2- https://fastapi-utils.davidmontague.xyz/user-guide/basics/guid-type/
     tags: Mapped[List["src.tag.models.Tag"]] = relationship(
-        secondary=entities_and_tags_table, back_populates="entities"
+        secondary=entities_and_tags_table,
+        back_populates="entities",
+        cascade="all, delete",
+        passive_deletes=True,
     )

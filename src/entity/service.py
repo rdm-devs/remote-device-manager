@@ -25,9 +25,9 @@ def create_entity(db: Session, entity: schemas.EntityCreate):
 
 
 def delete_entity(db: Session, entity_id: int):
-    get_entity(db, entity_id)
+    entity = get_entity(db, entity_id)
 
-    db.delete(entity_id)
+    db.delete(entity)
     db.commit()
     return entity_id
 

@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from typing import Union
 from tests.database import session, mock_os_data, mock_vendor_data
 
+from src.entity.service import get_entity
+from src.entity.exceptions import EntityNotFound
 from src.tenant.exceptions import (
     TenantNameTaken,
     TenantNotFound,
@@ -27,8 +29,9 @@ from src.tenant.service import (
 from src.tenant.schemas import TenantCreate, TenantUpdate, TenantSettings
 from src.user import models as user_models
 from src.tag.schemas import TagCreate
-from src.tag.service import create_tag
+from src.tag.service import create_tag, get_tag
 from src.tag.models import entities_and_tags_table, Tag, Type
+from src.tag.exceptions import TagNotFound
 from src.exceptions import PermissionDenied
 from src.folder.service import delete_folder, get_folder
 from src.folder.exceptions import FolderNotFound
@@ -173,13 +176,30 @@ def test_update_tenant_with_invalid_id(session: Session) -> None:
         )
 
 
-def test_delete_tenant(session: Session) -> None:
-    tenant = create_tenant(session, TenantCreate(name="tenant5delete"))
-    db_tenant = get_tenant(session, tenant.id)
+@pytest.mark.asyncio
+async def test_delete_tenant(session: Session) -> None:
+    tenant = create_tenant(session, TenantCreate(name="tenant-delete"))
+    tenant_id = tenant.id
 
-    with pytest.raises(TenantCannotBeDeleted):
-        deleted_tenant_id = delete_tenant(session, db_tenant=db_tenant)
-        assert deleted_tenant_id == tenant.id
+    tags = session.scalars(select(Tag.id).where(Tag.tenant_id == tenant_id)).all()
+    assert len(tags) == 2  # automatic tags
+
+    tenant = get_tenant(session, tenant_id)
+    entity = tenant.entity
+
+    tenant_id = delete_tenant(session, tenant)
+
+    with pytest.raises(TenantNotFound):
+        get_tenant(session, tenant_id)
+
+    # after removing tenant, the related entity has been deleted
+    with pytest.raises(EntityNotFound):
+        get_entity(session, entity_id=entity.id)
+
+    # after removing tenant, the related tags have been deleted
+    with pytest.raises(TagNotFound):
+        for tid in tags:
+            get_tag(session, tid)
 
 
 def test_delete_tenant_with_invalid_id(session: Session) -> None:
@@ -245,15 +265,15 @@ def test_update_tenant_settings(
         assert new_settings.heartbeat_s == tenant_settings_after["heartbeat_s"]
 
 
-def test_delete_tenant_permanent(
-    session: Session
-) -> None:
+def test_delete_tenant_permanent(session: Session) -> None:
     tenant_id = 2
     tenant = get_tenant(session, tenant_id)
     # saving folder ids to check that after tenant deletion these don't exist anymore
     folder_ids = [f.id for f in tenant.folders]
     # saving devices assigned to the tenant being deleted should be transferred to tenant 1.
-    devices = session.scalars(select(Device).where(Device.folder_id.in_(folder_ids))).all()
+    devices = session.scalars(
+        select(Device).where(Device.folder_id.in_(folder_ids))
+    ).all()
 
     delete_tenant_id = delete_tenant(session, tenant)
     assert delete_tenant_id == tenant_id
@@ -269,6 +289,7 @@ def test_delete_tenant_permanent(
 
     # checking that all the devices previosly assigned to the tenant being deleted were transferred to tenant 1
     assert all(filter(lambda d: d.folder_id == 1, devices))
+
 
 def test_delete_non_nexistent_tenant(session: Session) -> None:
     tenant_id = 99

@@ -1,7 +1,15 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import ForeignKey, Table, Column, DateTime, Integer, String, UniqueConstraint
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy import (
+    ForeignKey,
+    Table,
+    Column,
+    DateTime,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship, mapped_column, Mapped, backref
 from sqlalchemy.sql import func
 from typing import List, Optional
 from src.database import Base
@@ -25,16 +33,23 @@ class Tenant(AuditMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True)
-    entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id))
+    entity_id: Mapped[int] = mapped_column(ForeignKey(Entity.id, ondelete="CASCADE"))
     folders: Mapped[List["src.folders.models.Folder"]] = relationship(
         "Folder", back_populates="tenant"
     )
     users: Mapped[List["src.user.models.User"]] = relationship(
         secondary=tenants_and_users_table, back_populates="tenants"
     )
-    entity: Mapped[Entity] = relationship(Entity)
+    entity: Mapped["src.entity.models.Entity"] = relationship(
+        "src.entity.models.Entity",
+        backref=backref("tenant", cascade="all, delete"),
+        passive_deletes=True,
+    )
     tags_for_tenant: Mapped[List["src.tag.models.Tag"]] = relationship(
-        "src.tag.models.Tag", back_populates="tenant"
+        "src.tag.models.Tag",
+        back_populates="tenant",
+        cascade="all, delete",
+        passive_deletes=True,
     )
     settings: Mapped["TenantSettings"] = relationship(
         "TenantSettings", cascade="all, delete"
@@ -52,5 +67,9 @@ class TenantSettings(AuditMixin, Base):
     __tablename__ = "tenant_settings"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant.id", ondelete="cascade"), index=True)
-    heartbeat_s: Mapped[int] = mapped_column(default=int(os.getenv("HEARTBEAT_S")), nullable=False)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenant.id", ondelete="cascade"), index=True
+    )
+    heartbeat_s: Mapped[int] = mapped_column(
+        default=int(os.getenv("HEARTBEAT_S")), nullable=False
+    )
