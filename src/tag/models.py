@@ -45,9 +45,9 @@ class Tag(AuditMixin, Base):
         secondary=entities_and_tags_table, back_populates="tags"
     )
     tenant_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("tenant.id"), nullable=True
+        ForeignKey("tenant.id", ondelete="CASCADE"), nullable=True
     )
     tenant: Mapped[Optional["src.tenant.models.Tenant"]] = relationship(
-        "src.tenant.models.Tenant", back_populates="tags_for_tenant"
+        "src.tenant.models.Tenant", back_populates="tags_for_tenant", cascade="all, delete"
     )
     type: Mapped[Type]
