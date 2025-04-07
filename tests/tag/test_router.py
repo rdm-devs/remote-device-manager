@@ -80,6 +80,32 @@ def test_create_duplicated_tag(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == ErrorCode.TAG_NAME_TAKEN
 
+    response = client_authenticated.post(
+        "/tags/", json={"name": "MENDOZA", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.post(
+        "/tags/", json={"name": "Mendoza", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == ErrorCode.TAG_NAME_TAKEN
+
+    response = client_authenticated.post(
+        "/tags/", json={"name": "mendoza", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == ErrorCode.TAG_NAME_TAKEN
+
+    response = client_authenticated.post(
+        "/tags/", json={"name": "mendoza-1", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.post(
+        "/tags/", json={"name": "mendoza1", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 def test_create_tag_with_invalid_tenant_id(
     session: Session, client_authenticated: TestClient
