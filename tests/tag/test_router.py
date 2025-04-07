@@ -22,6 +22,7 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
         len(response.json()["assigned"]) == 15
     )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
+    
     response = client_authenticated.get("/tags/?tenant_id=1")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["assigned"]) == 3
@@ -102,10 +103,6 @@ def test_create_duplicated_tag(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    response = client_authenticated.post(
-        "/tags/", json={"name": "mendoza1", "tenant_id": 1}
-    )
-    assert response.status_code == status.HTTP_200_OK
 
 def test_create_tag_with_invalid_tenant_id(
     session: Session, client_authenticated: TestClient
@@ -136,6 +133,20 @@ def test_update_tag(session: Session, client_authenticated: TestClient) -> None:
     assert data["name"] == "tag5-updated"
     assert data["tenant_id"] == 1
 
+    response = client_authenticated.post(
+        "/tags/", json={"name": "mendoza1", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.patch(
+        f"/tags/{response.json()["id"]}", json={"name": "mendOza1", "tenant_id": 1}
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.patch(
+        f"/tags/{response.json()["id"]}", json={"name": "mendOza1"}
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 @pytest.mark.asyncio
 async def test_update_tag_to_add_a_tenant(

@@ -44,7 +44,7 @@ async def read_tags(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    if tenant_id == 1:
+    if tenant_id == 1 and user.role_id != 1:
         raise PermissionDenied()
     if not user_id or user_id == "me":
         ignore_user_id = True
@@ -69,7 +69,7 @@ def read_tag(
     user: User = Depends(get_current_active_user),
 ):
     db_tag = service.get_tag(db, tag_id)
-    if db_tag.tenant_id == 1:
+    if db_tag.tenant_id == 1 and user.role_id != 1:
         raise PermissionDenied()
     return db_tag
 
@@ -81,8 +81,8 @@ def update_tag(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    db_tag = read_tag(tag_id, db)
-    if db_tag.tenant_id == 1:
+    db_tag = service.get_tag(db, tag_id)
+    if db_tag.tenant_id == 1 and user.role_id != 1: # only admin users can update a tag from tenant1
         raise PermissionDenied()
     updated_device = service.update_tag(db, db_tag, updated_tag=tag)
     if not updated_device:
@@ -96,8 +96,8 @@ def delete_tag(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    db_tag = read_tag(tag_id, db)
-    if db_tag.tenant_id == 1:
+    db_tag = service.get_tag(db, tag_id)
+    if db_tag.tenant_id == 1 and user.role_id != 1:
         raise PermissionDenied()
     deleted_tag_id = service.delete_tag(db, db_tag)
     if not deleted_tag_id:

@@ -1,6 +1,6 @@
 from sqlalchemy import Select, select, insert, update, or_, and_, delete, func
 from sqlalchemy.orm import Session
-from typing import Union, List
+from typing import Union, List, Optional
 from src.auth.dependencies import (
     has_role,
     has_admin_role,
@@ -35,7 +35,7 @@ def get_tag(db: Session, tag_id: int):
     return tag
 
 
-def check_tag_name_exists(db: Session, tag_name: str, tenant_id: int):
+def check_tag_name_exists(db: Session, tag_name: str, tenant_id: int, tag_id: Optional[int] = None):
     # checking if the tag with `tag_name` already exists for tenant with `tenant_id`.
     tag = db.scalars(
         select(models.Tag).where(
@@ -44,7 +44,10 @@ def check_tag_name_exists(db: Session, tag_name: str, tenant_id: int):
         )
     ).first()
     if tag:
-        raise exceptions.TagNameTaken()
+        if tag_id and tag_id != tag.id:
+            raise exceptions.TagNameTaken()
+        if not tag_id:
+            raise exceptions.TagNameTaken()
 
 
 async def get_tags(
@@ -230,9 +233,10 @@ def update_tag(db: Session, db_tag: schemas.Tag, updated_tag: schemas.TagUpdate)
 
     if updated_tag.tenant_id:
         check_tenant_exists(db, updated_tag.tenant_id)
-        check_tag_name_exists(
-            db, tag_name=updated_tag.name, tenant_id=updated_tag.tenant_id
-        )
+
+    check_tag_name_exists(
+        db, tag_name=updated_tag.name, tenant_id=updated_tag.tenant_id, tag_id=db_tag.id
+    )
 
     res = db.execute(
         update(models.Tag)
