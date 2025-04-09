@@ -22,7 +22,6 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
         len(response.json()["assigned"]) == 15
     )  # see tags created in tests/database.py + automatic tags (tenants, folders/subfolders)
 
-    
     response = client_authenticated.get("/tags/?tenant_id=1")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["assigned"]) == 3
@@ -148,6 +147,18 @@ def test_update_tag(session: Session, client_authenticated: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_200_OK
 
+    response = client_authenticated.post(
+        "/tags/", json={"name": "mendoza1-global", "tenant_id": None, "type": "global"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response = client_authenticated.patch(
+        f"/tags/{response.json()["id"]}",
+        json={"name": "mendOza1-Global", "tenant_id": None},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+
 @pytest.mark.asyncio
 async def test_update_tag_to_add_a_tenant(
     session: Session, client_authenticated: TestClient
@@ -213,9 +224,7 @@ def test_delete_non_existent_tag(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_tag_multi(
-    session: Session, client_authenticated: TestClient
-) -> None:
+def test_delete_tag_multi(session: Session, client_authenticated: TestClient) -> None:
 
     # creating 2 new tags to delete them after
     response = client_authenticated.post(
