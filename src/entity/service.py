@@ -33,17 +33,20 @@ def delete_entity(db: Session, entity_id: int):
 
 
 def update_entity_tags(
-    db: Session, entity: models.Entity, tenant_ids: List[int], tag_ids: List[int]
+    db: Session, entity: models.Entity, tenant_ids: List[int], tag_ids: List[int], is_admin: bool = False
 ) -> models.Entity:
 
     # gathering new tags if they are global type or belong to a valid tenant_id
-    new_tags_query = select(Tag).where(
-        Tag.id.in_(tag_ids),
-        or_(
-            Tag.type == Type.GLOBAL,
-            Tag.tenant_id.in_(tenant_ids),
-        ),
-    )
+    if is_admin:
+        new_tags_query = select(Tag).where(Tag.id.in_(tag_ids))
+    else:
+        new_tags_query = select(Tag).where(
+            Tag.id.in_(tag_ids),
+            or_(
+                Tag.type == Type.GLOBAL,
+                Tag.tenant_id.in_(tenant_ids),
+            ),
+        )
     new_tags = db.scalars(new_tags_query).all()
 
     try:

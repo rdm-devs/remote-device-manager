@@ -1,5 +1,5 @@
 import pytest
-from typing import Union
+from typing import Union, List
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -397,10 +397,42 @@ def test_update_user_add_existing_tenant(session: Session) -> None:
     assert user.tenants[0].id == tenant_id
 
 
-def test_create_user_full(session):
+def test_create_user_full_admin(session: Session):
     role_id = 1
-    tenant_id = 1
-    tenants = [get_tenant(session, tenant_id)]
+    tag = session.scalar(select(Tag).where(Tag.id == 3))
+
+    user = create_user_full(
+        session,
+        UserCreateFull(
+            username="test-user@email.com",
+            password="_s3cr3tp@5sw0rd_",
+            role_id=role_id,
+            tags=[tag]
+        ),
+    )
+
+    assert user.username == "test-user@email.com"
+    assert user.role_id == role_id
+    assert len(user.tenants) == 0
+    assert len(user.tags) == 1
+
+
+@pytest.mark.parametrize(
+    "role_id, tenant_ids", [(2, []), (2, [1, 2]), (3, []), (3, [1, 2])]
+)
+def test_create_user_full_owner_user(
+    session: Session, role_id: int, tenant_ids: Union[None, List[int]]
+):
+
+    tenants = (
+        [get_tenant(session, tenant_id) for tenant_id in tenant_ids]
+        if tenant_ids
+        else []
+    )
+    tags = []
+    for tenant in tenants:
+        tags.extend(tenant.tags[:2])
+
     user = create_user_full(
         session,
         UserCreateFull(
@@ -408,9 +440,11 @@ def test_create_user_full(session):
             password="_s3cr3tp@5sw0rd_",
             role_id=role_id,
             tenants=tenants,
+            tags=tags,
         ),
     )
 
     assert user.username == "test-user@email.com"
     assert user.role_id == role_id
-    assert all(t in user.tenants for t in tenants)
+    assert all(t in user.tenants for t in tenants if not user.is_admin)
+    assert all(t in user.tags for t in tags)

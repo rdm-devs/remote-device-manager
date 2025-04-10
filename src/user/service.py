@@ -142,14 +142,18 @@ def update_user(
     if not tenant_ids and tenants is not None:
         tenant_ids = [t["id"] for t in tenants]
 
+    if updated_user.role_id is not None:
+        user = assign_role(db, db_user.id, updated_user.role_id)
     if tenant_ids is not None and len(tenant_ids) >= 0:
         user = update_user_tenants(db, user, tenant_ids)
     if tags is not None and len(tags) >= 0:
+        
         user.entity = update_entity_tags(
             db=db,
             entity=user.entity,
             tenant_ids=user.get_tenants_ids(),
             tag_ids=[t["id"] for t in tags],
+            is_admin=user.is_admin
         )
         db.commit()
     if updated_user.password:
@@ -159,9 +163,6 @@ def update_user(
         )  # rehash password
 
         values.pop("password")
-    
-    if updated_user.role_id is not None:
-        check_role_exists(db, role_id=updated_user.role_id)
 
     db.execute(update(models.User).where(models.User.id == user.id).values(values))
     db.commit()
