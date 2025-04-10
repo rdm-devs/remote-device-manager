@@ -16,7 +16,7 @@ from src.auth.utils import (
     expire_invalid_recovery_tokens,
     expire_used_recovery_token,
     get_user_password_update_token,
-    authenticate_user
+    authenticate_user,
 )
 from src.user.models import User
 from src.user.service import update_user, get_user, check_invalid_password
@@ -155,7 +155,10 @@ def send_password_recovery_email(
     recovery_url = f"{os.getenv('MAIN_SITE_DOMAIN_PROD')}/password-recovery?token={recovery_token_obj.recovery_token}"
     # TODO: send a real email with a message containing the recovery URL.
     print(recovery_token_obj.recovery_token)
-
+    email_message = constants.Message.PASSWORD_RECOVERY_EMAIL_BODY.substitute(
+        {"recovery_url": recovery_url}
+    )
+    utils.send_email(forgot_password_data.email, email_message)
     message = constants.Message.EMAIL_SENT_MSG.substitute({"email": user.username})
     return schemas.ForgotPasswordEmailSent(msg=message, url=recovery_url)
 
@@ -176,7 +179,9 @@ def update_user_password(
     return schemas.PasswordUpdated(msg=constants.Message.PASSWORD_UPDATED_MSG)
 
 
-def reset_user_password(db: Session, user, password_reset_data: schemas.PasswordResetData):
+def reset_user_password(
+    db: Session, user, password_reset_data: schemas.PasswordResetData
+):
     if not password_reset_data.user_id:
         auth_user = authenticate_user(user.username, password_reset_data.password, db)
         if auth_user:

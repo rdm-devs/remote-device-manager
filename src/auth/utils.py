@@ -1,6 +1,8 @@
 import os
 import datetime
 import pyotp
+import ssl
+import smtplib
 from fastapi import Depends
 from hashlib import sha256
 from pydantic import EmailStr
@@ -199,3 +201,15 @@ def get_user_password_update_token(
         return user
     except JWTError:
         raise exceptions.InvalidPasswordUpdateToken()
+
+
+def send_email(receiver_email: str, message: str):
+    port = os.getenv("SMTP_PORT") # For starttls
+    smtp_server = os.getenv("SMTP_SERVER")
+    sender_email = os.getenv("SENDER_EMAIL")
+    password = os.getenv("SENDER_PASSWORD")
+    context = ssl.create_default_context()
+    with smtplib.SMTP(smtp_server, port) as server:
+        server.starttls(context=context)
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message.encode('utf-8'))

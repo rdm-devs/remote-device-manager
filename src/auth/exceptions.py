@@ -24,3 +24,7 @@ class InvalidOTP(BadRequest):
 
 class InvalidPasswordUpdateToken(NotAuthenticated):
     DETAIL = ErrorCode.INVALID_PASSWORD_TOKEN
+
+
+class InvalidEmailCredentials(NotAuthenticated):
+    DETAIL = ErrorCode.EMAIL_AUTHENTICATION_REQUIRED
