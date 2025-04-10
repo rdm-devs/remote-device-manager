@@ -10,7 +10,7 @@ from src.auth.utils import create_otp, create_connection_url
 from src.device import schemas, models, exceptions, utils
 from src.entity.service import create_entity_auto, update_entity_tags
 from src.folder.models import Folder
-from src.folder.service import check_folder_exist, get_folders
+from src.folder.service import check_folder_exist, get_folders, get_root_folder
 from src.tenant.models import tenants_and_users_table, TenantSettings
 from src.tenant.service import get_tenant_settings
 from src.tenant.utils import filter_tag_ids
@@ -186,9 +186,18 @@ def delete_device(db: Session, db_device: schemas.Device):
     # sanity check
     get_device(db, db_device.id)
 
-    db.delete(db_device)
+    # deleting tags from the current folder tenant before moving it to another folder
+    current_folder_tenant_id = db_device.folder.tenant_id
+    current_tags = db_device.tags
+    db_device.entity.tags = [t for t in current_tags if t.tenant_id != current_folder_tenant_id]
     db.commit()
-    return db_device.id
+
+    # assigning tenant1's root folder id as folder_id for this device 
+    root_folder = get_root_folder(db, tenant_id=1)
+    updated_device = update_device(db, db_device, schemas.DeviceUpdate(folder_id=root_folder.id))
+
+    db.refresh(updated_device)
+    return updated_device.id
 
 
 def format_expiration_date(expiration_date: datetime) -> datetime:

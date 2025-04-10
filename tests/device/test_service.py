@@ -34,6 +34,8 @@ from src.device.schemas import (
 )
 from src.tenant.service import get_tenant
 from src.tag.models import entities_and_tags_table
+from src.tag.service import get_tags
+from src.user.service import get_user
 
 TEST_MAC_ADDR = "61:68:0C:1E:93:7F"
 TEST_IP_ADDR = "96.119.132.46"
@@ -265,15 +267,17 @@ def test_move_device_to_another_folder(
     updated_device = update_device(session, device, DeviceUpdate(folder_id=1))
     assert updated_device.folder_id == 1
 
-
-def test_delete_device(
+@pytest.mark.asyncio
+async def test_delete_device(
     session: Session, mock_os_data: dict, mock_vendor_data: dict
 ) -> None:
+    admin_user = get_user(session, user_id=1)
+    tags_tenant_2 = await get_tags(session, auth_user=admin_user, user_id=1, tenant_id=2) 
     device = create_device(
         session,
         DeviceCreate(
             name="dev5delete",
-            folder_id=3,
+            folder_id=6, # folder_id=6 belongs to tenant 2. see tests/database.py
             os_id=1,
             vendor_id=1,
             MAC_addresses=TEST_MAC_ADDR,
@@ -283,14 +287,16 @@ def test_delete_device(
             **mock_vendor_data
         ),
     )
-    db_device = get_device(session, device.id)
+    # assigning tags from tenant 2
+    device = update_device(session, device, DeviceUpdate(tags=tags_tenant_2))
 
-    device_id = device.id
-    deleted_device_id = delete_device(session, db_device=db_device)
-    assert deleted_device_id == device_id
-
-    with pytest.raises(DeviceNotFound):
-        get_device(session, device.id)
+    # confirming that after deletion, device is moved to tenant1's root folder
+    deleted_device_id = delete_device(session, db_device=device)
+    assert deleted_device_id == device.id
+    device = get_device(session, device.id)
+    assert device.folder_id == 1 # folder_id=1 is root folder for tenant1. see tests/database.py
+    # confirming previoust tenant's related tags were removed from device's tags.
+    assert all(t not in tags_tenant_2 for t in device.tags)
 
 
 def test_delete_device_with_invalid_id(

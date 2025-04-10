@@ -249,13 +249,25 @@ def test_update_non_existent_device(
 
 
 def test_delete_device(session: Session, client_authenticated: TestClient) -> None:
+    root_folder_id = 1 # see tests/database.py 
     device_id = 1  # Device with id=1 already exists in the session
+    response = client_authenticated.get(f"/devices/{device_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    original_tags = data["tags"]
+    folder_id = data["folder_id"]
 
     response = client_authenticated.delete(f"/devices/{device_id}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "id" in data
     assert data["id"] == device_id
+
+    response = client_authenticated.get(f"/devices/{device_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert "id" in data
+    assert data["folder_id"] == root_folder_id
 
 
 def test_delete_non_existent_device(
