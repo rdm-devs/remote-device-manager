@@ -156,7 +156,7 @@ async def password_recovery(
 @router.post("/password-reset")
 async def password_reset(
     password_reset_data: PasswordResetData,
-    user = Depends(has_admin_or_owner_role),
+    user=Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> PasswordUpdated:
     if password_reset_data.user_id:
