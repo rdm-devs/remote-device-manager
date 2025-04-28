@@ -26,6 +26,16 @@ def test_read_tags(session: Session, client_authenticated: TestClient) -> None:
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()["assigned"]) == 3
 
+    # getting tags for device using device's id
+    response = client_authenticated.get("/tags/?device_id=1")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["assigned"]) == 2
+
+    # getting tags for device using device's serial number
+    response = client_authenticated.get("/tags/?device_id=DeviceSerialno0001")
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["assigned"]) == 2
+
 
 def test_read_tag(session: Session, client_authenticated: TestClient) -> None:
     tenant_id = 1

@@ -7,7 +7,7 @@ from fastapi import Depends
 from hashlib import sha256
 from pydantic import EmailStr
 from dotenv import load_dotenv
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 from sqlalchemy.orm import Session
 from typing import Any, Optional, Dict, Union
 from jose import JWTError, jwt
@@ -98,8 +98,12 @@ def get_refresh_token_settings(
     }
 
 
-def check_device_has_rustdesk_credentials(db: Session, device_id: int):
-    device = db.scalars(select(Device).where(Device.id == device_id)).first()
+def check_device_has_rustdesk_credentials(db: Session, device_id: Union[str, int]):
+    device = db.scalars(
+        select(Device).where(
+            or_(Device.id == device_id, Device.serial_number == device_id)
+        )
+    ).first()
     if not device:
         raise device_exceptions.DeviceNotFound()
     if not device.id_rust or not device.pass_rust:
@@ -116,7 +120,7 @@ def is_valid_otp(otp: str) -> bool:
     raise exceptions.InvalidOTP()
 
 
-def create_connection_url(db: Session, device_id: int, otp: str):
+def create_connection_url(db: Session, device_id: Union[str, int], otp: str):
     _ = check_device_has_rustdesk_credentials(db, device_id)
 
     base_url = os.getenv(f"RUSTDESK_CLIENT_URL")
@@ -185,7 +189,9 @@ def get_user_password_update_token(
     db: Session = Depends(get_db),
 ) -> None:
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")])
+        payload = jwt.decode(
+            token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
+        )
         recovery_token_obj = db.scalar(
             select(RecoveryToken).where(RecoveryToken.recovery_token == token)
         )
@@ -204,7 +210,7 @@ def get_user_password_update_token(
 
 
 def send_email(receiver_email: str, message: str):
-    port = os.getenv("SMTP_PORT") # For starttls
+    port = os.getenv("SMTP_PORT")  # For starttls
     smtp_server = os.getenv("SMTP_SERVER")
     sender_email = os.getenv("SENDER_EMAIL")
     password = os.getenv("SENDER_PASSWORD")
@@ -212,4 +218,4 @@ def send_email(receiver_email: str, message: str):
     with smtplib.SMTP(smtp_server, port) as server:
         server.starttls(context=context)
         server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email, message.encode('utf-8'))
+        server.sendmail(sender_email, receiver_email, message.encode("utf-8"))

@@ -39,7 +39,7 @@ async def read_tags(
     user_id: Union[int, str, None] = None,
     tenant_id: Union[int, None] = None,
     folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
+    device_id: Union[str, int, None] = None,
     name: Union[str, None] = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),

@@ -743,6 +743,7 @@ async def test_send_token_to_rustdesk(
     "auth_user_id, device_id, expected_status_code",
     [
         (1, 1, status.HTTP_200_OK),
+        (1, "DeviceSerialno0001", status.HTTP_200_OK),
         (1, 2, status.HTTP_400_BAD_REQUEST),  # dev2 doesn't have rust credentials set
         (1, 3, status.HTTP_400_BAD_REQUEST),  # dev3 doesn't have rust credentials set
         (1, 4, status.HTTP_404_NOT_FOUND),

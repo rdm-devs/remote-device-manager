@@ -35,7 +35,9 @@ def get_tag(db: Session, tag_id: int):
     return tag
 
 
-def check_tag_name_exists(db: Session, tag_name: str, tenant_id: int, tag_id: Optional[int] = None):
+def check_tag_name_exists(
+    db: Session, tag_name: str, tenant_id: int, tag_id: Optional[int] = None
+):
     # checking if the tag with `tag_name` already exists for tenant with `tenant_id`.
     tag = db.scalars(
         select(models.Tag).where(
@@ -57,7 +59,7 @@ async def get_tags(
     name: Union[str, None] = "",
     tenant_id: Union[int, None] = None,
     folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
+    device_id: Union[str, int, None] = None,
     ignore_user_id: bool = True,
 ):
 
@@ -85,7 +87,11 @@ async def get_tags(
 
     if device_id:
         await has_access_to_device(device_id, db, auth_user)
-        device = db.scalars(select(Device).where(Device.id == device_id)).first()
+        device = db.scalars(
+            select(Device).where(
+                or_(Device.id == device_id, Device.serial_number == device_id)
+            )
+        ).first()
         device_assigned_tag_ids = get_entity_tag_ids(db, device.entity_id)
         tag_ids = device_assigned_tag_ids
 
@@ -138,8 +144,12 @@ def get_folder_available_tags(db: Session, folder_id: int, tags: Select):
     )
 
 
-def get_device_available_tags(db: Session, device_id: int, tags: Select):
-    device = db.scalars(select(Device).where(Device.id == device_id)).first()
+def get_device_available_tags(db: Session, device_id: Union[str, int], tags: Select):
+    device = db.scalars(
+        select(Device).where(
+            or_(Device.id == device_id, Device.serial_number == device_id)
+        )
+    ).first()
     auto_device_tag_id = (
         select(models.Tag.id)
         .join(
@@ -178,7 +188,7 @@ async def get_available_tags(
     name: Union[str, None] = "",
     tenant_id: Union[int, None] = None,
     folder_id: Union[int, None] = None,
-    device_id: Union[int, None] = None,
+    device_id: Union[str, int, None] = None,
     ignore_user_id: bool = True,
 ):
 

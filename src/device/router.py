@@ -1,9 +1,9 @@
 import os
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Path
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from fastapi_pagination.ext.sqlalchemy import paginate
-from typing import List
+from typing import List, Union
 from src.auth.dependencies import (
     get_current_active_user,
     has_admin_role,
@@ -17,7 +17,7 @@ from src.auth.schemas import ConnectionUrl
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
 from src.database import get_db
-from src.device import service, schemas, utils, models
+from src.device import service, schemas, utils, models, exceptions
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
@@ -65,14 +65,20 @@ def get_unassigned_devices(
 #         return False
 
 
-@router.get("/{device_id:int}", response_model=schemas.Device)
+@router.get("/{device_id}", response_model=schemas.Device)
 def read_device(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_device),
 ):
-    db_device = service.get_device(db, device_id=device_id)
-    return db_device
+    if str(device_id).isdigit():
+        return service.get_device(db, device_id=device_id)
+    device = utils.get_device_by_serial_number(
+        db, serial_number=device_id
+    )
+    if not device:
+        raise exceptions.DeviceNotFound()
+    return device
 
 
 @router.get("/", response_model=CustomBigPage[schemas.DeviceList])
@@ -89,7 +95,7 @@ def read_devices(
 
 @router.patch("/{device_id}", response_model=schemas.Device)
 def update_device(
-    device_id: int,
+    device_id: Union[str, int],
     device: schemas.DeviceUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(can_edit_device),
@@ -102,22 +108,23 @@ def update_device(
 
 @router.delete("/{device_id}", response_model=schemas.DeviceDelete)
 def delete_device(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(can_edit_device),
 ):
     db_device = read_device(device_id, db)
-    deleted_device_id = service.delete_device(db, db_device)
+    deleted_device_id, deleted_device_serial_number = service.delete_device(db, db_device)
 
     return {
         "id": deleted_device_id,
-        "msg": f"Dispositivo {deleted_device_id} eliminado exitosamente!",
+        "serial_number": deleted_device_serial_number,
+        "msg": f"Dispositivo {deleted_device_serial_number} eliminado exitosamente!",
     }
 
 
 @router.get("/{device_id}/connect", response_model=ConnectionUrl)
 async def connect(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_device),
 ):
@@ -128,7 +135,7 @@ async def connect(
 
 @router.post("/{device_id}/heartbeat", response_model=schemas.HeartBeatResponse)
 def update_heartbeat(
-    device_id: int,
+    device_id: Union[str, int],
     heartbeat: schemas.HeartBeat,
     db: Session = Depends(get_db),
 ):
@@ -138,7 +145,7 @@ def update_heartbeat(
 
 @router.post("/{device_id}/share", response_model=schemas.ShareDeviceURL)
 def share_device(
-    device_id: int,
+    device_id: Union[str, int],
     share_params: schemas.ShareParams,
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_device),
@@ -146,9 +153,9 @@ def share_device(
     return service.share_device(db, user.id, device_id, share_params)
 
 
-@router.get("/{device_id:int}/revoke-share-url", response_model=schemas.Device)
+@router.get("/{device_id}/revoke-share-url", response_model=schemas.Device)
 def revoke_share_url(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(has_access_to_device),
 ):

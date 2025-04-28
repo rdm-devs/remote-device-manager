@@ -3,7 +3,7 @@ import datetime
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Cookie
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import or_
+from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from typing import Any, Dict, Union, List
@@ -191,15 +191,20 @@ async def has_access_to_tags(
 
 
 async def has_access_to_device(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
     device = (
-        db.query(device_models.Device)
-        .filter(device_models.Device.id == device_id)
-        .first()
-    )
+        db.scalars(
+            select(device_models.Device).where(
+                or_(
+                    device_models.Device.id == device_id,
+                    device_models.Device.serial_number == device_id,
+                )
+            )
+        )
+    ).first()
     if not device:
         raise DeviceNotFound()
 
@@ -235,7 +240,7 @@ async def has_access_to_user_id(
 
 
 async def can_edit_device(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     user: User = Depends(has_admin_or_owner_role),
 ):

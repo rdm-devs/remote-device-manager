@@ -146,11 +146,16 @@ def update_device(
     return device
 
 
-def update_device_heartbeat(db: Session, device_id: int, heartbeat: schemas.HeartBeat):
+def update_device_heartbeat(
+    db: Session, device_id: Union[str, int], heartbeat: schemas.HeartBeat
+):
     # sanity checks
     values = heartbeat.model_dump(exclude_none=True)
     id_rust = values.pop("id_rust", None)
     pass_rust = values.pop("pass_rust", None)
+    if not str(device_id).isdigit():
+        device = utils.get_device_by_serial_number(db, device_id)
+        device_id = device.id
 
     timestamp = datetime.now()
     db.execute(
@@ -197,7 +202,7 @@ def delete_device(db: Session, db_device: schemas.Device):
     updated_device = update_device(db, db_device, schemas.DeviceUpdate(folder_id=root_folder.id))
 
     db.refresh(updated_device)
-    return updated_device.id
+    return updated_device.id, updated_device.serial_number
 
 
 def format_expiration_date(expiration_date: datetime) -> datetime:
@@ -206,7 +211,7 @@ def format_expiration_date(expiration_date: datetime) -> datetime:
 
 
 def create_share_url(
-    user_id: int, device_id: int, expiration_minutes: int
+    user_id: int, device_id: Union[str, int], expiration_minutes: int
 ) -> tuple[str, datetime]:
     expiration_minutes = (
         int(os.getenv("SHARE_URL_MAX_DURATION_MINUTES"))
@@ -230,7 +235,10 @@ def create_share_url(
 
 
 def share_device(
-    db: Session, user_id: int, device_id: int, share_params: schemas.ShareParams
+    db: Session,
+    user_id: int,
+    device_id: Union[str, int],
+    share_params: schemas.ShareParams,
 ) -> schemas.ShareDeviceURL:
     # extracting expiration_minutes from share_params
     expiration_minutes = share_params.expiration_minutes
@@ -238,7 +246,11 @@ def share_device(
         raise exceptions.InvalidExpirationMinutes()
 
     # updating device attributes (share_url + share exp time)
-    device = get_device(db, device_id)
+    if str(device_id).isdigit():
+        device = get_device(db, device_id)
+    else:
+        device = utils.get_device_by_serial_number(db, device_id)
+
     if not device.id_rust or not device.pass_rust:
         raise exceptions.DeviceCredentialsNotConfigured()
 
@@ -289,8 +301,12 @@ def verify_share_url(db: Session, token: str) -> str:
     return redirect_url
 
 
-def revoke_share_url(db: Session, device_id: int) -> schemas.Device:
-    device = get_device(db, device_id)
+def revoke_share_url(db: Session, device_id: Union[str, int]) -> schemas.Device:
+    if str(device_id).isdigit():
+        device = get_device(db, device_id)
+    else:
+        device = utils.get_device_by_serial_number(db, device_id)
+
     device = update_device(
         db,
         device,

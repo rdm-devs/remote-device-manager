@@ -298,7 +298,7 @@ async def test_get_available_tags(
     user_id: Union[None, int],
     tenant_id: Union[None, int],
     folder_id: Union[None, int],
-    device_id: Union[None, int],
+    device_id: Union[None, str, int],
     n_expected_items: Union[None, int],
 ) -> None:
     async def get_tags():

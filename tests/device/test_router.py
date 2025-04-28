@@ -43,6 +43,7 @@ def test_read_device(
             "MAC_addresses": TEST_MAC_ADDR,
             "local_ips": TEST_IP_ADDR,
             "time_zone": "America/Argentina/Buenos_Aires",
+            "serial_number": "DeviceSerialNumber0005",
             **mock_os_data,
             **mock_vendor_data,
         },
@@ -51,7 +52,17 @@ def test_read_device(
     data = response.json()
     device_id = data["id"]
 
+    # retrieving device's data using id
     response = client_authenticated.get(f"/devices/{device_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["id"] == device_id
+    assert data["name"] == "dev5"
+    assert data["folder_id"] == 1
+
+    # retrieving device's data using serial_number
+    response = client_authenticated.get(f"/devices/{data['serial_number']}")
+    print(response.text)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["id"] == device_id
@@ -185,9 +196,21 @@ def test_create_device_with_non_existing_folder(
     assert response.json()["detail"] == FolderErrorCode.FOLDER_NOT_FOUND
 
 
-def test_update_device(session: Session, client_authenticated: TestClient) -> None:
+@pytest.mark.parametrize(
+    "device_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        ("DeviceSerialno0001", status.HTTP_200_OK),
+    ],
+)
+def test_update_device(
+    session: Session,
+    client_authenticated: TestClient,
+    device_id: int,
+    expected_status_code: int,
+) -> None:
     # Device with id=1 already exists in the session. See: tests/database.py
-    device_id = 1
+    # device_id = 1
 
     # attempting to assign tags from a tenant with who the device is not related.
     tenant_id = 2
@@ -206,7 +229,7 @@ def test_update_device(session: Session, client_authenticated: TestClient) -> No
             "tags": new_tags,
         },
     )
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code  # status.HTTP_200_OK
     data = response.json()
     assert data["name"] == "dev5-updated"
     assert data["folder_id"] == 1
@@ -229,7 +252,7 @@ def test_update_device(session: Session, client_authenticated: TestClient) -> No
         f"/devices/{device_id}",
         json={"tags": new_tags},
     )
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code  # status.HTTP_200_OK
     data = response.json()
     # the operation should succeed and the device should have new tags assigned.
     assert all(t in data["tags"] for t in tags_tenant_1)
@@ -248,23 +271,35 @@ def test_update_non_existent_device(
     assert response.json()["detail"] == ErrorCode.DEVICE_NOT_FOUND
 
 
-def test_delete_device(session: Session, client_authenticated: TestClient) -> None:
-    root_folder_id = 1 # see tests/database.py 
-    device_id = 1  # Device with id=1 already exists in the session
+@pytest.mark.parametrize(
+    "device_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        ("DeviceSerialno0001", status.HTTP_200_OK),
+    ],
+)
+def test_delete_device(
+    session: Session,
+    client_authenticated: TestClient,
+    device_id: int,
+    expected_status_code: int,
+) -> None:
+    root_folder_id = 1  # see tests/database.py
+    # device_id = 1  # Device with id=1 already exists in the session
     response = client_authenticated.get(f"/devices/{device_id}")
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     data = response.json()
     original_tags = data["tags"]
     folder_id = data["folder_id"]
 
     response = client_authenticated.delete(f"/devices/{device_id}")
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     data = response.json()
     assert "id" in data
-    assert data["id"] == device_id
+    assert data["id"] == device_id or data["serial_number"] == device_id
 
     response = client_authenticated.get(f"/devices/{device_id}")
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     data = response.json()
     assert "id" in data
     assert data["folder_id"] == root_folder_id
@@ -280,14 +315,22 @@ def test_delete_non_existent_device(
     assert response.json()["detail"] == ErrorCode.DEVICE_NOT_FOUND
 
 
+@pytest.mark.parametrize(
+    "device_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        ("DeviceSerialno0001", status.HTTP_200_OK),
+    ],
+)
 def test_connect_to_device(
     session: Session,
     client_authenticated: TestClient,
+    device_id: int,
+    expected_status_code: int
 ):
-    device_id = 1
     response = client_authenticated.get(f"/devices/{device_id}/connect")
     url = response.json()["url"]
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     assert url is not None
     assert "id=" in url
     assert "otp=" in url
@@ -324,6 +367,7 @@ def test_update_device_heartbeat(
     "device_id, body, expected_status_code",
     [
         (1, {"expiration_minutes": 1}, status.HTTP_200_OK),
+        ("DeviceSerialno0001", {"expiration_minutes": 1}, status.HTTP_200_OK),
         (1, {"expiration_minutes": 0}, status.HTTP_200_OK),
         (1, {"expiration_minutes": -1}, status.HTTP_400_BAD_REQUEST),
         (1, {}, status.HTTP_422_UNPROCESSABLE_ENTITY),
@@ -343,7 +387,9 @@ def test_share_device(
         assert "url" in share_data
 
 
-def test_device_is_online(session: Session, client_authenticated: TestClient, client: TestClient):
+def test_device_is_online(
+    session: Session, client_authenticated: TestClient, client: TestClient
+):
     device_id = 1  # is offline initially
     response = client_authenticated.get(f"/devices/{device_id}")
     data = response.json()
@@ -358,9 +404,7 @@ def test_device_is_online(session: Session, client_authenticated: TestClient, cl
     }
 
     # sending a heartbeat will recalculate the online status in new readings
-    response = client.post(
-        f"/devices/{device_id}/heartbeat", json=fake_heartbeat
-    )
+    response = client.post(f"/devices/{device_id}/heartbeat", json=fake_heartbeat)
     data = response.json()
     assert response.status_code == status.HTTP_200_OK
 
@@ -371,7 +415,9 @@ def test_device_is_online(session: Session, client_authenticated: TestClient, cl
     assert data["is_online"] == True
 
 
-def test_device_list_with_online_status(session: Session, client_authenticated: TestClient, client: TestClient):
+def test_device_list_with_online_status(
+    session: Session, client_authenticated: TestClient, client: TestClient
+):
     response = client_authenticated.get(f"/devices")
     devices = response.json()["items"]
     assert response.status_code == status.HTTP_200_OK
@@ -387,9 +433,7 @@ def test_device_list_with_online_status(session: Session, client_authenticated: 
     }
 
     # sending a heartbeat will recalculate the online status in new readings
-    response = client.post(
-        f"/devices/{device_id}/heartbeat", json=fake_heartbeat
-    )
+    response = client.post(f"/devices/{device_id}/heartbeat", json=fake_heartbeat)
     data = response.json()
     assert response.status_code == status.HTTP_200_OK
 

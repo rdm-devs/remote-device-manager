@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 from src.tag.schemas import Tag
 
 
@@ -78,6 +78,7 @@ class DeviceUpdate(DeviceCreate):
 
 class DeviceDelete(BaseModel):
     id: int
+    serial_number: str
     msg: str
 
 
