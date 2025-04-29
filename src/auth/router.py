@@ -103,7 +103,7 @@ async def logout_user(
 
 @router.get("/device/{device_id}/connect/{otp}", response_model=dict)
 async def get_device_connection_token(
-    device_id: int,
+    device_id: Union[str, int],
     db: Session = Depends(get_db),
     otp: str = Depends(is_valid_otp),
     # user: User = Depends(get_current_active_user),

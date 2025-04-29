@@ -135,7 +135,7 @@ def create_otp(interval: int = int(os.getenv("OTP_INTERVAL_SECS"))):
 
 def create_connection_token(
     db: Session,
-    device_id: int,
+    device_id: Union[str, int],
     expiration_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")),
 ) -> str:
     device = check_device_has_rustdesk_credentials(db, device_id)
