@@ -7,7 +7,7 @@ from src.database import get_db
 from src.exceptions import PermissionDenied
 from src.user.schemas import User, UserCreate
 from src.user.service import check_username_exists, create_user, get_user
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from src.auth.utils import (
     authenticate_user,
     create_access_token,
