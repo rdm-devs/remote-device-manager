@@ -21,7 +21,7 @@ from src.device import service, schemas, utils, models, exceptions
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
-alt_router = APIRouter(prefix="/serials", tags=["serial"])  # compatibilidad para SIA
+alt_router = APIRouter(prefix="/serials", tags=["serials"])  # compatibilidad para SIA
 
 
 @router.post("/", response_model=schemas.Device)
@@ -56,8 +56,6 @@ def get_unassigned_devices(
     )
 
 
-## TODO: crear otro endpoint que haga lo mismo pero que recibirá el numero de serie
-## en lugar del device_id -->> /serial/{serial_number}
 @alt_router.get("/{serial_number}", response_model=schemas.Device)
 def read_device_with_serial_number(
     serial_number: str,
@@ -124,8 +122,6 @@ def delete_device(
     }
 
 
-## TODO: crear otro endpoint que haga lo mismo pero que recibirá el numero de serie
-## en lugar del device_id -->> /serial/{serial_number}/connect
 @alt_router.get("/{serial_number}/connect", response_model=ConnectionUrl)
 async def connect_with_serial_number(
     serial_number: str,
