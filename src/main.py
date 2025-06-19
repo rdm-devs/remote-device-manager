@@ -8,6 +8,7 @@ from fastapi_pagination import add_pagination
 from .database import engine, Base
 from .auth.router import router as auth_router
 from .device.router import router as device_router
+from .device.router import alt_router
 from .folder.router import router as folder_router
 from .role.router import router as role_router
 from .tag.router import router as tag_router
@@ -47,6 +48,7 @@ add_pagination(app)
 
 app.include_router(auth_router)
 app.include_router(device_router)
+app.include_router(alt_router)
 app.include_router(folder_router)
 app.include_router(role_router)
 app.include_router(tag_router)

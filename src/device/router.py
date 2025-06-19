@@ -1,5 +1,5 @@
 import os
-from fastapi import Depends, APIRouter, HTTPException, Path
+from fastapi import Depends, APIRouter, HTTPException, Path, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -21,6 +21,7 @@ from src.device import service, schemas, utils, models, exceptions
 from src.utils import CustomBigPage
 
 router = APIRouter(prefix="/devices", tags=["devices"])
+alt_router = APIRouter(prefix="/serials", tags=["serial"])  # compatibilidad para SIA
 
 
 @router.post("/", response_model=schemas.Device)
@@ -55,14 +56,15 @@ def get_unassigned_devices(
     )
 
 
-# TODO: remove
-# @router.get("/verify-url")
-# def connect_to_shared_device(url: str, db: Session = Depends(get_db)):
-#     try:
-#         redirect_url = service.verify_share_url(db, url.split("?id=")[1])
-#         return True if redirect_url else False
-#     except:
-#         return False
+## TODO: crear otro endpoint que haga lo mismo pero que recibirá el numero de serie
+## en lugar del device_id -->> /serial/{serial_number}
+@alt_router.get("/{serial_number}", response_model=schemas.Device)
+def read_device_with_serial_number(
+    serial_number: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(lambda serial_number: has_access_to_device(serial_number)),
+):
+    return read_device(serial_number, db)
 
 
 @router.get("/{device_id}", response_model=schemas.Device)
@@ -73,9 +75,7 @@ def read_device(
 ):
     if str(device_id).isdigit():
         return service.get_device(db, device_id=device_id)
-    device = utils.get_device_by_serial_number(
-        db, serial_number=device_id
-    )
+    device = utils.get_device_by_serial_number(db, serial_number=device_id)
     if not device:
         raise exceptions.DeviceNotFound()
     return device
@@ -113,13 +113,26 @@ def delete_device(
     user: User = Depends(can_edit_device),
 ):
     db_device = read_device(device_id, db)
-    deleted_device_id, deleted_device_serial_number = service.delete_device(db, db_device)
+    deleted_device_id, deleted_device_serial_number = service.delete_device(
+        db, db_device
+    )
 
     return {
         "id": deleted_device_id,
         "serial_number": deleted_device_serial_number,
         "msg": f"Dispositivo {deleted_device_serial_number} eliminado exitosamente!",
     }
+
+
+## TODO: crear otro endpoint que haga lo mismo pero que recibirá el numero de serie
+## en lugar del device_id -->> /serial/{serial_number}/connect
+@alt_router.get("/{serial_number}/connect", response_model=ConnectionUrl)
+async def connect_with_serial_number(
+    serial_number: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(lambda serial_number: has_access_to_device(serial_number)),
+):
+    return await connect(serial_number, db)
 
 
 @router.get("/{device_id}/connect", response_model=ConnectionUrl)

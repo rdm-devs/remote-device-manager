@@ -1,6 +1,7 @@
 import os
 import pytest
 import time
+from typing import Union
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
@@ -76,6 +77,38 @@ def test_read_non_existent_device(
     device_id = 5
     response = client_authenticated.get(f"/devices/{device_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+@pytest.mark.parametrize(
+    "device_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        ("DeviceSerialno0001", status.HTTP_200_OK),
+    ],
+)
+def test_read_device_with_id_and_serial_number(
+    session: Session,
+    client_authenticated: TestClient,
+    device_id: Union[str, int],
+    expected_status_code: int,
+) -> None:
+    response = client_authenticated.get(
+        f"/devices/{device_id}",
+    )
+    assert response.status_code == expected_status_code  # status.HTTP_200_OK
+    assert response.json()["id"] == 1
+
+
+def test_read_device_with_serial_number(
+    session: Session,
+    client_authenticated: TestClient,
+) -> None:
+    serial_number = "DeviceSerialno0001"
+    response = client_authenticated.get(
+        f"/serials/{serial_number}",
+    )
+    
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["id"] == 1
 
 
 def test_create_device(
@@ -331,6 +364,19 @@ def test_connect_to_device(
     response = client_authenticated.get(f"/devices/{device_id}/connect")
     url = response.json()["url"]
     assert response.status_code == expected_status_code
+    assert url is not None
+    assert "id=" in url
+    assert "otp=" in url
+
+
+def test_connect_to_device_with_serial_number(
+    session: Session,
+    client_authenticated: TestClient,
+):
+    serial_number = "DeviceSerialno0001"
+    response = client_authenticated.get(f"/serials/{serial_number}/connect")
+    assert response.status_code == status.HTTP_200_OK
+    url = response.json()["url"]
     assert url is not None
     assert "id=" in url
     assert "otp=" in url
