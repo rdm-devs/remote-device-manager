@@ -11,6 +11,7 @@ from src.auth.dependencies import (
     has_access_to_device,
     has_admin_or_owner_role,
     can_edit_device,
+    has_access_to_device_by_serial
 )
 from src.auth.utils import create_connection_url, create_otp
 from src.auth.schemas import ConnectionUrl
@@ -60,7 +61,7 @@ def get_unassigned_devices(
 def read_device_with_serial_number(
     serial_number: str,
     db: Session = Depends(get_db),
-    user: User = Depends(lambda serial_number: has_access_to_device(serial_number)),
+    user: User = Depends(has_access_to_device_by_serial),
 ):
     return read_device(serial_number, db)
 
@@ -126,7 +127,7 @@ def delete_device(
 async def connect_with_serial_number(
     serial_number: str,
     db: Session = Depends(get_db),
-    user: User = Depends(lambda serial_number: has_access_to_device(serial_number)),
+    user: User = Depends(has_access_to_device_by_serial),
 ):
     return await connect(serial_number, db)
 

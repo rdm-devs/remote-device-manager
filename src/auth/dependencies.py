@@ -189,6 +189,12 @@ async def has_access_to_tags(
     if tags:
         return user
 
+async def has_access_to_device_by_serial(
+    serial_number: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user)
+) -> User:
+    return await has_access_to_device(device_id=serial_number, db=db, user=user)
 
 async def has_access_to_device(
     device_id: Union[str, int],
