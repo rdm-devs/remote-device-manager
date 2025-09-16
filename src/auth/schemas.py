@@ -30,13 +30,17 @@ class LoginData(BaseModel):
     device: Optional[Device]
 
 
-class AuthRefreshToken(BaseModel):
-    id: int
+class RefreshToken(BaseModel):
     user_id: int
-    serial_number: str
+    serial_number: Optional[str]
     refresh_token: str
     expires_at: datetime
     valid: bool
+
+
+class AuthRefreshToken(RefreshToken):
+    id: int
+    serial_number: str
 
     model_config = {"from_attributes": True}
 

@@ -20,8 +20,8 @@ from src.tag import schemas as tag_schemas
 from src.folder.exceptions import FolderNotFound
 from src.device.exceptions import DeviceNotFound
 from src.auth import service, exceptions
-from src.auth.schemas import TokenData
-from src.auth.utils import get_user_by_username, _is_valid_refresh_token
+from src.auth.schemas import AuthRefreshToken, TokenData
+from src.auth.utils import get_user_by_username, _is_valid_refresh_token, parse_refresh_token
 
 load_dotenv()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -109,16 +109,13 @@ async def can_assign_role(
 
 async def valid_refresh_token(
     refresh_token: str,
-    db: Session = Depends(get_db),
 ) -> Dict[str, Any]:
-    db_refresh_token = await service.get_refresh_token(db, refresh_token)
-    if not db_refresh_token:
+    parsed_token = parse_refresh_token(refresh_token)
+
+    if not _is_valid_refresh_token(parsed_token.expires_at):
         raise exceptions.RefreshTokenNotValid()
 
-    if not _is_valid_refresh_token(db_refresh_token):
-        raise exceptions.RefreshTokenNotValid()
-
-    return db_refresh_token
+    return parsed_token
 
 
 async def valid_refresh_token_user(

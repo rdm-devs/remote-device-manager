@@ -72,7 +72,7 @@ async def create_refresh_token(
         ).first()
 
     if db_refresh_token:
-        if _is_valid_refresh_token(db_refresh_token):
+        if _is_valid_refresh_token(db_refresh_token.expires_at):
             return db_refresh_token.refresh_token
         else:
             await delete_refresh_token(db, db_refresh_token.refresh_token)

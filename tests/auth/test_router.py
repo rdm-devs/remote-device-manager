@@ -386,7 +386,7 @@ async def test_read_tag_authorized_owner_2(
     assert response.status_code == status.HTTP_200_OK, response.text
     assert len(data["assigned"]) == 0
 
-    # filtering by tenant_id
+    # filtering by tenant_id = 1. As the user is not an admin, it should reject the request
     tenant_id = 1
     response = client.get(
         f"/tags/?tenant_id={tenant_id}",
@@ -394,8 +394,7 @@ async def test_read_tag_authorized_owner_2(
     )
 
     data = response.json()
-    assert response.status_code == status.HTTP_200_OK, response.text
-    assert len(data["assigned"]) == 3
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
 
     # filtering by tenant_id (wrong one) and name. it should reject the request
     name = "tenant"
@@ -577,7 +576,7 @@ async def test_read_tag_authorized_owner_3(
         ("name=tenant1", 4, status.HTTP_200_OK),
         ("name=tenant2", 3, status.HTTP_200_OK),
         ("tenant_id=2", 0, status.HTTP_403_FORBIDDEN),
-        ("name=tenant&tenant_id=1", 2, status.HTTP_200_OK),
+        ("name=tenant&tenant_id=1", 2, status.HTTP_403_FORBIDDEN),
         ("device_id=1", 2, status.HTTP_200_OK),
         ("device_id=3", 0, status.HTTP_403_FORBIDDEN),
         ("device_id=10", 0, status.HTTP_404_NOT_FOUND),
@@ -881,7 +880,7 @@ async def test_reset_password(
 async def test_reset_password_invalid_permissions(
     session: Session, client: TestClient, user_auth_tokens: dict
 ) -> None:
-    user_id = 4
+    user_id = 1
     access_token = (await user_auth_tokens)["access_token"]
 
     response = client.post(
@@ -889,6 +888,7 @@ async def test_reset_password_invalid_permissions(
         json={
             "password": "_s3cr3tp@5sw0rd_",
             "new_password": "_s3cr3tp@5sw0rd_",
+            "user_id": user_id
         },
         headers={
             "Authorization": f"Bearer {access_token}"
@@ -896,19 +896,6 @@ async def test_reset_password_invalid_permissions(
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    user_id = 2
-    response = client.post(
-        "/auth/password-reset",
-        json={
-            "user_id": 1,
-            "new_password": "_s3cr3tp@5sw0rd_",
-        },
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    data = response.json()
 
 
 @pytest.mark.asyncio

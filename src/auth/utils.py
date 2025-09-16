@@ -150,10 +150,8 @@ def create_connection_token(
     return conn_token
 
 
-def _is_valid_refresh_token(db_refresh_token: auth_schemas.AuthRefreshToken) -> bool:
-    return datetime.datetime.now(
-        datetime.UTC
-    ) <= db_refresh_token.expires_at.astimezone(datetime.UTC)
+def _is_valid_refresh_token(expires_at: datetime) -> bool:
+    return datetime.datetime.now(datetime.UTC) <= expires_at.astimezone(datetime.UTC)
 
 
 def get_most_recent_valid_recovery_token(
@@ -219,3 +217,22 @@ def send_email(receiver_email: str, message: str):
         server.starttls(context=context)
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, message.encode("utf-8"))
+
+
+def parse_refresh_token(refresh_token: str) -> auth_schemas.RefreshToken:
+    payload = jwt.decode(
+        refresh_token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
+    )
+    user = user_schemas.User.model_validate_json(payload.get("sub"))
+    user_id = user.id
+    serial_number = payload.get("sn")
+    expires_at = datetime.datetime.fromtimestamp(payload.get("exp"))
+    valid = _is_valid_refresh_token(expires_at)
+
+    return auth_schemas.RefreshToken(
+        user_id=user_id,
+        serial_number=serial_number,
+        expires_at=expires_at,
+        valid=valid,
+        refresh_token=refresh_token,
+    )
