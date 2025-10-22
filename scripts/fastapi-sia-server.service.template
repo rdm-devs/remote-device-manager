@@ -1,0 +1,27 @@
+[Unit]
+Description=FastAPI Uvicorn Server Setup
+After=network.target
+
+[Service]
+# The user who owns the FastAPI project and the tmux session
+User=yourusername 
+
+# The primary group for the user
+Group=yourusername
+
+# Set the working directory for the script (usually the project root)
+WorkingDirectory=/path/to/your/fastapi/project # Match PROJECT_DIR from your script
+
+# The command to execute (the absolute path to your script)
+ExecStart=/usr/local/bin/server-setup.sh
+
+# Standard output and error will be logged by systemd (use 'journalctl -u fastapi-server.service' to view)
+StandardOutput=journal
+StandardError=journal
+
+# Ensures the process runs as a non-interactive script (essential for background processes like tmux)
+Type=oneshot
+RemainAfterExit=yes 
+
+[Install]
+WantedBy=multi-user.target
