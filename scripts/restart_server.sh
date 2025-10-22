@@ -54,13 +54,13 @@ if [ $? != 0 ]; then
 
   # Sending commands to the first pane (index 0)
   # a. Activating the virtual environment
-  tmux send-keys -t $SESSION_NAME:0 "source $VENV_ACTIVATE" C-m
+  tmux send-keys -t $SESSION_NAME:1 "source $VENV_ACTIVATE" C-m
 
   # b. Waiting a moment for the venv to activate
   sleep 2
 
   # c. Running the uvicorn server
-  tmux send-keys -t $SESSION_NAME:0 "$UVICORN_CMD" C-m
+  tmux send-keys -t $SESSION_NAME:1 "$UVICORN_CMD" C-m
 
   echo "FastAPI server started inside tmux session: $SESSION_NAME"
 else
