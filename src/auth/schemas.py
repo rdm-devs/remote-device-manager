@@ -1,5 +1,6 @@
+import string
 from pydantic import BaseModel, HttpUrl, EmailStr
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
 from src.user.schemas import User
 from src.device.schemas import Device
@@ -22,7 +23,7 @@ class ConnectionToken(BaseModel):
 
 
 class ConnectionUrl(BaseModel):
-    url: HttpUrl
+    url: Union[HttpUrl, str]
 
 class LoginData(BaseModel):
     access_token: str

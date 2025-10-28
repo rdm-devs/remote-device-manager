@@ -13,7 +13,11 @@ from src.auth.dependencies import (
     can_edit_device,
     has_access_to_device_by_serial
 )
-from src.auth.utils import create_connection_url, create_otp
+from src.auth.utils import (
+    create_connection_url,
+    create_otp,
+    create_desktop_mode_connection_url,
+)
 from src.auth.schemas import ConnectionUrl
 from src.user.schemas import User
 from src.tenant.router import router as tenant_router
@@ -136,12 +140,15 @@ async def connect_with_serial_number(
 async def connect(
     device_id: Union[str, int],
     db: Session = Depends(get_db),
+    desktop_mode: bool = False,
     user: User = Depends(has_access_to_device),
 ):
-    otp = create_otp()
-    url = create_connection_url(db, device_id, otp)
+    if not desktop_mode:
+        otp = create_otp()
+        url = create_connection_url(db, device_id, otp)
+    else:
+        url = create_desktop_mode_connection_url(db, device_id)
     return {"url": url}
-
 
 @router.post("/{device_id}/heartbeat", response_model=schemas.HeartBeatResponse)
 def update_heartbeat(

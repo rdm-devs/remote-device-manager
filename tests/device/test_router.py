@@ -383,6 +383,27 @@ def test_connect_to_device_with_serial_number(
 
 
 @pytest.mark.parametrize(
+    "device_id, expected_status_code",
+    [
+        (1, status.HTTP_200_OK),
+        ("DeviceSerialno0001", status.HTTP_200_OK),
+    ],
+)
+def test_connect_to_device_using_desktop_mode(
+    session: Session,
+    client_authenticated: TestClient,
+    device_id: int,
+    expected_status_code: int,
+):
+    response = client_authenticated.get(f"/devices/{device_id}/connect?desktop_mode=true")
+    url = response.json()["url"]
+    assert response.status_code == expected_status_code
+    assert url is not None
+    assert "id=" in url
+    assert "pass=" in url
+
+
+@pytest.mark.parametrize(
     "device_id, body, expected_status_code",
     [
         (1, {}, status.HTTP_200_OK),

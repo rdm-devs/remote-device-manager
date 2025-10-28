@@ -119,6 +119,9 @@ def is_valid_otp(otp: str) -> bool:
         return otp
     raise exceptions.InvalidOTP()
 
+def create_desktop_mode_connection_url(db: Session, device_id: Union[str, int]):
+    device = check_device_has_rustdesk_credentials(db, device_id)
+    return f"{os.getenv("DESKTOP_MODE_URL_BASE")}?id={device.id_rust}&pass={device.pass_rust}"
 
 def create_connection_url(db: Session, device_id: Union[str, int], otp: str):
     _ = check_device_has_rustdesk_credentials(db, device_id)
