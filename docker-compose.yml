@@ -1,0 +1,73 @@
+services:
+  # FastAPI
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+    environment:
+      DB_CONNECTION_DEV: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}/${MYSQL_DATABASE}
+
+    depends_on:
+      db_service:
+        condition: service_healthy
+
+    container_name: rdm-api
+    restart: unless-stopped
+
+    networks:
+      rdm_net:
+        ipv4_address: 172.22.0.10
+
+  # DB
+  db_service:
+    image: mysql:8.0
+    command: --sql-mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+
+    env_file:
+      - ./.env
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - db_data:/var/lib/mysql
+
+    container_name: rdm-db
+    restart: unless-stopped
+
+    networks:
+      rdm_net:
+        ipv4_address: 172.22.0.20
+
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "172.22.0.20", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  db_data:
+
+networks:
+  rdm_net:
+    driver: bridge
+
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1

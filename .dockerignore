@@ -1,0 +1,7 @@
+data.json
+.env.template
+*.sql
+*.db
+poetry.lock
+pyproject.toml
+README.md
