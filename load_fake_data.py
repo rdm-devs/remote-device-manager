@@ -76,7 +76,7 @@ device_1 = create_device(
         folder_id=folder_1.id,
         MAC_addresses="61:68:0C:1E:93:8F",
         local_ips="96.119.132.44",
-        time_zone="America/Argentina/Buenos_Aires"
+        time_zone="America/Argentina/Buenos_Aires",
         **mock_os_data_1,
         **mock_vendor_data_1
     ),
@@ -89,7 +89,7 @@ device_2 = create_device(
         folder_id=folder_2.id,
         MAC_addresses="61:68:0C:1E:93:9F",
         local_ips="96.119.132.45",
-        time_zone="America/Argentina/Buenos_Aires"
+        time_zone="America/Argentina/Buenos_Aires",
         **mock_os_data_1,
         **mock_vendor_data_2
     ),
@@ -102,7 +102,7 @@ device_3 = create_device(
         folder_id=folder_3.id,
         MAC_addresses="61:68:00:1F:95:AA",
         local_ips="96.119.132.46",
-        time_zone="America/Argentina/Buenos_Aires"
+        time_zone="America/Argentina/Buenos_Aires",
         **mock_os_data_2,
         **mock_vendor_data_2
     ),
