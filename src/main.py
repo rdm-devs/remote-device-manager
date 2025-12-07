@@ -46,6 +46,7 @@ app.add_middleware(AuthUserRequestContextMiddleware)
 
 add_pagination(app)
 
+
 app.include_router(auth_router)
 app.include_router(device_router)
 app.include_router(alt_router)
@@ -54,3 +55,7 @@ app.include_router(role_router)
 app.include_router(tag_router)
 app.include_router(tenant_router)
 app.include_router(user_router)
+
+@app.get("/status", tags=["status"])
+async def status():
+    return {"status": "ok"}
